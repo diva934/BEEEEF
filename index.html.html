@@ -1092,9 +1092,79 @@ body::before{
 .score-bar{height:4px;background:var(--ink3);border-radius:2px;margin-top:6px;overflow:hidden}
 .score-bar-fill{height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.34,1.2,0.64,1)}
 
+
+/* ── SVG ICONS ── */
+.ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle}
+.ic svg{display:block}
+
+/* ── SETTINGS BUTTON ── */
+.settings-btn{
+  width:34px;height:34px;border-radius:var(--rs);
+  background:var(--s2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--txt2);cursor:pointer;transition:all 0.2s;flex-shrink:0;padding:0
+}
+.settings-btn:hover{border-color:var(--line2);color:var(--txt);background:var(--s3)}
+.settings-btn.open{border-color:var(--fire);color:var(--fire);background:rgba(255,74,14,0.06)}
+
+/* ── SETTINGS PANEL ── */
+.settings-panel{
+  position:fixed;top:calc(var(--hh) + 8px);right:12px;z-index:1100;
+  width:268px;background:var(--ink2);border:1px solid var(--line2);border-radius:var(--rl);
+  box-shadow:0 24px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(255,74,14,0.05);
+  display:none;flex-direction:column;
+  animation:modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1);overflow:hidden
+}
+.settings-panel.open{display:flex}
+.sp-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.sp-title{font-family:var(--fn-disp);font-size:10px;font-weight:900;color:var(--txt3);text-transform:uppercase;letter-spacing:3.5px}
+.sp-close{background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;padding:0 4px;border-radius:3px;line-height:1;transition:color 0.18s}
+.sp-close:hover{color:var(--txt)}
+.sp-section{padding:12px 16px}
+.sp-lbl{font-family:var(--fn-mono);font-size:9px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+.sp-server-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--ink);border:1px solid var(--line);border-radius:var(--rs)}
+.sp-server-name{font-family:var(--fn-disp);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ice)}
+.sp-lang-chips{display:flex;flex-wrap:wrap;gap:6px}
+.sp-lang-chip{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:4px;background:var(--s3);border:1px solid var(--line2);font-family:var(--fn-disp);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px}
+.sp-divider{height:1px;background:var(--line);margin:0}
+.sp-edit-btn{margin:12px 16px 14px;padding:10px 14px;background:linear-gradient(135deg,var(--fire),var(--fire2));border:none;border-radius:var(--rs);font-family:var(--fn-disp);font-size:11px;font-weight:900;color:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:1.2px;transition:all 0.2s}
+.sp-edit-btn:hover{box-shadow:0 4px 22px rgba(255,74,14,0.5);filter:brightness(1.07)}
+.sp-empty{font-family:var(--fn-mono);font-size:10px;color:var(--txt3);font-style:italic}
+
 </style>
 </head>
 <body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><defs>
+<symbol id="ic-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 6-8 7-8 13a8 8 0 0016 0c0-3-1.5-6-4-8 0 3-1.5 4.5-2 4.5C13.5 9 13 5 12 2z"/></symbol>
+<symbol id="ic-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M8 20V10M12 20V4M16 20V14"/></symbol>
+<symbol id="ic-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8M9 2v7a3 3 0 006 0V2M5 3H3a2 2 0 000 4h2M19 3h2a2 2 0 010 4h-2M12 12v4M8 20h8M10 16h4"/></symbol>
+<symbol id="ic-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 010 20M2 12h20"/></symbol>
+<symbol id="ic-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></symbol>
+<symbol id="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+<symbol id="ic-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="ic-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="ic-vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></symbol>
+<symbol id="ic-vol-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
+<symbol id="ic-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></symbol>
+<symbol id="ic-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></symbol>
+<symbol id="ic-mic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23M12 19v4M8 23h8"/></symbol>
+<symbol id="ic-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></symbol>
+<symbol id="ic-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+<symbol id="ic-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+<symbol id="ic-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4M8 4h8M7 12h.01M17 12h.01M9 16h6"/></symbol>
+<symbol id="ic-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="ic-speech" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></symbol>
+<symbol id="ic-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+<symbol id="ic-trend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+<symbol id="ic-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></symbol>
+<symbol id="ic-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></symbol>
+<symbol id="ic-bank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+<symbol id="ic-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V7H5a2 2 0 010-4h14v4"/><path d="M20 12a2 2 0 010 4H5a2 2 0 01-2-2V5"/></symbol>
+<symbol id="ic-coins" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1110.34 18"/><path d="M7 6h1v4"/></symbol>
+<symbol id="ic-dice" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/><circle cx="16" cy="8" r="1.2" fill="currentColor"/><circle cx="8" cy="16" r="1.2" fill="currentColor"/><circle cx="16" cy="16" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></symbol>
+</defs></svg>
+
 
 
 <div class="glow-fire"></div>
@@ -1104,7 +1174,7 @@ body::before{
 
 <!-- TOAST -->
 <div class="toast" id="toast">
-  <div class="toast-icon" id="toastIcon">✅</div>
+  <div class="toast-icon" id="toastIcon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24"><use href="#ic-check"/></svg></div>
   <div>
     <div class="toast-text" id="toastText"></div>
     <div class="toast-sub" id="toastSub"></div>
@@ -1115,17 +1185,16 @@ body::before{
 <header id="header">
   <div class="logo" onclick="goHome()">BEEEF</div>
   <nav class="h-nav">
-    <button class="hnav-btn active">🔥 Débats</button>
-    <button class="hnav-btn">📊 Mes Paris</button>
-    <button class="hnav-btn">🏆 Classement</button>
+    <button class="hnav-btn active"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-flame"/></svg>&nbsp;Débats</button>
+    <button class="hnav-btn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-chart"/></svg>&nbsp;Mes Paris</button>
+    <button class="hnav-btn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-trophy"/></svg>&nbsp;Classement</button>
     <div class="live-ticker" id="liveDebateCount">8 LIVE</div>
   </nav>
   <div class="h-right">
-    <button class="h-lang-btn" onclick="openSetupModal()" id="langBtnEl"><span id="langBtnContent">🌍 Langues</span></button>
-    <span class="hero-server" id="serverTagEl" style="font-size:10px;padding:4px 10px">⚡ SERVEUR EU</span>
     <div class="wallet-badge" onclick="openProfile()" id="headerBalance">$2,840.00</div>
     <button class="top-up-btn" onclick="openFunds()">+ RECHARGER</button>
     <div class="av" onclick="openProfile()" id="headerAvatar">P</div>
+    <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()" title="Paramètres"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-gear"/></svg></button>
   </div>
 </header>
 
@@ -1136,10 +1205,6 @@ body::before{
   <div id="homepage">
     <div class="hero">
       <div class="hero-main">
-        <div class="hero-eyebrow">
-          <div class="arena-badge"><div class="arena-badge-dot"></div>ARÈNE LIVE</div>
-          <div class="hero-server" id="serverTagEl">⚡ SERVEUR EUROPE</div>
-        </div>
         <h1 class="hero-title">Pariez sur<br>le meilleur<br><em>orateur.</em></h1>
         <p class="hero-sub">Des débats live, un verdict IA. Misez sur le camp qui argumente le mieux. La conviction bat la chance.</p>
         <div class="hero-cta-row">
@@ -1187,12 +1252,12 @@ body::before{
   <!-- LIVE VIEW -->
   <div id="live-view">
     <div class="live-topbar">
-      <div class="back-btn" id="backBtn">← RETOUR</div>
+      <div class="back-btn" id="backBtn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-back"/></svg> RETOUR</div>
       <div class="live-topbar-title" id="liveTopTitle"></div>
       <div class="live-topbar-meta">
         <div class="live-badge-big"><div class="live-dot"></div>LIVE</div>
         <div class="live-countdown" id="liveCountdown">--:--</div>
-        <div class="viewers-count">👁 <span id="topViewers">0</span></div>
+        <div class="viewers-count"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></div>
       </div>
     </div>
 
@@ -1202,9 +1267,9 @@ body::before{
         <div class="video-container">
           <canvas id="liveCanvas"></canvas>
           <div class="video-live-badge"><div class="live-dot"></div>LIVE</div>
-          <div class="video-viewers">👁 <span id="videoViewers">0</span></div>
-          <div class="video-timer-overlay" id="videoTimerOverlay">⏱ --:--</div>
-          <div class="video-mute" id="muteBtn">🔊</div>
+          <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
+          <div class="video-timer-overlay" id="videoTimerOverlay"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-clock"/></svg> --:--</div>
+          <div class="video-mute" id="muteBtn"><svg class="ic" width="16" height="16" viewBox="0 0 24 24"><use href="#ic-vol"/></svg></div>
         </div>
 
         <!-- PARTICIPANTS STRIP -->
@@ -1236,18 +1301,18 @@ body::before{
 
         <!-- MOBILE TABS -->
         <div class="mobile-tabs-bar" id="mobileTabs">
-          <button class="mobile-tab active" id="tabBet" onclick="setMobileTab('bet')">💰 PARIER</button>
-          <button class="mobile-tab" id="tabChat" onclick="setMobileTab('chat')">💬 CHAT</button>
+          <button class="mobile-tab active" id="tabBet" onclick="setMobileTab('bet')"> PARIER</button>
+          <button class="mobile-tab" id="tabChat" onclick="setMobileTab('chat')"> CHAT</button>
         </div>
 
         <!-- ENDED BANNER -->
         <div class="ended-banner" id="endedBanner">
-          <h3>⏰ DÉBAT TERMINÉ</h3>
+          <h3>DÉBAT TERMINÉ</h3>
           <div class="winner-side" id="endedWinner"></div>
           <div id="endedPayoutInfo" style="font-size:13px;color:var(--elec);margin:6px 0;font-weight:700;font-family:var(--fn-disp);letter-spacing:0.5px"></div>
           <p>L'IA analyse les arguments et détermine le vainqueur…</p>
           <div class="ai-thinking" id="aiThinkingIndicator">
-            <span>🤖 MODÉRATION IA EN COURS</span>
+            <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-ai"/></svg>&nbsp;MODÉRATION IA EN COURS
             <div class="ai-thinking-dots"><span></span><span></span><span></span></div>
           </div>
         </div>
@@ -1265,7 +1330,7 @@ body::before{
               <div class="participant-avatar" id="p2Avatar" style="background:linear-gradient(135deg,#3d9eff,#667eea)">M</div>
               <span id="p2Name">Maya_T</span>
             </div>
-            <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()">🎙️ PARTICIPER</button>
+            <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-mic"/></svg>&nbsp;PARTICIPER</button>
           </div>
         </div>
 
@@ -1370,7 +1435,7 @@ body::before{
 <!-- ── BET CONFIRM ── -->
 <div class="modal-overlay" id="betConfirmModal">
   <div class="modal" style="max-width:400px;text-align:center">
-    <div style="font-size:40px;margin-bottom:14px">⚠️</div>
+    <div style="margin-bottom:14px;color:var(--spark)"><svg class="ic" width="44" height="44" viewBox="0 0 24 24"><use href="#ic-warn"/></svg></div>
     <div class="modal-title" style="margin-bottom:10px;font-size:18px">CONFIRMER LE PARI</div>
     <p style="font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:12px">
       Vous misez <span id="confirmAmt" style="color:var(--txt);font-weight:700"></span> sur <span id="confirmSide" style="font-weight:700"></span>.
@@ -1416,10 +1481,10 @@ body::before{
       <div class="form-group">
         <label class="form-label">Paiement</label>
         <div class="payment-methods">
-          <div class="payment-method selected" onclick="selectPayment(this)"><div class="payment-method-icon">💳</div><div class="payment-method-label">Carte</div></div>
+          <div class="payment-method selected" onclick="selectPayment(this)"><div class="payment-method-icon"><svg class="ic" width="22" height="22" viewBox="0 0 24 24"><use href="#ic-card"/></svg></div><div class="payment-method-label">Carte</div></div>
           <div class="payment-method" onclick="selectPayment(this)"><div class="payment-method-icon">₿</div><div class="payment-method-label">Bitcoin</div></div>
-          <div class="payment-method" onclick="selectPayment(this)"><div class="payment-method-icon">🔷</div><div class="payment-method-label">Ethereum</div></div>
-          <div class="payment-method" onclick="selectPayment(this)"><div class="payment-method-icon">🏦</div><div class="payment-method-label">Virement</div></div>
+          <div class="payment-method" onclick="selectPayment(this)"><div class="payment-method-icon"><svg width="22" height="22" viewBox="0 0 32 32"><path d="M16 2L5 16l11 14 11-14z" fill="none" stroke="#627EEA" stroke-width="2"/></svg></div><div class="payment-method-label">Ethereum</div></div>
+          <div class="payment-method" onclick="selectPayment(this)"><div class="payment-method-icon"><svg class="ic" width="22" height="22" viewBox="0 0 24 24"><use href="#ic-bank"/></svg></div><div class="payment-method-label">Virement</div></div>
         </div>
       </div>
       <div id="cardFields" class="form-group">
@@ -1433,7 +1498,7 @@ body::before{
       <button class="btn-primary" onclick="confirmDeposit()">Confirmer le rechargement</button>
     </div>
     <div class="funds-success" id="fundsSuccess">
-      <div class="funds-success-icon">🎉</div>
+      <div class="funds-success-icon" style="color:var(--elec)"><svg class="ic" width="44" height="44" viewBox="0 0 24 24"><use href="#ic-check"/></svg></div>
       <div class="funds-success-msg" id="fundsSuccessMsg">Solde rechargé !</div>
       <div class="funds-success-sub" id="fundsSuccessSub"></div>
       <button class="btn-primary" style="margin-top:20px" onclick="closeModal('fundsModal')">Fermer</button>
@@ -1445,7 +1510,7 @@ body::before{
 <div class="modal-overlay" id="joinParticipantModal">
   <div class="participant-modal">
     <div class="modal-header">
-      <div class="modal-title">🎙️ REJOINDRE</div>
+      <div class="modal-title"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-mic"/></svg>&nbsp;REJOINDRE</div>
       <div class="modal-close" onclick="closeModal('joinParticipantModal')">✕</div>
     </div>
     <div class="join-debate-info">
@@ -1456,12 +1521,12 @@ body::before{
     <div style="font-family:var(--fn-disp);font-size:10px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Votre position</div>
     <div class="join-debate-side-select">
       <div class="join-side-btn yes-side" id="joinSideYes" onclick="selectJoinSide('yes')">
-        <div style="font-size:22px;margin-bottom:6px">✅</div>
+        <div style="margin-bottom:8px;color:var(--elec)"><svg class="ic" width="22" height="22" viewBox="0 0 24 24"><use href="#ic-check"/></svg></div>
         <div id="joinYesLabel">OUI</div>
         <div style="font-family:var(--fn-mono);font-size:10px;color:rgba(0,240,118,0.6);margin-top:4px">Je soutiens</div>
       </div>
       <div class="join-side-btn no-side" id="joinSideNo" onclick="selectJoinSide('no')">
-        <div style="font-size:22px;margin-bottom:6px">❌</div>
+        <div style="margin-bottom:8px;color:var(--blood)"><svg class="ic" width="22" height="22" viewBox="0 0 24 24"><use href="#ic-x"/></svg></div>
         <div id="joinNoLabel">NON</div>
         <div style="font-family:var(--fn-mono);font-size:10px;color:rgba(255,34,68,0.6);margin-top:4px">Je m'oppose</div>
       </div>
@@ -1475,10 +1540,10 @@ body::before{
     <div style="font-family:var(--fn-disp);font-size:10px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Mode de participation</div>
     <div class="join-media-options">
       <div class="join-media-btn selected" id="joinModeAudio" onclick="selectJoinMode('audio')">
-        <span class="micon">🎙️</span>Audio
+        <span class="micon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24"><use href="#ic-mic"/></svg></span>Audio
       </div>
       <div class="join-media-btn" id="joinModeVideo" onclick="selectJoinMode('video')">
-        <span class="micon">📹</span>Audio + Caméra
+        <span class="micon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24"><use href="#ic-cam"/></svg></span>Audio + Caméra
       </div>
     </div>
     <div class="join-rules">
@@ -1502,7 +1567,7 @@ body::before{
 <!-- ── AI VERDICT ── -->
 <div class="ai-verdict-overlay" id="aiVerdictOverlay">
   <div class="ai-verdict-box">
-    <div class="ai-verdict-icon">🤖</div>
+    <div class="ai-verdict-icon"><svg class="ic" width="48" height="48" viewBox="0 0 24 24"><use href="#ic-ai"/></svg></div>
     <div class="ai-verdict-title">VERDICT DE L'IA</div>
     <div style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);margin-bottom:16px">Analyse de modération indépendante</div>
     <div id="aiVerdictWinner" class="ai-verdict-winner"></div>
@@ -1541,7 +1606,7 @@ body::before{
       <div class="proom-turn-timer" id="proomTurnTimer">2:00</div>
     </div>
   </div>
-  <div class="proom-ai-alert" id="proomAiAlert">⚠️ <span id="proomAiAlertText"></span></div>
+  <div class="proom-ai-alert" id="proomAiAlert"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-warn"/></svg>&nbsp;<span id="proomAiAlertText"></span></div>
   <div class="proom-moderation-feed" id="proomModerationFeed"></div>
   <div class="proom-main" id="proomMain">
     <div class="proom-side" id="proomSide1">
@@ -1559,7 +1624,7 @@ body::before{
           <div class="proom-side-side" id="proomSideLabel1">OUI</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <div class="proom-mute-indicator" id="proomMuteIcon1">🎙️</div>
+          <div class="proom-mute-indicator" id="proomMuteIcon1"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-mic"/></svg></div>
           <div class="speaking-wave" id="proomWave1" style="display:none"><span></span><span></span><span></span><span></span><span></span></div>
         </div>
       </div>
@@ -1586,8 +1651,8 @@ body::before{
   <div class="proom-controls">
     <button class="proom-media-btn" id="proomShareMediaBtn" onclick="shareMediaFromDevice()">📎 PARTAGER MÉDIA</button>
     <input type="file" id="proomFileInput" accept="image/*,video/*" style="display:none" onchange="handleMediaFile(this)">
-    <button class="proom-ctrl-btn" id="proomCamToggle" onclick="toggleParticipantCam()" style="display:none">📹 CAMÉRA</button>
-    <button class="proom-ctrl-btn danger" onclick="leaveParticipantRoom()">🚪 QUITTER</button>
+    <button class="proom-ctrl-btn" id="proomCamToggle" onclick="toggleParticipantCam()" style="display:none"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-cam"/></svg>&nbsp;CAMÉRA</button>
+    <button class="proom-ctrl-btn danger" onclick="leaveParticipantRoom()"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-exit"/></svg>&nbsp;QUITTER</button>
   </div>
   <div class="proom-min-timer" id="proomMinWarning"></div>
 </div>
@@ -1603,7 +1668,7 @@ body::before{
     </div>
     <!-- Step 0: Welcome -->
     <div class="setup-step" id="setupStep0" style="display:block">
-      <div class="setup-icon">⚡</div>
+      <div class="setup-icon"><svg class="ic" width="40" height="40" viewBox="0 0 24 24"><use href="#ic-bolt"/></svg></div>
       <div class="setup-title">Bienvenue sur BEEEF</div>
       <p class="setup-sub">Configurez votre région et vos langues. Seuls les débats dans vos langues seront visibles. Vous ne pouvez participer qu'aux débats de votre serveur régional.</p>
       <div class="setup-nav" style="margin-top:16px">
@@ -1612,18 +1677,20 @@ body::before{
     </div>
     <!-- Step 1: Region -->
     <div class="setup-step" id="setupStep1">
-      <div class="setup-icon">📍</div>
+      <div class="setup-icon"><svg class="ic" width="40" height="40" viewBox="0 0 24 24"><use href="#ic-pin"/></svg></div>
       <div class="setup-title">Votre région</div>
       <p class="setup-sub">Choisissez votre pays pour rejoindre le serveur BEEEF le plus proche. Cela définit les règles locales et les modes de paiement acceptés.</p>
       <div class="setup-grid" id="regionGrid"></div>
       <div class="setup-nav">
-        <button class="setup-btn-back" onclick="setupBack(1)">← RETOUR</button>
+        <button class="setup-btn-back" onclick="setupBack(1)">
+          <svg class="ic" width="12" height="12" viewBox="0 0 24 24"><use href="#ic-back"/></svg> RETOUR
+        </button>
         <button class="setup-btn-next" onclick="setupNext(1)">SUIVANT →</button>
       </div>
     </div>
     <!-- Step 2: Languages -->
     <div class="setup-step" id="setupStep2">
-      <div class="setup-icon">🗣️</div>
+      <div class="setup-icon"><svg class="ic" width="40" height="40" viewBox="0 0 24 24"><use href="#ic-speech"/></svg></div>
       <div class="setup-title">Vos langues</div>
       <p class="setup-sub">Sélectionnez une ou plusieurs langues. Vous ne verrez que les débats dans ces langues et ne pourrez y participer qu'en tant qu'orateur.</p>
       <div class="setup-grid" id="langGrid"></div>
@@ -1732,12 +1799,12 @@ function goToSetupStep(n) {
   setupStep = n;
 }
 function setupNext(from) {
-  if (from===1 && !setupRegion) { showToast('⚠️','Choisissez votre région',''); return; }
+  if (from===1 && !setupRegion) { showToast('warn','Choisissez votre région',''); return; }
   goToSetupStep(from+1);
 }
 function setupBack(from) { goToSetupStep(from-1); }
 function setupFinish() {
-  if (setupLangs.size === 0) { showToast('⚠️','Sélectionnez au moins une langue',''); return; }
+  if (setupLangs.size === 0) { showToast('warn','Sélectionnez au moins une langue',''); return; }
   userRegion = setupRegion;
   userLangs = [...setupLangs];
   localStorage.setItem('beeef_region', userRegion);
@@ -1746,17 +1813,13 @@ function setupFinish() {
   document.getElementById('setupOverlay').classList.remove('open');
   applyUserPrefs();
   renderGrid(activeFilter);
-  showToast('✅','Profil configuré','Langues et région enregistrées');
+  showToast('ok','Profil configuré','Langues et région enregistrées');
 }
 function applyUserPrefs() {
   const region = REGIONS.find(r=>r.id===userRegion);
   const langs = LANGUAGES.filter(l=>userLangs.includes(l.id));
-  // Server tag in header
-  const st = document.getElementById('serverTagEl');
-  if (st && region) st.textContent = `⚡ ${region.server}`;
-  // Lang button
-  const lb = document.getElementById('langBtnContent');
-  if (lb) lb.textContent = langs.length ? langs.map(l=>l.flag).join('') + ' Langues' : '🌍 Langues';
+  // Update settings panel if open
+  updateSettingsPanel();
   // Lang filter chips
   buildLangChips(langs);
 }
@@ -1910,7 +1973,7 @@ function tickTimer(debate) {
 }
 function updateCardTimer(debate) {
   const el = document.querySelector(`.debate-card[data-id="${debate.id}"] .card-timer`);
-  if(el) el.textContent = '⏱ '+fmtTime(debate.timerRemaining);
+  if(el) el.textContent = fmtTime(debate.timerRemaining);
   const card = document.querySelector(`.debate-card[data-id="${debate.id}"]`);
   if(card){debate.timerRemaining<60000?card.classList.add('ending'):card.classList.remove('ending');}
 }
@@ -1918,7 +1981,7 @@ function updateLiveTimer(debate) {
   const cd=document.getElementById('liveCountdown'),vt=document.getElementById('videoTimerOverlay');
   const t=fmtTime(debate.timerRemaining);
   if(cd){cd.textContent=t;cd.className='live-countdown'+(debate.timerRemaining<60000?' ending':'');}
-  if(vt)vt.textContent='⏱ '+t;
+  if(vt)vt.textContent=t;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1935,7 +1998,7 @@ function onDebateClosed(debate) {
   }
   if(currentDebate && currentDebate.id===debate.id) {
     document.getElementById('endedBanner').style.display='block';
-    document.getElementById('endedWinner').textContent='🤖 Analyse IA du vainqueur…';
+    document.getElementById('endedWinner').textContent='Analyse IA du vainqueur…';
     document.getElementById('betYesBtn').disabled=true;
     document.getElementById('betNoBtn').disabled=true;
     document.getElementById('joinAsParticipantBtn').disabled=true;
@@ -1947,7 +2010,7 @@ function onDebateClosed(debate) {
     setTimeout(()=>{
       const w=debate.yesPct>50?(debate.yesLabel||'OUI'):(debate.noLabel||'NON');
       const el=document.getElementById('cw'+debate.id);
-      if(el)el.textContent='🏆 '+w+' gagne';
+      if(el)el.textContent=w+' gagne';
     }, 4000);
   }
   setTimeout(()=>launchAIDebate(debate.category), 10000);
@@ -1988,13 +2051,13 @@ Réponds UNIQUEMENT en JSON valide, sans texte avant/après, format exact :
 function applyVerdict(verdict, debate) {
   // Update closed card
   const cwEl = document.getElementById('cw'+debate.id);
-  if(cwEl) cwEl.textContent = '🏆 '+verdict.winner+' gagne';
+  if(cwEl) cwEl.textContent = verdict.winner+' gagne';
   // Hide thinking indicator
   const ati = document.getElementById('aiThinkingIndicator');
   if(ati) ati.style.display='none';
   // Update live banner
   const ew = document.getElementById('endedWinner');
-  if(ew) ew.textContent = '🏆 '+verdict.winner+' remporte le débat !';
+  if(ew) ew.textContent = verdict.winner+' remporte le débat !';
 
   // ── PAYOUT CALCULATION ──────────────────────────────────
   const userBetYes = debate._userBetYes || 0;
@@ -2023,7 +2086,7 @@ function applyVerdict(verdict, debate) {
   // Update payout info in banner
   const epi = document.getElementById('endedPayoutInfo');
   if(epi) {
-    if(totalGain > 0) { epi.textContent='💰 Gains crédités : +'+fmtBalance(totalGain); epi.style.color='var(--elec)'; }
+    if(totalGain > 0) { epi.textContent='Gains crédités : +'+fmtBalance(totalGain); epi.style.color='var(--elec)'; }
     else if(totalLoss > 0) { epi.textContent='📉 Mise perdue : -'+fmtBalance(totalLoss); epi.style.color='var(--blood)'; }
     else { epi.textContent=''; }
   }
@@ -2035,12 +2098,12 @@ function applyVerdict(verdict, debate) {
 function showVerdictOverlay(verdict, debate, payout) {
   const yL=debate.yesLabel||'OUI', nL=debate.noLabel||'NON';
   const wEl = document.getElementById('aiVerdictWinner');
-  wEl.textContent = '🏆 '+verdict.winner+' remporte le débat !';
+  wEl.textContent = verdict.winner+' remporte le débat !';
   wEl.className = 'ai-verdict-winner '+(verdict.winnerSide==='yes'?'yes-win':'no-win');
 
   document.getElementById('aiVerdictCriteria').innerHTML=`
     <div class="ai-criterion">
-      <div class="ai-criterion-label">💬 Conviction</div>
+      <div class="ai-criterion-label">Conviction</div>
       <div class="ai-criterion-value" style="color:var(--elec)">${yL} : ${verdict.conviction.yes}/10</div>
       <div class="ai-criterion-value" style="color:var(--blood)">${nL} : ${verdict.conviction.no}/10</div>
     </div>
@@ -2093,7 +2156,7 @@ function launchAIDebate(cat) {
   debates.push(nd);
   renderGrid(activeFilter);
   startTimer(nd);
-  showToast('🤖','Nouveau débat',nd.title.slice(0,48)+'…');
+  showToast('ai','Nouveau débat',nd.title.slice(0,48)+'…');
   document.getElementById('liveDebateCount').textContent=debates.filter(d=>!d.closed).length+' LIVE';
 }
 
@@ -2314,7 +2377,7 @@ function placeBet(side) {
   if(!currentDebate||currentDebate.closed)return;
   const amt=parseFloat(document.getElementById('betAmount').value)||50;
   if(amt<=0)return;
-  if(amt>balance){showToast('❌','Fonds insuffisants','Rechargez votre solde');return;}
+  if(amt>balance){showToast('err','Fonds insuffisants','Rechargez votre solde');return;}
   pendingBetSide=side;
   const sl=side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON');
   document.getElementById('confirmAmt').textContent=fmt(amt);
@@ -2408,7 +2471,7 @@ document.getElementById('chatSendBtn').addEventListener('click',sendChat);
 document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
 
 let muted=false;
-document.getElementById('muteBtn').addEventListener('click',function(){muted=!muted;this.textContent=muted?'🔇':'🔊';});
+document.getElementById('muteBtn').addEventListener('click',function(){muted=!muted;this.innerHTML=muted?'<svg class=\"ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><use href=\"#ic-vol-off\"/></svg>':'<svg class=\"ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><use href=\"#ic-vol\"/></svg>';});
 
 // ═══════════════════════════════════════════════════════════
 //  MOBILE TABS
@@ -2434,12 +2497,59 @@ function updateBalanceUI(){
   ['headerBalance','profileBalance','fundsCurrentBalance'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=b;});
 }
 let toastTimeout;
+const TOAST_ICONS = {
+  ok:    '<svg class="ic" width="18" height="18" viewBox="0 0 24 24"><use href="#ic-check"/></svg>',
+  warn:  '<svg class="ic" width="18" height="18" viewBox="0 0 24 24"><use href="#ic-warn"/></svg>',
+  err:   '<svg class="ic" width="18" height="18" viewBox="0 0 24 24"><use href="#ic-x"/></svg>',
+  ai:    '<svg class="ic" width="18" height="18" viewBox="0 0 24 24"><use href="#ic-ai"/></svg>',
+  coins: '<svg class="ic" width="18" height="18" viewBox="0 0 24 24"><use href="#ic-coins"/></svg>',
+  yes:   '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--elec)"></span>',
+  no:    '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--blood)"></span>',
+};
 function showToast(icon,text,sub){
-  document.getElementById('toastIcon').textContent=icon;
+  const el=document.getElementById('toastIcon');
+  el.innerHTML = TOAST_ICONS[icon] || TOAST_ICONS.ok;
   document.getElementById('toastText').textContent=text;
   document.getElementById('toastSub').textContent=sub||'';
   const t=document.getElementById('toast');t.classList.add('show');
   clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── SETTINGS PANEL ──
+function toggleSettings(){
+  const btn=document.getElementById('settingsBtn');
+  const panel=document.getElementById('settingsPanel');
+  const isOpen=panel.classList.contains('open');
+  if(isOpen){closeSettings();}else{openSettings();}
+}
+function openSettings(){
+  const panel=document.getElementById('settingsPanel');
+  const btn=document.getElementById('settingsBtn');
+  panel.classList.add('open');btn.classList.add('open');
+  updateSettingsPanel();
+  setTimeout(()=>document.addEventListener('click',closeSettingsOutside),0);
+}
+function closeSettings(){
+  document.getElementById('settingsPanel').classList.remove('open');
+  const btn=document.getElementById('settingsBtn');if(btn)btn.classList.remove('open');
+  document.removeEventListener('click',closeSettingsOutside);
+}
+function closeSettingsOutside(e){
+  const panel=document.getElementById('settingsPanel');
+  const btn=document.getElementById('settingsBtn');
+  if(!panel.contains(e.target)&&!btn.contains(e.target))closeSettings();
+}
+function updateSettingsPanel(){
+  const region=REGIONS.find(r=>r.id===userRegion);
+  const nameEl=document.getElementById('spServerName');
+  if(nameEl)nameEl.textContent=region?region.server:'Non défini';
+  const chips=document.getElementById('spLangChips');
+  if(chips){
+    const langs=LANGUAGES.filter(l=>userLangs.includes(l.id));
+    chips.innerHTML=langs.length
+      ? langs.map(l=>`<div class="sp-lang-chip">${l.flag} ${l.id.toUpperCase()}</div>`).join('')
+      : '<span class="sp-empty">Aucune langue sélectionnée</span>';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2457,31 +2567,31 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('clic
 const setupOverlayEl = document.getElementById('setupOverlay');
 if(setupOverlayEl) setupOverlayEl.addEventListener('click',e=>{if(e.target===setupOverlayEl)setupOverlayEl.classList.remove('open');});
 
-function saveProfile(){showToast('✅','Profil enregistré','Paramètres mis à jour');closeModal('profileModal');}
+function saveProfile(){showToast('ok','Profil enregistré','Paramètres mis à jour');closeModal('profileModal');}
 let pwdOpen=false;
 function togglePwdEdit(){pwdOpen=!pwdOpen;document.getElementById('pwdChangeFields').style.display=pwdOpen?'block':'none';}
 function savePwd(){
   const p1=document.getElementById('newPwd1').value,p2=document.getElementById('newPwd2').value;
-  if(!p1||p1.length<6){showToast('❌','Trop court','6 caractères minimum');return;}
-  if(p1!==p2){showToast('❌','Ne correspond pas','');return;}
-  showToast('✅','Mot de passe mis à jour','');document.getElementById('pwdChangeFields').style.display='none';pwdOpen=false;
+  if(!p1||p1.length<6){showToast('err','Trop court','6 caractères minimum');return;}
+  if(p1!==p2){showToast('err','Ne correspond pas','');return;}
+  showToast('ok','Mot de passe mis à jour','');document.getElementById('pwdChangeFields').style.display='none';pwdOpen=false;
 }
 function toggle2FA(el){document.getElementById('twofaSection').classList.toggle('visible',el.checked);}
-function verifyPhone(){const p=document.getElementById('phoneInput').value;if(!p||p.length<8){showToast('❌','Numéro invalide','');return;}document.getElementById('phoneCodeWrap').style.display='block';showToast('📱','Code envoyé','');}
-function confirmPhone(){const c=document.getElementById('phoneCode').value;if(c.length!==6){showToast('❌','Code invalide','6 chiffres');return;}showToast('✅','Téléphone vérifié','2FA actif');document.getElementById('twofaSection').classList.remove('visible');}
+function verifyPhone(){const p=document.getElementById('phoneInput').value;if(!p||p.length<8){showToast('err','Numéro invalide','');return;}document.getElementById('phoneCodeWrap').style.display='block';showToast('📱','Code envoyé','');}
+function confirmPhone(){const c=document.getElementById('phoneCode').value;if(c.length!==6){showToast('err','Code invalide','6 chiffres');return;}showToast('ok','Téléphone vérifié','2FA actif');document.getElementById('twofaSection').classList.remove('visible');}
 let selectedPresetVal2=100;
 function selectPreset(el){document.querySelectorAll('.funds-preset').forEach(p=>p.classList.remove('selected'));el.classList.add('selected');selectedPresetVal2=el.dataset.val;document.getElementById('customAmountWrap').style.display=selectedPresetVal2==='custom'?'block':'none';}
 function selectPayment(el){document.querySelectorAll('.payment-method').forEach(m=>m.classList.remove('selected'));el.classList.add('selected');const isCard=el.querySelector('.payment-method-icon').textContent==='💳';document.getElementById('cardFields').style.display=isCard?'block':'none';}
 function formatCard(input){let v=input.value.replace(/\D/g,'');if(v.length>16)v=v.slice(0,16);input.value=v.replace(/(.{4})/g,'$1 ').trim();}
 function confirmDeposit(){
   let amount=selectedPresetVal2==='custom'?parseFloat(document.getElementById('customAmount').value):parseFloat(selectedPresetVal2);
-  if(!amount||amount<10){showToast('❌','Montant invalide','Minimum $10');return;}
+  if(!amount||amount<10){showToast('err','Montant invalide','Minimum $10');return;}
   balance+=amount;updateBalanceUI();
   document.getElementById('fundsForm').style.display='none';
   document.getElementById('fundsSuccessMsg').textContent='+'+fmtBalance(amount)+' ajoutés !';
   document.getElementById('fundsSuccessSub').textContent='Nouveau solde : '+fmtBalance(balance);
   document.getElementById('fundsSuccess').style.display='block';
-  showToast('💰','Rechargement réussi','+'+fmtBalance(amount));
+  showToast('coins','Rechargement réussi','+'+fmtBalance(amount));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2507,7 +2617,7 @@ function openJoinParticipantModal(){
   if(!currentDebate||currentDebate.closed)return;
   // Check if user has matching lang for this debate
   if(userLangs.length>0 && currentDebate.lang && !userLangs.includes(currentDebate.lang)){
-    showToast('❌','Langue incompatible','Ce débat n\'est pas dans vos langues sélectionnées');return;
+    showToast('err','Langue incompatible','Ce débat n\'est pas dans vos langues sélectionnées');return;
   }
   document.getElementById('joinModalTopic').textContent='📌 '+currentDebate.title;
   document.getElementById('joinYesLabel').textContent=currentDebate.yesLabel||'OUI';
@@ -2516,7 +2626,7 @@ function openJoinParticipantModal(){
   const langTag = currentDebate.lang ? LANG_LABELS[currentDebate.lang]||'' : '';
   const region = REGIONS.find(r=>r.id===userRegion);
   const serverInfo = document.getElementById('joinServerInfo');
-  if(serverInfo) serverInfo.textContent = (region?`⚡ ${region.server}`:'') + (langTag?' · '+langTag:'');
+  if(serverInfo) serverInfo.textContent = (region?region.server:'') + (langTag?' · '+langTag:'');
   joinedSide=null;
   document.getElementById('joinSideYes').classList.remove('selected');
   document.getElementById('joinSideNo').classList.remove('selected');
@@ -2525,10 +2635,10 @@ function openJoinParticipantModal(){
 function selectJoinSide(side){joinedSide=side;document.getElementById('joinSideYes').classList.toggle('selected',side==='yes');document.getElementById('joinSideNo').classList.toggle('selected',side==='no');}
 function selectJoinMode(mode){joinMode=mode;document.getElementById('joinModeAudio').classList.toggle('selected',mode==='audio');document.getElementById('joinModeVideo').classList.toggle('selected',mode==='video');}
 function submitJoinParticipant(){
-  if(!joinedSide){showToast('⚠️','Choisissez votre camp','');return;}
+  if(!joinedSide){showToast('warn','Choisissez votre camp','');return;}
   const amt=parseFloat(document.getElementById('joinBetAmount').value)||50;
-  if(amt<50){showToast('❌','Minimum $50','');return;}
-  if(amt>balance){showToast('❌','Fonds insuffisants','');return;}
+  if(amt<50){showToast('err','Minimum $50','');return;}
+  if(amt>balance){showToast('err','Fonds insuffisants','');return;}
   closeModal('joinParticipantModal');
   myBetAsParticipant=amt; userBetSideInRoom=joinedSide;
   balance-=amt; updateBalanceUI();
@@ -2542,7 +2652,7 @@ function showWaitingRoom(){
   const wr=document.getElementById('waitingRoom'); wr.classList.add('open');
   const region=REGIONS.find(r=>r.id===userRegion);
   document.getElementById('waitingSpots').innerHTML=`
-    <div class="waiting-spot you">🎙️ Vous · ${joinedSide==='yes'?(currentDebate?.yesLabel||'OUI'):(currentDebate?.noLabel||'NON')}</div>
+    <div class="waiting-spot you">Vous · ${joinedSide==='yes'?(currentDebate?.yesLabel||'OUI'):(currentDebate?.noLabel||'NON')}</div>
     <div class="waiting-spot empty" id="waitingSpotOpp">⏳ Recherche adversaire…</div>`;
   document.getElementById('waitingServerLabel').textContent=region?`Serveur ${region.server}`:'Serveur EU';
   let cnt=Math.floor(3+Math.random()*5);
@@ -2563,7 +2673,7 @@ function cancelWaiting(){
   document.getElementById('waitingRoom').classList.remove('open');
   if(currentDebate){currentDebate._participantBet=0;currentDebate._participantSide=null;}
   balance+=myBetAsParticipant; updateBalanceUI(); myBetAsParticipant=0;
-  showToast('✅','Annulé','Mise remboursée');
+  showToast('ok','Annulé','Mise remboursée');
 }
 
 // Live Participant Room
@@ -2715,7 +2825,7 @@ function handleMediaFile(input){
       showToast('📎','Média diffusé','Visible par tous les spectateurs');
     }else{
       addModerationEntry('❌ Média refusé — non conforme','warn');
-      showToast('❌','Média refusé','Contenu non conforme détecté par l\'IA');
+      showToast('err','Média refusé','Contenu non conforme détecté par l\'IA');
     }
     input.value='';
   },1800);
@@ -2862,5 +2972,29 @@ class Typewriter {
   document.head.appendChild(s);
 })();
 </script>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-panel" id="settingsPanel">
+  <div class="sp-header">
+    <span class="sp-title">Paramètres</span>
+    <button class="sp-close" onclick="closeSettings()">×</button>
+  </div>
+  <div class="sp-section">
+    <div class="sp-lbl">Serveur</div>
+    <div class="sp-server-row">
+      <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-server"/></svg>
+      <span class="sp-server-name" id="spServerName">—</span>
+    </div>
+  </div>
+  <div class="sp-divider"></div>
+  <div class="sp-section">
+    <div class="sp-lbl">Langues</div>
+    <div class="sp-lang-chips" id="spLangChips">
+      <span class="sp-empty">Non configuré</span>
+    </div>
+  </div>
+  <div class="sp-divider"></div>
+  <button class="sp-edit-btn" onclick="openSetupModal();closeSettings()">Modifier région &amp; langues →</button>
+</div>
 </body>
 </html>
