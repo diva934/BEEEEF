@@ -2639,7 +2639,7 @@ button:active{transform:scale(0.97)!important}
 // ═══════════════════════════════════════════════════════════
 //  BEEEF — Core State
 // ═══════════════════════════════════════════════════════════
-const SPEED = 60;
+const SPEED = 1;
 let balance = 2840;
 let currentDebate = null;
 let livePool = 0, liveYesPct = 50, liveViewers = 0;
@@ -2885,7 +2885,7 @@ function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000));const h=Math.floor(
 function catLabel(c){const m={politics:'Politique',sports:'Sport',crypto:'Crypto',geopolitics:'Géopolitique',economy:'Économie',technology:'Tech',society:'Société'};return m[c]||c}
 function fmtBalance(n){return'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function makeId(){return ++nextId}
-function getTimerDuration(pool){if(pool>200000)return 3600000;if(pool>100000)return 2400000;if(pool>50000)return 1800000;return 1200000}
+function getTimerDuration(pool){if(pool>200000)return 5400000;if(pool>100000)return 3600000;if(pool>50000)return 2700000;return 1800000}
 
 // ═══════════════════════════════════════════════════════════
 //  TIMERS
@@ -3737,7 +3737,7 @@ let participantStream=null, debateRoomActive=false;
 let turnTimer=null, mainDebateTimer=null;
 let currentSpeaker='you', turnDuration=120, turnRemaining=120;
 let totalDebateDuration=0;
-const MIN_DEBATE_DURATION=15*60;
+const MIN_DEBATE_DURATION=30*60;
 let userBetSideInRoom=null;
 const OPPONENTS=[
   {name:'CryptoKing',avatar:'C',color:'linear-gradient(135deg,#f7931a,#aa55ff)'},
