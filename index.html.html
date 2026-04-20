@@ -338,7 +338,6 @@ body::before{
 .card-thumb{position:relative;width:100%;padding-top:52%;overflow:hidden;background:#09090f}
 .thumb-bg{
   position:absolute;inset:0;
-  background:var(--ink3)!important;
   animation:none
 }
 .thumb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 0.55s ease;opacity:0.65;mix-blend-mode:normal}
@@ -421,20 +420,19 @@ body::before{
 /* Join overlay */
 .join-cta{
   position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;
-  background:rgba(6,6,10,0.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  opacity:0;transform:translateY(6px);transition:opacity 0.22s,transform 0.22s
+  background:rgba(6,6,10,0.55);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
+  opacity:0;transform:translateY(8px);transition:opacity 0.25s ease,transform 0.25s ease
 }
 .join-btn{
-  padding:11px 28px;
-  background:var(--fire);
+  padding:13px 36px;
+  background:#ff6b35;
   color:#fff;border:none;border-radius:9999px;
-  box-shadow:0 4px 24px rgba(255,107,53,0.4),inset 0 1px 0 rgba(255,255,255,0.18);
-  font-family:var(--fn-body);font-size:14px;font-weight:600;cursor:pointer;
-  letter-spacing:2.5px;text-transform:uppercase;
-  box-shadow:0 4px 32px rgba(255,74,14,0.6),0 1px 0 rgba(255,255,255,0.1) inset;
-  transition:transform 0.15s,box-shadow 0.15s
+  font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:600;cursor:pointer;
+  letter-spacing:0;text-transform:none;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.15) inset, 0 4px 32px rgba(255,107,53,0.55);
+  transition:transform 0.15s ease,box-shadow 0.15s ease
 }
-.join-btn:hover{transform:scale(1.04);box-shadow:0 6px 48px rgba(255,74,14,0.85)}
+.join-btn:hover{transform:scale(1.04);box-shadow:0 0 0 1px rgba(255,255,255,0.2) inset, 0 8px 44px rgba(255,107,53,0.7)}
 
 /* Closed state */
 .closed-overlay{
@@ -468,28 +466,28 @@ body::before{
   border-bottom:1px solid var(--line)
 }
 .back-btn{
-  display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);
-  background:var(--s2);border:1px solid var(--line);font-family:var(--fn-disp);
-  font-size:11.5px;font-weight:800;color:var(--txt2);cursor:pointer;transition:all 0.18s;
-  letter-spacing:0.8px;text-transform:uppercase
+  display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:9999px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-family:var(--fn-body);
+  font-size:12px;font-weight:500;color:var(--txt2);cursor:pointer;transition:all 0.18s ease;
+  letter-spacing:0;text-transform:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)
 }
-.back-btn:hover{border-color:var(--line2);color:var(--txt)}
+.back-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.18);color:var(--txt)}
 .live-topbar-title{
-  font-family:var(--fn-disp);font-size:15px;font-weight:900;flex:1;
-  text-transform:uppercase;letter-spacing:0.3px;line-height:1.2;
+  font-family:var(--fn-disp);font-size:15px;font-weight:800;flex:1;
+  text-transform:none;letter-spacing:-0.02em;line-height:1.2;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis
 }
 .live-topbar-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .live-badge-big{
-  display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:3px;
-  background:rgba(255,34,68,0.1);border:1px solid rgba(255,34,68,0.25);
-  font-family:var(--fn-disp);font-size:10.5px;font-weight:900;color:var(--blood);letter-spacing:2px
+  display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:9999px;
+  background:rgba(255,69,58,0.12);border:1px solid rgba(255,69,58,0.22);
+  font-family:var(--fn-body);font-size:10px;font-weight:600;color:#ff453a;letter-spacing:0.04em
 }
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--blood);animation:beat 1.2s ease-in-out infinite}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#ff453a;animation:beat 1.2s ease-in-out infinite}
 .live-countdown{
   font-family:var(--fn-mono);font-size:13px;font-weight:600;color:var(--fire);
-  background:rgba(255,74,14,0.08);border:1px solid rgba(255,74,14,0.2);
-  padding:4px 11px;border-radius:var(--rs)
+  background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.18);
+  padding:4px 12px;border-radius:9999px
 }
 .live-countdown.ending{
   color:var(--blood);background:rgba(255,34,68,0.1);border-color:rgba(255,34,68,0.28);
@@ -617,11 +615,12 @@ body::before{
 .participant-chip span{font-family:var(--fn-disp);font-size:13px;font-weight:700;letter-spacing:0.3px}
 .dp-vs{font-family:var(--fn-disp);font-size:11px;color:var(--txt3);font-weight:700;letter-spacing:1px}
 #joinAsParticipantBtn{
-  margin-left:auto;padding:7px 16px;border-radius:4px;
-  background:rgba(61,158,255,0.1);border:1px solid rgba(61,158,255,0.3);
-  font-family:var(--fn-disp);font-size:12px;font-weight:800;color:var(--ice);cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;text-transform:uppercase
+  margin-left:auto;padding:8px 18px;border-radius:9999px;
+  background:rgba(10,132,255,0.12);border:1px solid rgba(10,132,255,0.28);
+  font-family:var(--fn-body);font-size:12px;font-weight:600;color:var(--ice);cursor:pointer;transition:all 0.18s ease;letter-spacing:0;text-transform:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08)
 }
-#joinAsParticipantBtn:hover{background:rgba(61,158,255,0.2);border-color:rgba(61,158,255,0.6)}
+#joinAsParticipantBtn:hover{background:rgba(10,132,255,0.22);border-color:rgba(10,132,255,0.5);box-shadow:0 4px 16px rgba(10,132,255,0.2),inset 0 1px 0 rgba(255,255,255,0.1)}
 #joinAsParticipantBtn:disabled{opacity:0.4;cursor:not-allowed}
 
 /* ── BETTING PANEL ── */
@@ -887,31 +886,32 @@ body::before{
 .ai-verdict-box::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.07);border-radius:50px}
 .ai-verdict-icon{font-size:52px;margin-bottom:14px;animation:float 3s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.ai-verdict-title{font-family:var(--fn-disp);font-size:12px;font-weight:800;letter-spacing:4px;color:var(--txt3);text-transform:uppercase;margin-bottom:6px}
+.ai-verdict-title{font-family:var(--fn-body);font-size:10px;font-weight:600;letter-spacing:0.1em;color:var(--txt3);text-transform:uppercase;margin-bottom:6px}
 .ai-verdict-winner{
-  display:inline-block;font-family:var(--fn-disp);font-size:26px;font-weight:900;
-  padding:12px 28px;border-radius:8px;margin:10px auto 18px;letter-spacing:1px;text-transform:uppercase
+  display:inline-block;font-family:var(--fn-disp);font-size:22px;font-weight:900;
+  padding:10px 28px;border-radius:9999px;margin:10px auto 18px;letter-spacing:-0.02em;text-transform:none
 }
-.ai-verdict-winner.yes-win{background:rgba(0,240,118,0.1);color:var(--elec);border:1px solid rgba(0,240,118,0.25)}
-.ai-verdict-winner.no-win{background:rgba(255,34,68,0.1);color:var(--blood);border:1px solid rgba(255,34,68,0.25)}
+.ai-verdict-winner.yes-win{background:rgba(48,209,88,0.1);color:var(--elec);border:1px solid rgba(48,209,88,0.25);box-shadow:0 0 24px rgba(48,209,88,0.1)}
+.ai-verdict-winner.no-win{background:rgba(255,69,58,0.1);color:var(--blood);border:1px solid rgba(255,69,58,0.25);box-shadow:0 0 24px rgba(255,69,58,0.1)}
 .ai-verdict-criteria{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0;text-align:left}
-.ai-criterion{background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:12px}
-.ai-criterion-label{font-family:var(--fn-disp);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--txt3);margin-bottom:8px}
-.ai-criterion-value{font-family:var(--fn-mono);font-size:14px;font-weight:600;margin-bottom:2px}
+.ai-criterion{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05)}
+.ai-criterion-label{font-family:var(--fn-body);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--txt3);margin-bottom:8px}
+.ai-criterion-value{font-family:var(--fn-body);font-size:13px;font-weight:600;margin-bottom:2px}
 .ai-verdict-reasoning{
   font-size:13px;color:var(--txt2);line-height:1.75;text-align:left;
-  background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:16px;margin:16px 0
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;margin:16px 0
 }
 .ai-payout-section{background:rgba(0,240,118,0.05);border:1px solid rgba(0,240,118,0.15);border-radius:8px;padding:16px;margin:16px 0;text-align:left}
 .ai-payout-title{font-family:var(--fn-disp);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--elec);margin-bottom:10px}
 .ai-payout-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;font-family:var(--fn-body)}
 .ai-payout-row:last-child{margin-bottom:0;font-family:var(--fn-disp);font-weight:800;font-size:15px;border-top:1px solid rgba(0,240,118,0.15);padding-top:8px;margin-top:4px;letter-spacing:0.5px;text-transform:uppercase}
 .ai-verdict-close{
-  width:100%;padding:14px;background:var(--fire);border:none;border-radius:6px;
-  font-family:var(--fn-disp);font-size:14px;font-weight:900;color:#fff;cursor:pointer;margin-top:16px;
-  letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 4px 24px rgba(255,74,14,0.4);transition:all 0.2s
+  width:100%;padding:14px;background:var(--fire);border:none;border-radius:9999px;
+  font-family:var(--fn-body);font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-top:16px;
+  letter-spacing:0;text-transform:none;
+  box-shadow:0 4px 28px rgba(255,107,53,0.45),inset 0 1px 0 rgba(255,255,255,0.18);transition:all 0.18s ease
 }
-.ai-verdict-close:hover{filter:brightness(1.1);box-shadow:0 4px 36px rgba(255,74,14,0.65)}
+.ai-verdict-close:hover{box-shadow:0 6px 36px rgba(255,107,53,0.6),inset 0 1px 0 rgba(255,255,255,0.2)}
 .ai-thinking{display:flex;align-items:center;gap:10px;justify-content:center;padding:12px;color:var(--ice);font-family:var(--fn-mono);font-size:11px}
 .ai-thinking-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ice);animation:dotPulse 1.2s ease-in-out infinite}
 .ai-thinking-dots span:nth-child(2){animation-delay:.2s}
@@ -1087,18 +1087,18 @@ body::before{
 .ssi.current{background:var(--fire)}
 .ssi.done{background:var(--elec)}
 .setup-icon{text-align:center;font-size:48px;margin-bottom:16px}
-.setup-title{font-family:var(--fn-disp);font-size:26px;font-weight:900;text-align:center;margin-bottom:8px;letter-spacing:0.5px;text-transform:uppercase}
+.setup-title{font-family:var(--fn-disp);font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;letter-spacing:-0.02em;text-transform:none}
 .setup-sub{font-size:13px;color:var(--txt2);text-align:center;line-height:1.7;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto}
 .setup-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
-.setup-opt{padding:14px 10px;border-radius:8px;border:1px solid var(--line);background:var(--ink2);cursor:pointer;text-align:center;transition:all 0.22s;font-family:var(--fn-disp)}
-.setup-opt:hover{border-color:var(--line2);background:var(--ink3)}
-.setup-opt.picked{border-color:var(--fire);background:rgba(255,74,14,0.08)}
+.setup-opt{padding:14px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.05);cursor:pointer;text-align:center;transition:all 0.18s ease;font-family:var(--fn-body);box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);backdrop-filter:blur(8px)}
+.setup-opt:hover{border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.09)}
+.setup-opt.picked{border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 0 20px rgba(255,107,53,0.1)}
 .setup-nav{display:flex;gap:10px;margin-top:10px}
-.setup-nav button{flex:1;padding:13px;border-radius:6px;font-family:var(--fn-disp);font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s}
-.setup-btn-next{background:var(--fire);border:none;color:#fff;box-shadow:0 4px 20px rgba(255,74,14,0.35)}
-.setup-btn-next:hover{box-shadow:0 4px 32px rgba(255,74,14,0.6);filter:brightness(1.08)}
-.setup-btn-back{background:var(--s2);border:1px solid var(--line);color:var(--txt2)}
-.setup-btn-back:hover{border-color:var(--line2);color:var(--txt)}
+.setup-nav button{flex:1;padding:13px;border-radius:9999px;font-family:var(--fn-body);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0;text-transform:none;transition:all 0.18s ease}
+.setup-btn-next{background:var(--fire);border:none;color:#fff;box-shadow:0 4px 24px rgba(255,107,53,0.4),inset 0 1px 0 rgba(255,255,255,0.18)}
+.setup-btn-next:hover{box-shadow:0 6px 32px rgba(255,107,53,0.55),inset 0 1px 0 rgba(255,255,255,0.2)}
+.setup-btn-back{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--txt2);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)}
+.setup-btn-back:hover{background:rgba(255,255,255,0.1);color:var(--txt)}
 
 /* Lang filter chips in filter bar */
 .lang-chip{font-size:11px!important;padding:5px 12px!important;opacity:0.7}
@@ -1842,10 +1842,164 @@ button:active{transform:scale(0.97)!important}
 .ftab:active{transform:scale(0.97)!important}
 .debate-card:active{transform:translateY(0) scale(0.995)!important}
 
+/* ══ MES PARIS & CLASSEMENT ══ */
+.tab-view-inner{max-width:900px;margin:0 auto;padding:40px 40px 80px}
+.tab-view-header{margin-bottom:32px}
+.tab-view-title{font-family:'Inter Tight','Inter',sans-serif;font-size:clamp(28px,3.5vw,42px);font-weight:900;letter-spacing:-0.03em;line-height:1;margin-bottom:6px}
+.tab-view-sub{font-family:var(--fn-body);font-size:13px;color:var(--txt3);font-weight:500}
+
+/* Stats grid */
+.mp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+@media(max-width:768px){.mp-stats{grid-template-columns:repeat(2,1fr)}}
+.mp-stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px 20px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)}
+.mp-stat-lbl{font-family:var(--fn-body);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--txt3);margin-bottom:8px}
+.mp-stat-val{font-family:'Inter Tight','Inter',sans-serif;font-size:26px;font-weight:900;letter-spacing:-0.03em;line-height:1}
+
+/* Bet list */
+.mp-bet-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.mp-bet-item:last-child{border-bottom:none}
+.mp-bet-topic{font-family:var(--fn-body);font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px;line-height:1.3}
+.mp-bet-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-side-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:700;letter-spacing:0.04em}
+.mp-side-badge.yes{background:rgba(48,209,88,0.12);color:#30d158;border:1px solid rgba(48,209,88,0.25)}
+.mp-side-badge.no{background:rgba(255,69,58,0.12);color:#ff453a;border:1px solid rgba(255,69,58,0.25)}
+.mp-bet-date{font-size:11px;color:var(--txt3)}
+.mp-bet-amt{font-family:'Inter Tight','Inter',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.02em;text-align:right}
+.mp-bet-result{font-family:var(--fn-body);font-size:12px;font-weight:600;padding:4px 12px;border-radius:9999px;text-align:center;white-space:nowrap}
+.mp-bet-result.won{background:rgba(48,209,88,0.12);color:#30d158;border:1px solid rgba(48,209,88,0.2)}
+.mp-bet-result.lost{background:rgba(255,69,58,0.12);color:#ff453a;border:1px solid rgba(255,69,58,0.2)}
+.mp-bet-result.pending{background:rgba(255,107,53,0.1);color:var(--fire);border:1px solid rgba(255,107,53,0.2)}
+.mp-bet-list-wrap{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:0 20px}
+
+/* Empty state */
+.tab-empty-state{text-align:center;padding:80px 20px}
+.tab-empty-icon{font-size:48px;margin-bottom:16px;opacity:0.5}
+.tab-empty-title{font-family:'Inter Tight','Inter',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px;color:var(--txt2)}
+.tab-empty-sub{font-size:14px;color:var(--txt3);max-width:360px;margin:0 auto;line-height:1.6}
+
+/* Leaderboard */
+.rank-podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:12px;margin-bottom:28px;align-items:end}
+.rank-podium .rank-podium-card:nth-child(1){margin-top:24px}
+.rank-podium .rank-podium-card:nth-child(3){margin-top:40px}
+.rank-podium-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px 16px;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)}
+.rank-podium-card.rank-1{background:rgba(255,215,0,0.06);border-color:rgba(255,215,0,0.2);box-shadow:inset 0 1px 0 rgba(255,215,0,0.12),0 0 40px rgba(255,215,0,0.05)}
+.rank-podium-medal{font-size:28px;margin-bottom:8px}
+.rank-podium-name{font-family:var(--fn-body);font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.rank-podium-score{font-family:'Inter Tight','Inter',sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;color:#ffd60a}
+.rank-podium-lbl{font-size:10px;color:var(--txt3);font-weight:500;text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
+.rank-list-wrap{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.rank-row{display:grid;grid-template-columns:40px 1fr auto auto;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.rank-row:last-child{border-bottom:none}
+.rank-row.rank-me{background:rgba(255,107,53,0.06);border-left:2px solid rgba(255,107,53,0.4)}
+.rank-num{font-family:'Inter Tight','Inter',sans-serif;font-size:15px;font-weight:800;color:var(--txt3);letter-spacing:-0.02em}
+.rank-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+.rank-name-col{display:flex;align-items:center;gap:10px}
+.rank-username{font-family:var(--fn-body);font-size:14px;font-weight:600;color:var(--txt)}
+.rank-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:9999px;background:rgba(255,107,53,0.15);color:var(--fire);border:1px solid rgba(255,107,53,0.25)}
+.rank-winrate{font-size:12px;color:var(--txt3);font-weight:500}
+.rank-profit{font-family:'Inter Tight','Inter',sans-serif;font-size:16px;font-weight:800;letter-spacing:-0.02em}
+.rank-profit.pos{color:#30d158}
+.rank-profit.neg{color:#ff453a}
+
 /* ══ SCROLLBAR ══ */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--glass-bg-strong);border-radius:var(--rfull)}
+
+/* ══ LIVE ROOM — BETTING PANEL ══ */
+.betting-panel{
+  background:rgba(255,255,255,0.02)!important;
+  border-top:1px solid rgba(255,255,255,0.07)!important;
+  padding:20px 20px 22px!important;
+}
+.panel-title{
+  font-family:var(--fn-body)!important;
+  font-size:10px!important;font-weight:600!important;
+  text-transform:uppercase!important;letter-spacing:0.1em!important;
+  color:var(--txt3)!important;margin-bottom:16px!important;
+}
+.big-label-name{
+  font-family:var(--fn-body)!important;
+  font-size:10px!important;font-weight:600!important;
+  text-transform:uppercase!important;letter-spacing:0.08em!important;
+}
+.big-label-pct{
+  font-family:'Inter Tight','Inter',sans-serif!important;
+  font-size:38px!important;font-weight:900!important;
+  letter-spacing:-0.03em!important;line-height:1!important;
+}
+.big-label-odd{
+  font-family:var(--fn-body)!important;
+  font-size:11px!important;font-weight:500!important;
+}
+.big-bet-bar{border-radius:9999px!important;overflow:hidden!important}
+.big-bet-fill{border-radius:9999px!important}
+.pool-total{font-family:var(--fn-body)!important;font-size:11px!important;color:var(--txt3)!important}
+.pool-total span{font-family:var(--fn-body)!important;font-size:14px!important;font-weight:700!important;color:var(--txt)!important}
+
+/* Bet input */
+.bet-input{
+  border-radius:12px!important;
+  background:rgba(255,255,255,0.04)!important;
+  border:1px solid rgba(255,255,255,0.1)!important;
+  font-family:var(--fn-body)!important;
+}
+.bet-input:focus{border-color:rgba(255,107,53,0.4)!important;box-shadow:0 0 0 3px rgba(255,107,53,0.08)!important}
+
+/* Bet buttons — pill */
+.bet-btn{
+  border-radius:9999px!important;
+  text-transform:none!important;letter-spacing:0!important;
+  font-family:var(--fn-body)!important;font-size:14px!important;font-weight:700!important;
+  padding:13px 16px!important;
+}
+.bets-feed-title{
+  font-family:var(--fn-body)!important;
+  font-size:10px!important;font-weight:600!important;
+  text-transform:uppercase!important;letter-spacing:0.08em!important;
+  color:var(--txt3)!important;
+}
+
+/* Debate info row — no uppercase */
+.debate-info-title{
+  text-transform:none!important;letter-spacing:-0.01em!important;
+  font-size:17px!important;font-weight:800!important;
+}
+.debate-info-row{
+  background:rgba(255,255,255,0.02)!important;
+  border-bottom:1px solid rgba(255,255,255,0.07)!important;
+}
+
+/* Ended banner */
+.ended-banner{
+  background:linear-gradient(135deg,rgba(255,107,53,0.06),rgba(255,69,58,0.03))!important;
+  border-top:1px solid rgba(255,107,53,0.18)!important;
+  border-bottom:1px solid rgba(255,107,53,0.18)!important;
+}
+.ended-banner h3{
+  text-transform:none!important;letter-spacing:-0.01em!important;
+  font-family:var(--fn-disp)!important;font-size:14px!important;
+  color:var(--txt3)!important;font-weight:600!important;
+}
+.ended-banner .winner-side{
+  text-transform:none!important;letter-spacing:-0.03em!important;
+  font-family:'Inter Tight','Inter',sans-serif!important;
+  font-size:28px!important;font-weight:900!important;
+}
+
+/* Join modal topic */
+.join-debate-topic{
+  text-transform:none!important;letter-spacing:-0.01em!important;
+  font-family:var(--fn-disp)!important;font-size:15px!important;
+}
+
+/* Participant chips in debate row */
+.participant-chip{
+  background:rgba(255,255,255,0.05)!important;
+  border:1px solid rgba(255,255,255,0.09)!important;
+  border-radius:9999px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)!important;
+}
 
 </style>
 </head>
@@ -1978,6 +2132,51 @@ button:active{transform:scale(0.97)!important}
       <div id="langFilterChips" style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;padding-bottom:16px"></div>
     </div>
     <div class="debates-grid" id="debatesGrid"></div>
+  </div>
+
+  <!-- MES PARIS VIEW -->
+  <div id="mes-paris-view" style="display:none">
+    <div class="tab-view-inner">
+      <div class="tab-view-header">
+        <div class="tab-view-title">Mes Paris</div>
+        <div class="tab-view-sub" id="mpSubtitle">0 paris placés</div>
+      </div>
+      <div class="mp-stats" id="mpStats">
+        <div class="mp-stat-card">
+          <div class="mp-stat-lbl">Total misé</div>
+          <div class="mp-stat-val" id="mpTotalStaked">$0</div>
+        </div>
+        <div class="mp-stat-card">
+          <div class="mp-stat-lbl">Gains nets</div>
+          <div class="mp-stat-val" id="mpNetGain" style="color:var(--elec)">+$0</div>
+        </div>
+        <div class="mp-stat-card">
+          <div class="mp-stat-lbl">ROI</div>
+          <div class="mp-stat-val" id="mpROI">—</div>
+        </div>
+        <div class="mp-stat-card">
+          <div class="mp-stat-lbl">Taux de réussite</div>
+          <div class="mp-stat-val" id="mpWinRate">—</div>
+        </div>
+      </div>
+      <div id="mpBetList"><div class="tab-empty-state">
+        <div class="tab-empty-icon">🎯</div>
+        <div class="tab-empty-title">Aucun pari pour l'instant</div>
+        <div class="tab-empty-sub">Entrez dans un débat live et misez sur le camp qui argumente le mieux.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- CLASSEMENT VIEW -->
+  <div id="classement-view" style="display:none">
+    <div class="tab-view-inner">
+      <div class="tab-view-header">
+        <div class="tab-view-title">Classement</div>
+        <div class="tab-view-sub">Top parieurs de la semaine</div>
+      </div>
+      <div class="rank-podium" id="rankPodium"></div>
+      <div class="rank-list" id="rankList"></div>
+    </div>
   </div>
 
   <!-- LIVE VIEW -->
@@ -2633,15 +2832,15 @@ const AI_TOPICS = {
   ],
 };
 
-// Liquid glass — subtle tinted neutral, not colored
+// Liquid glass — subtle category tints (very low opacity via hex suffix)
 const catGradients = {
-  politics:   ["#ffffff","#ffffff","#0c0c14"],
-  sports:     ["#ffffff","#ffffff","#0c0c14"],
-  crypto:     ["#ffffff","#ffffff","#0c0c14"],
-  geopolitics:["#ffffff","#ffffff","#0c0c14"],
-  economy:    ["#ffffff","#ffffff","#0c0c14"],
-  technology: ["#ffffff","#ffffff","#0c0c14"],
-  society:    ["#ffffff","#ffffff","#0c0c14"],
+  politics:   ["#0a84ff","#0a84ff","#06060a"],   // blue
+  sports:     ["#30d158","#30d158","#06060a"],   // green
+  crypto:     ["#bf5af2","#bf5af2","#06060a"],   // purple
+  geopolitics:["#ff453a","#ff453a","#06060a"],   // red
+  economy:    ["#ffd60a","#ffd60a","#06060a"],   // yellow
+  technology: ["#0a84ff","#30d158","#06060a"],   // blue→green
+  society:    ["#ff6b35","#ff6b35","#06060a"],   // orange
 };
 
 let nextId = 100;
@@ -3641,24 +3840,24 @@ function endParticipantRoom(natural){
   /* ── VS bars visual ── */
   function buildVSBars(yPct, clr){
     const nPct=100-yPct;
-    return `<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 20px 14px">
-      <div style="display:flex;align-items:flex-end;gap:12px;height:75%">
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%">
-          <span style="font-family:var(--fn-disp);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#10d260">OUI</span>
-          <div style="width:100%;flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-            <div style="width:100%;border-radius:6px 6px 0 0;background:rgba(16,210,96,0.2);border:1px solid rgba(16,210,96,0.4);border-bottom:none;height:${yPct}%;min-height:32px;display:flex;align-items:center;justify-content:center">
-              <span style="font-family:var(--fn-disp);font-size:24px;font-weight:900;color:#10d260">${yPct}%</span>
-            </div>
-          </div>
+    return `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;padding:28px 32px;gap:24px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-family:'Inter',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.3)">OUI</span>
+          <span style="font-family:'Inter Tight','Inter',sans-serif;font-size:54px;font-weight:900;line-height:1;letter-spacing:-0.03em;color:#30d158">${yPct}%</span>
         </div>
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%">
-          <span style="font-family:var(--fn-disp);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#ff2626">NON</span>
-          <div style="width:100%;flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-            <div style="width:100%;border-radius:6px 6px 0 0;background:rgba(255,38,38,0.18);border:1px solid rgba(255,38,38,0.38);border-bottom:none;height:${nPct}%;min-height:32px;display:flex;align-items:center;justify-content:center">
-              <span style="font-family:var(--fn-disp);font-size:24px;font-weight:900;color:#ff2626">${nPct}%</span>
-            </div>
-          </div>
+        <div style="width:1px;height:40px;background:rgba(255,255,255,0.08);margin-bottom:8px"></div>
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+          <span style="font-family:'Inter',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.3)">NON</span>
+          <span style="font-family:'Inter Tight','Inter',sans-serif;font-size:54px;font-weight:900;line-height:1;letter-spacing:-0.03em;color:#ff453a">${nPct}%</span>
         </div>
+      </div>
+      <div style="position:relative;width:100%;height:4px;background:rgba(255,69,58,0.18);border-radius:9999px;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${yPct}%;background:linear-gradient(90deg,#30d158,#25a244);border-radius:9999px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-family:'Inter',sans-serif;font-size:10px;color:rgba(255,255,255,0.25);font-weight:500">${yPct}% des paris</span>
+        <span style="font-family:'Inter',sans-serif;font-size:10px;color:rgba(255,255,255,0.25);font-weight:500">${nPct}% des paris</span>
       </div>
     </div>`;
   }
@@ -3674,9 +3873,9 @@ function endParticipantRoom(natural){
         <animate attributeName="stroke-dasharray" from="0 ${circ}" to="${fill} ${circ}" dur="1s" begin="0.3s" fill="freeze" calcMode="spline" keySplines="0.22 1 0.36 1"/>
       </circle>
       <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
-        font-family="'GT Ultra','Barlow Condensed',sans-serif" font-size="22" font-weight="900" fill="white">${yPct}%</text>
-      <text x="${cx}" y="${cy+20}" text-anchor="middle" font-family="'GT Ultra','Barlow Condensed',sans-serif"
-        font-size="8.5" font-weight="700" fill="rgba(255,255,255,0.4)" letter-spacing="2">OUI</text>
+        font-family="'Inter Tight','Inter',sans-serif" font-size="22" font-weight="900" fill="white">${yPct}%</text>
+      <text x="${cx}" y="${cy+20}" text-anchor="middle" font-family="'Inter',sans-serif"
+        font-size="8" font-weight="600" fill="rgba(255,255,255,0.35)" letter-spacing="2">OUI</text>
     </svg>`;
   }
 
@@ -3866,6 +4065,200 @@ function endParticipantRoom(natural){
     if(d)openDebate(d);
   };
 })();
+
+// ═══════════════════════════════════════════════════════════
+//  MES PARIS — Track & Display
+// ═══════════════════════════════════════════════════════════
+const myBets = [];
+
+// Intercept placeBet to record bets
+const _origPlaceBet = placeBet;
+placeBet = function(side) {
+  _origPlaceBet(side);
+  if(!currentDebate || currentDebate.closed) return;
+  const amt = parseFloat(document.getElementById('betAmount').value) || 50;
+  myBets.push({
+    id: Date.now(),
+    debateId: currentDebate.id,
+    title: currentDebate.title,
+    cat: currentDebate.cat,
+    side,
+    yesLabel: currentDebate.yesLabel || 'OUI',
+    noLabel: currentDebate.noLabel || 'NON',
+    amt,
+    status: 'pending',
+    payout: 0,
+    ts: new Date()
+  });
+};
+
+// Intercept applyVerdict to update bet status
+const _origApplyVerdict = applyVerdict;
+applyVerdict = function(verdict, debate) {
+  _origApplyVerdict(verdict, debate);
+  const winner = verdict.winnerSide;
+  myBets.filter(b => b.debateId === debate.id && b.status === 'pending').forEach(b => {
+    const oddsRaw = winner === 'yes'
+      ? parseFloat(calcOdds(debate.yesPct))
+      : parseFloat(calcOdds(100 - debate.yesPct));
+    const odds = isNaN(oddsRaw) ? 2 : oddsRaw;
+    b.status = b.side === winner ? 'won' : 'lost';
+    b.payout = b.side === winner ? b.amt * odds : -b.amt;
+  });
+};
+
+function renderMyBets() {
+  const list = document.getElementById('mpBetList');
+  const sub = document.getElementById('mpSubtitle');
+  const staked = myBets.reduce((s,b) => s + b.amt, 0);
+  const netGain = myBets.reduce((s,b) => s + (b.status === 'won' ? b.payout - b.amt : b.status === 'lost' ? -b.amt : 0), 0);
+  const settled = myBets.filter(b => b.status !== 'pending');
+  const won = settled.filter(b => b.status === 'won').length;
+  const roi = staked > 0 ? ((netGain / staked) * 100).toFixed(1) : null;
+  const winRate = settled.length > 0 ? Math.round((won / settled.length) * 100) : null;
+
+  sub.textContent = myBets.length + ' paris placé' + (myBets.length > 1 ? 's' : '');
+  document.getElementById('mpTotalStaked').textContent = fmt(staked);
+  document.getElementById('mpNetGain').textContent = (netGain >= 0 ? '+' : '') + fmtBalance(netGain);
+  document.getElementById('mpNetGain').style.color = netGain >= 0 ? 'var(--elec)' : 'var(--blood)';
+  document.getElementById('mpROI').textContent = roi !== null ? roi + '%' : '—';
+  document.getElementById('mpROI').style.color = roi !== null ? (parseFloat(roi) >= 0 ? 'var(--elec)' : 'var(--blood)') : '';
+  document.getElementById('mpWinRate').textContent = winRate !== null ? winRate + '%' : '—';
+
+  if (myBets.length === 0) {
+    list.innerHTML = `<div class="tab-empty-state">
+      <div class="tab-empty-icon">🎯</div>
+      <div class="tab-empty-title">Aucun pari pour l'instant</div>
+      <div class="tab-empty-sub">Entrez dans un débat live et misez sur le camp qui argumente le mieux.</div>
+    </div>`;
+    return;
+  }
+
+  const sorted = [...myBets].reverse();
+  list.innerHTML = `<div class="mp-bet-list-wrap">${sorted.map(b => {
+    const sideLabel = b.side === 'yes' ? b.yesLabel : b.noLabel;
+    const resultText = b.status === 'won'
+      ? '+' + fmtBalance(b.payout - b.amt)
+      : b.status === 'lost'
+      ? '−' + fmtBalance(b.amt)
+      : 'En cours…';
+    const time = b.ts.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    return `<div class="mp-bet-item">
+      <div>
+        <div class="mp-bet-topic">${b.title}</div>
+        <div class="mp-bet-meta">
+          <span class="mp-side-badge ${b.side}">${sideLabel}</span>
+          <span class="mp-bet-date">${time}</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="mp-bet-amt">${fmt(b.amt)}</div>
+      </div>
+      <div>
+        <div class="mp-bet-result ${b.status}">${resultText}</div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLASSEMENT — Simulated Leaderboard
+// ═══════════════════════════════════════════════════════════
+const LEADERBOARD_DATA = [
+  {name:'WHALE_WATCHER', profit:28450, rate:74, bets:52, avatar:'#0a84ff'},
+  {name:'CRYPTO_KING',   profit:19830, rate:68, bets:38, avatar:'#bf5af2'},
+  {name:'SIGMA_MODE',    profit:14200, rate:63, bets:45, avatar:'#30d158'},
+  {name:'BEARMODE_ON',   profit: 9760, rate:58, bets:31, avatar:'#ffd60a'},
+  {name:'TRUTH_FINDER',  profit: 7430, rate:56, bets:27, avatar:'#ff6b35'},
+  {name:'ALPHA_MIND',    profit: 5120, rate:54, bets:22, avatar:'#0a84ff'},
+  {name:'BULL_BEAR',     profit: 3980, rate:52, bets:19, avatar:'#ff453a'},
+  {name:'DEFI_DEGEN',    profit: 2640, rate:50, bets:16, avatar:'#30d158'},
+  {name:'LUNA_RISES',    profit: 1870, rate:48, bets:14, avatar:'#bf5af2'},
+  {name:'MARKET_MOVER',  profit:  940, rate:46, bets:11, avatar:'#ffd60a'},
+];
+const ME_RANK = 5; // "Vous" appears at rank 5 (0-indexed in list below podium)
+
+function renderClassement() {
+  const podium = document.getElementById('rankPodium');
+  const list = document.getElementById('rankList');
+  const top3 = LEADERBOARD_DATA.slice(0,3);
+  const rest = LEADERBOARD_DATA.slice(3);
+  const medals = ['🥇','🥈','🥉'];
+  const order = [1,0,2]; // silver, gold, bronze layout
+
+  podium.innerHTML = order.map(i => {
+    const p = top3[i];
+    const isGold = i === 0;
+    return `<div class="rank-podium-card ${isGold ? 'rank-1' : ''}">
+      <div class="rank-podium-medal">${medals[i]}</div>
+      <div class="rank-podium-name">${p.name}</div>
+      <div class="rank-podium-score">${fmt(p.profit)}</div>
+      <div class="rank-podium-lbl">Gains nets</div>
+    </div>`;
+  }).join('');
+
+  const myNetGain = myBets.reduce((s,b) => s + (b.status === 'won' ? b.payout - b.amt : b.status === 'lost' ? -b.amt : 0), 0);
+  const mySettled = myBets.filter(b => b.status !== 'pending');
+  const myWon = mySettled.filter(b => b.status === 'won').length;
+  const myRate = mySettled.length > 0 ? Math.round((myWon / mySettled.length) * 100) : 0;
+  const myBetsCount = myBets.length;
+
+  const allRows = [
+    ...rest.map((p, i) => ({...p, rank: i + 4, isMe: false})),
+    {name: 'Vous', profit: myNetGain, rate: myRate, bets: myBetsCount, avatar:'#ff6b35', rank: '?', isMe: true}
+  ];
+
+  list.innerHTML = `<div class="rank-list-wrap">${allRows.map(p => `
+    <div class="rank-row${p.isMe ? ' rank-me' : ''}">
+      <div class="rank-num">${p.isMe ? '—' : '#' + p.rank}</div>
+      <div class="rank-name-col">
+        <div class="rank-avatar" style="background:${p.avatar}">${p.name[0]}</div>
+        <div>
+          <div class="rank-username">${p.name}${p.isMe ? ' <span style="font-size:10px;color:var(--fire)">(vous)</span>' : ''}</div>
+          <div class="rank-winrate">${p.bets} paris · ${p.rate}% réussite</div>
+        </div>
+      </div>
+      <div></div>
+      <div class="rank-profit ${p.profit >= 0 ? 'pos' : 'neg'}">${p.profit >= 0 ? '+' : ''}${fmt(Math.abs(p.profit))}</div>
+    </div>`).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NAV TAB SWITCHING
+// ═══════════════════════════════════════════════════════════
+const navBtns = document.querySelectorAll('.hnav-btn');
+const views = {
+  0: 'homepage',
+  1: 'mes-paris-view',
+  2: 'classement-view'
+};
+
+function switchTab(idx) {
+  navBtns.forEach((b, i) => b.classList.toggle('active', i === idx));
+  Object.values(views).forEach(v => {
+    const el = document.getElementById(v);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById(views[idx]);
+  if (target) {
+    target.style.display = 'block';
+    if (idx === 1) renderMyBets();
+    if (idx === 2) renderClassement();
+  }
+  // Hide live view too
+  document.getElementById('live-view').style.display = 'none';
+}
+
+navBtns.forEach((btn, i) => {
+  btn.addEventListener('click', () => switchTab(i));
+});
+
+// Patch goHome to restore Débats tab state
+const _origGoHome = goHome;
+goHome = function() {
+  _origGoHome();
+  navBtns.forEach((b, i) => b.classList.toggle('active', i === 0));
+};
 
 </script>
 
