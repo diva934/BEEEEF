@@ -2003,6 +2003,7 @@ button:active{transform:scale(0.97)!important}
 }
 
 </style>
+<script src="https://beeeef-production.up.railway.app/socket.io/socket.io.js"></script>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><defs>
@@ -3531,17 +3532,18 @@ function confirmDeposit(){
 // ═══════════════════════════════════════════════════════════
 //  WebRTC — Perfect Negotiation  (webrtc.github.io/samples)
 //  Signaling : SSE GET /signal?room=X&peer=Y  (push)
-//              POST /signal  {room,from,to,type,…}  (relay)
+//  WebRTC signaling via Socket.IO (Railway backend)
 // ═══════════════════════════════════════════════════════════
+const BACKEND_URL = 'https://beeeef-production.up.railway.app';
 const RTC_CFG = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
 ] };
 
-let _rtcPeerId      = null; // my ephemeral ID
-let _rtcRemoteId    = null; // opponent's ephemeral ID
+let _socket         = null; // Socket.IO instance
+let _rtcPeerId      = null; // my socket ID
+let _rtcRemoteId    = null; // opponent's socket ID
 let _rtcRoom        = null; // debate ID used as room
-let _rtcSse         = null; // EventSource
 let _rtcPc          = null; // RTCPeerConnection
 let _rtcPolite      = false;// perfect-negotiation role
 let _rtcMakingOff   = false;
@@ -3549,55 +3551,85 @@ let _rtcIgnoreOff   = false;
 let _rtcPending     = [];   // signals queued before pc exists
 let _rtcConnected   = false;// true once P2P link is up
 
-function _rtcId() { return Math.random().toString(36).slice(2,10); }
+function _getSocket() {
+  if (!_socket || _socket.disconnected) {
+    _socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+  }
+  return _socket;
+}
 
 /* ── Join signaling room & wait for a peer (returns Promise<peerId>) ── */
 function rtcJoinRoom(debateId, timeoutMs = 9000) {
-  _rtcPeerId = _rtcId();
-  _rtcRoom   = String(debateId);
+  _rtcRoom    = String(debateId);
   _rtcPending = [];
 
-  return new Promise((resolve, reject) => {
-    const url = `/signal?room=${encodeURIComponent(_rtcRoom)}&peer=${_rtcPeerId}`;
-    _rtcSse = new EventSource(url);
+  const socket   = _getSocket();
+  const username = (typeof currentUser !== 'undefined' && currentUser?.username) ? currentUser.username : 'Anonyme';
 
+  return new Promise((resolve, reject) => {
     let resolved = false;
     const to = setTimeout(() => {
       if (!resolved) { resolved = true; reject(new Error('timeout')); }
     }, timeoutMs);
 
-    _rtcSse.onmessage = async e => {
-      let msg;
-      try { msg = JSON.parse(e.data); } catch { return; }
-
-      if (msg.type === 'peer_joined') {
-        _rtcRemoteId = msg.peerId;
-        _rtcPolite   = !!msg.polite;
-        if (!resolved) { resolved = true; clearTimeout(to); resolve(msg.peerId); }
-
-      } else if (['offer','answer','ice'].includes(msg.type)) {
-        if (_rtcPc) await _rtcHandle(msg);
-        else        _rtcPending.push(msg);
-
-      } else if (msg.type === 'peer_left') {
-        _rtcHandleLeft();
+    // After join, server sends room_peers with all current participants
+    socket.once('room_peers', (peers) => {
+      _rtcPeerId = socket.id;
+      const others = peers.filter(id => id !== socket.id);
+      if (others.length > 0) {
+        // Someone was already in the room — we are the impolite (initiating) peer
+        _rtcRemoteId = others[0];
+        _rtcPolite   = false;
+        if (!resolved) { resolved = true; clearTimeout(to); resolve(_rtcRemoteId); }
       }
-    };
+      // else: we're first — wait for debate_state to show a new joiner
+    });
 
-    _rtcSse.onerror = () => {
-      if (!resolved) { resolved = true; clearTimeout(to); reject(new Error('sse_error')); }
-    };
+    // New participant joined → we were first, so we're the polite (responding) peer
+    socket.on('debate_state', (state) => {
+      if (state.id !== _rtcRoom) return;
+      if (!resolved) {
+        const others = (state.participants || []).filter(p => p.socketId !== socket.id);
+        if (others.length > 0) {
+          _rtcRemoteId = others[0].socketId;
+          _rtcPolite   = true;
+          resolved = true; clearTimeout(to); resolve(_rtcRemoteId);
+        }
+      }
+    });
+
+    // WebRTC relay listeners
+    socket.on('webrtc_offer', async ({ fromSocketId, offer }) => {
+      if (fromSocketId !== _rtcRemoteId) return;
+      const msg = { type: 'offer', sdp: offer };
+      if (_rtcPc) await _rtcHandle(msg); else _rtcPending.push(msg);
+    });
+    socket.on('webrtc_answer', async ({ fromSocketId, answer }) => {
+      if (fromSocketId !== _rtcRemoteId) return;
+      const msg = { type: 'answer', sdp: answer };
+      if (_rtcPc) await _rtcHandle(msg); else _rtcPending.push(msg);
+    });
+    socket.on('webrtc_ice_candidate', async ({ fromSocketId, candidate }) => {
+      if (fromSocketId !== _rtcRemoteId) return;
+      const msg = { type: 'ice', candidate };
+      if (_rtcPc) await _rtcHandle(msg); else _rtcPending.push(msg);
+    });
+
+    socket.emit('join_debate', { debateId: _rtcRoom, username });
   });
 }
 
-/* ── Send signal to remote peer via POST ── */
+/* ── Send signal to remote peer via Socket.IO relay ── */
 async function _rtcSend(msg) {
+  if (!_socket || !_rtcRemoteId) return;
   try {
-    await fetch('/signal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...msg, room: _rtcRoom, from: _rtcPeerId, to: _rtcRemoteId }),
-    });
+    if (msg.type === 'offer') {
+      _socket.emit('webrtc_offer', { targetSocketId: _rtcRemoteId, offer: msg.sdp });
+    } else if (msg.type === 'answer') {
+      _socket.emit('webrtc_answer', { targetSocketId: _rtcRemoteId, answer: msg.sdp });
+    } else if (msg.type === 'ice') {
+      _socket.emit('webrtc_ice_candidate', { targetSocketId: _rtcRemoteId, candidate: msg.candidate });
+    }
   } catch(e) { console.warn('rtc send failed', e); }
 }
 
@@ -3686,8 +3718,13 @@ function _rtcHandleLeft() {
 
 /* ── Cleanup ── */
 function rtcClose() {
-  if (_rtcSse) { try { _rtcSse.close(); } catch(_){} _rtcSse = null; }
-  if (_rtcPc)  { try { _rtcPc.close();  } catch(_){} _rtcPc  = null; }
+  if (_socket) {
+    _socket.off('webrtc_offer');
+    _socket.off('webrtc_answer');
+    _socket.off('webrtc_ice_candidate');
+    _socket.off('debate_state');
+  }
+  if (_rtcPc) { try { _rtcPc.close(); } catch(_){} _rtcPc = null; }
   _rtcPeerId = _rtcRemoteId = _rtcRoom = null;
   _rtcConnected = false; _rtcPending = [];
 }
