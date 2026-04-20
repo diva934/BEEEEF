@@ -3566,6 +3566,13 @@ function rtcJoinRoom(debateId, timeoutMs = 9000) {
   const socket   = _getSocket();
   const username = (typeof currentUser !== 'undefined' && currentUser?.username) ? currentUser.username : 'Anonyme';
 
+  // Nettoyer les anciens listeners avant d'en ajouter de nouveaux
+  socket.off('room_peers');
+  socket.off('debate_state');
+  socket.off('webrtc_offer');
+  socket.off('webrtc_answer');
+  socket.off('webrtc_ice_candidate');
+
   return new Promise((resolve, reject) => {
     let resolved = false;
     const to = setTimeout(() => {

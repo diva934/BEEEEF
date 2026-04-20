@@ -35,28 +35,25 @@ app.use(express.json());
 // ─────────────────────────────────────────────────────────────
 //  In-memory state
 // ─────────────────────────────────────────────────────────────
-const debates = {
-  debate1: {
-    id:             'debate1',
-    title:          'Is Messi the GOAT?',
-    status:         'waiting',   // waiting | live | ended
-    participants:   [],          // [{ socketId, username }]
-    currentSpeaker: null,        // socketId of current speaker
-    turnEndsAt:     null,        // ISO timestamp
-    createdAt:      new Date().toISOString(),
-    updatedAt:      new Date().toISOString(),
-  },
-  debate2: {
-    id:             'debate2',
-    title:          'Will AI replace most jobs by 2030?',
-    status:         'waiting',
-    participants:   [],
-    currentSpeaker: null,
-    turnEndsAt:     null,
-    createdAt:      new Date().toISOString(),
-    updatedAt:      new Date().toISOString(),
-  },
-};
+// Rooms créées dynamiquement pour tout debateId envoyé par le frontend
+const debates = {};
+
+function getOrCreateRoom(debateId) {
+  const id = String(debateId);
+  if (!debates[id]) {
+    debates[id] = {
+      id,
+      status:         'waiting',
+      participants:   [],
+      currentSpeaker: null,
+      turnEndsAt:     null,
+      createdAt:      new Date().toISOString(),
+      updatedAt:      new Date().toISOString(),
+    };
+    console.log(`[room] créé dynamiquement: ${id}`);
+  }
+  return debates[id];
+}
 
 // ─────────────────────────────────────────────────────────────
 //  Helpers
@@ -112,8 +109,7 @@ io.on('connection', socket => {
   // ── join_debate ────────────────────────────────────────────
   // payload: { debateId, username }
   socket.on('join_debate', ({ debateId, username }) => {
-    const debate = debates[debateId];
-    if (!debate) return socket.emit('error', { message: 'Debate not found' });
+    const debate = getOrCreateRoom(debateId);
 
     socket.join(debateId);
     socket.data.debateId  = debateId;
@@ -136,7 +132,7 @@ io.on('connection', socket => {
   // ── start_debate ───────────────────────────────────────────
   // payload: { debateId }
   socket.on('start_debate', ({ debateId }) => {
-    const debate = debates[debateId];
+    const debate = debates[String(debateId)];
     if (!debate) return;
 
     debate.status         = 'live';
@@ -151,7 +147,7 @@ io.on('connection', socket => {
   // ── change_turn ────────────────────────────────────────────
   // payload: { debateId }
   socket.on('change_turn', ({ debateId }) => {
-    const debate = debates[debateId];
+    const debate = debates[String(debateId)];
     if (!debate || debate.participants.length < 2) return;
 
     const ids     = debate.participants.map(p => p.socketId);
@@ -169,7 +165,7 @@ io.on('connection', socket => {
     const { debateId, username } = socket.data;
     if (!debateId) return;
 
-    const debate = debates[debateId];
+    const debate = debates[String(debateId)];
     if (!debate) return;
 
     const wasCurrentSpeaker = debate.currentSpeaker === socket.id;
