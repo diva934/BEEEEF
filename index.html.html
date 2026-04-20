@@ -2566,6 +2566,7 @@ button:active{transform:scale(0.97)!important}
           <div class="proom-no-cam-avatar" id="proomAvatar2" style="background:linear-gradient(135deg,#f7931a,#ff6432)">O</div>
           <span style="font-family:var(--fn-disp);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase" id="proomOpponentName">Adversaire</span>
         </div>
+        <video id="proomVideo2" autoplay playsinline style="display:none;width:100%;height:100%;object-fit:cover"></video>
       </div>
       <div class="proom-side-info">
         <div>
@@ -3528,6 +3529,170 @@ function confirmDeposit(){
 }
 
 // ═══════════════════════════════════════════════════════════
+//  WebRTC — Perfect Negotiation  (webrtc.github.io/samples)
+//  Signaling : SSE GET /signal?room=X&peer=Y  (push)
+//              POST /signal  {room,from,to,type,…}  (relay)
+// ═══════════════════════════════════════════════════════════
+const RTC_CFG = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+] };
+
+let _rtcPeerId      = null; // my ephemeral ID
+let _rtcRemoteId    = null; // opponent's ephemeral ID
+let _rtcRoom        = null; // debate ID used as room
+let _rtcSse         = null; // EventSource
+let _rtcPc          = null; // RTCPeerConnection
+let _rtcPolite      = false;// perfect-negotiation role
+let _rtcMakingOff   = false;
+let _rtcIgnoreOff   = false;
+let _rtcPending     = [];   // signals queued before pc exists
+let _rtcConnected   = false;// true once P2P link is up
+
+function _rtcId() { return Math.random().toString(36).slice(2,10); }
+
+/* ── Join signaling room & wait for a peer (returns Promise<peerId>) ── */
+function rtcJoinRoom(debateId, timeoutMs = 9000) {
+  _rtcPeerId = _rtcId();
+  _rtcRoom   = String(debateId);
+  _rtcPending = [];
+
+  return new Promise((resolve, reject) => {
+    const url = `/signal?room=${encodeURIComponent(_rtcRoom)}&peer=${_rtcPeerId}`;
+    _rtcSse = new EventSource(url);
+
+    let resolved = false;
+    const to = setTimeout(() => {
+      if (!resolved) { resolved = true; reject(new Error('timeout')); }
+    }, timeoutMs);
+
+    _rtcSse.onmessage = async e => {
+      let msg;
+      try { msg = JSON.parse(e.data); } catch { return; }
+
+      if (msg.type === 'peer_joined') {
+        _rtcRemoteId = msg.peerId;
+        _rtcPolite   = !!msg.polite;
+        if (!resolved) { resolved = true; clearTimeout(to); resolve(msg.peerId); }
+
+      } else if (['offer','answer','ice'].includes(msg.type)) {
+        if (_rtcPc) await _rtcHandle(msg);
+        else        _rtcPending.push(msg);
+
+      } else if (msg.type === 'peer_left') {
+        _rtcHandleLeft();
+      }
+    };
+
+    _rtcSse.onerror = () => {
+      if (!resolved) { resolved = true; clearTimeout(to); reject(new Error('sse_error')); }
+    };
+  });
+}
+
+/* ── Send signal to remote peer via POST ── */
+async function _rtcSend(msg) {
+  try {
+    await fetch('/signal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...msg, room: _rtcRoom, from: _rtcPeerId, to: _rtcRemoteId }),
+    });
+  } catch(e) { console.warn('rtc send failed', e); }
+}
+
+/* ── Create RTCPeerConnection and attach local stream ── */
+async function rtcStart(localStream) {
+  _rtcPc = new RTCPeerConnection(RTC_CFG);
+
+  // Local tracks → peer
+  localStream.getTracks().forEach(t => _rtcPc.addTrack(t, localStream));
+
+  // Remote stream → video slot 2
+  _rtcPc.ontrack = ({ streams: [s] }) => {
+    const v = document.getElementById('proomVideo2');
+    const nc = document.getElementById('proomNoCam2');
+    if (v)  { v.srcObject = s; v.style.display = 'block'; }
+    if (nc) { nc.style.display = 'none'; }
+  };
+
+  // Perfect Negotiation — offer creation
+  _rtcPc.onnegotiationneeded = async () => {
+    try {
+      _rtcMakingOff = true;
+      await _rtcPc.setLocalDescription();
+      await _rtcSend({ type: 'offer', sdp: _rtcPc.localDescription });
+    } catch(e) { console.error('offer err', e); }
+    finally    { _rtcMakingOff = false; }
+  };
+
+  // ICE candidates
+  _rtcPc.onicecandidate = ({ candidate }) => {
+    if (candidate) _rtcSend({ type: 'ice', candidate });
+  };
+
+  // Connection state feedback
+  _rtcPc.onconnectionstatechange = () => {
+    const st = _rtcPc.connectionState;
+    if (st === 'connected') {
+      _rtcConnected = true;
+      addModerationEntry('✅ Flux P2P actif — connexion directe entre les deux orateurs', 'ok');
+      showToast('🔴', 'LIVE réel', 'Flux WebRTC établi');
+      // Show green border on remote video slot
+      const s2 = document.getElementById('proomSide2');
+      if (s2) s2.style.boxShadow = 'inset 0 0 0 2px var(--elec)';
+    } else if (st === 'disconnected' || st === 'failed') {
+      addModerationEntry('⚠️ Flux P2P interrompu', 'warn');
+    }
+  };
+
+  // Drain pending signals that arrived before pc was ready
+  for (const sig of _rtcPending) await _rtcHandle(sig);
+  _rtcPending = [];
+}
+
+/* ── Perfect Negotiation signal handler ── */
+async function _rtcHandle(msg) {
+  if (!_rtcPc) return;
+  try {
+    if (msg.type === 'offer') {
+      const collision = _rtcMakingOff || _rtcPc.signalingState !== 'stable';
+      _rtcIgnoreOff   = !_rtcPolite && collision;
+      if (_rtcIgnoreOff) return;
+      await _rtcPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      await _rtcPc.setLocalDescription();
+      await _rtcSend({ type: 'answer', sdp: _rtcPc.localDescription });
+
+    } else if (msg.type === 'answer') {
+      if (!_rtcIgnoreOff)
+        await _rtcPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+
+    } else if (msg.type === 'ice') {
+      if (msg.candidate)
+        await _rtcPc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+    }
+  } catch(e) { if (!_rtcIgnoreOff) console.error('rtcHandle', e); }
+}
+
+/* ── Remote peer left ── */
+function _rtcHandleLeft() {
+  addModerationEntry('👋 Adversaire a quitté la room', 'warn');
+  const v2 = document.getElementById('proomVideo2');
+  const nc2 = document.getElementById('proomNoCam2');
+  if (v2)  { v2.srcObject = null; v2.style.display = 'none'; }
+  if (nc2) { nc2.style.display = 'flex'; }
+  _rtcConnected = false;
+}
+
+/* ── Cleanup ── */
+function rtcClose() {
+  if (_rtcSse) { try { _rtcSse.close(); } catch(_){} _rtcSse = null; }
+  if (_rtcPc)  { try { _rtcPc.close();  } catch(_){} _rtcPc  = null; }
+  _rtcPeerId = _rtcRemoteId = _rtcRoom = null;
+  _rtcConnected = false; _rtcPending = [];
+}
+
+// ═══════════════════════════════════════════════════════════
 //  PARTICIPANT SYSTEM — SERVER / LIVE ROOM
 // ═══════════════════════════════════════════════════════════
 let joinedSide=null, joinMode='audio', myBetAsParticipant=0;
@@ -3580,37 +3745,71 @@ function submitJoinParticipant(){
   showWaitingRoom();
 }
 
-// Waiting Room — simulates server matchmaking
+// ── Waiting Room — tente un vrai pair WebRTC, fallback simulation ──
 function showWaitingRoom(){
-  const wr=document.getElementById('waitingRoom'); wr.classList.add('open');
-  const region=REGIONS.find(r=>r.id===userRegion);
+  const wr  = document.getElementById('waitingRoom'); wr.classList.add('open');
+  const region = REGIONS.find(r=>r.id===userRegion);
+  const oppSide = joinedSide==='yes'?(currentDebate?.noLabel||'NON'):(currentDebate?.yesLabel||'OUI');
+  const mySide  = joinedSide==='yes'?(currentDebate?.yesLabel||'OUI'):(currentDebate?.noLabel||'NON');
   document.getElementById('waitingSpots').innerHTML=`
-    <div class="waiting-spot you">Vous · ${joinedSide==='yes'?(currentDebate?.yesLabel||'OUI'):(currentDebate?.noLabel||'NON')}</div>
-    <div class="waiting-spot empty" id="waitingSpotOpp">⏳ Recherche adversaire…</div>`;
-  document.getElementById('waitingServerLabel').textContent=region?`Serveur ${region.server}`:'Serveur EU';
-  let cnt=Math.floor(3+Math.random()*5);
-  const ce=document.getElementById('waitingCountdown'); ce.textContent='Appairage… '+cnt+'s';
-  const ci=setInterval(()=>{
-    cnt--;ce.textContent='Appairage… '+cnt+'s';
-    if(cnt<=0){
-      clearInterval(ci);
-      const opp=OPPONENTS[Math.floor(Math.random()*OPPONENTS.length)];
-      document.getElementById('waitingSpotOpp').className='waiting-spot filled';
-      document.getElementById('waitingSpotOpp').textContent='✅ '+opp.name+' · '+(joinedSide==='yes'?(currentDebate?.noLabel||'NON'):(currentDebate?.yesLabel||'OUI'));
-      ce.textContent='Adversaire trouvé ! Connexion P2P…';
-      setTimeout(()=>{wr.classList.remove('open');startParticipantRoom(opp);},1500);
-    }
-  },1000);
+    <div class="waiting-spot you">Vous · ${mySide}</div>
+    <div class="waiting-spot empty" id="waitingSpotOpp">🔍 Recherche adversaire réel…</div>`;
+  document.getElementById('waitingServerLabel').textContent = region?`Serveur ${region.server}`:'Serveur EU';
+  const ce = document.getElementById('waitingCountdown');
+  ce.textContent = '⚡ WebRTC — connexion P2P en cours…';
+
+  let settled = false; // set to true when we pick a path (real or sim)
+
+  // ── Tentative WebRTC réelle (9 s max) ───────────────────────
+  const roomId = currentDebate ? currentDebate.id : 'demo';
+  rtcJoinRoom(roomId, 9000)
+    .then(remotePeerId => {
+      if (settled) return;
+      settled = true;
+      document.getElementById('waitingSpotOpp').className  = 'waiting-spot filled';
+      document.getElementById('waitingSpotOpp').textContent = `✅ Pair réel trouvé · ${oppSide}`;
+      ce.textContent = '🔗 Connexion WebRTC…';
+      setTimeout(() => {
+        wr.classList.remove('open');
+        startParticipantRoom(null); // null = pair réel via WebRTC
+      }, 1200);
+    })
+    .catch(() => {
+      if (settled) return;
+      // Fallback simulation après 9 s
+      settled = true;
+      const opp = OPPONENTS[Math.floor(Math.random()*OPPONENTS.length)];
+      document.getElementById('waitingSpotOpp').className  = 'waiting-spot filled';
+      document.getElementById('waitingSpotOpp').textContent = `🤖 ${opp.name} · ${oppSide}`;
+      ce.textContent = 'Adversaire simulé — connexion…';
+      setTimeout(() => {
+        wr.classList.remove('open');
+        startParticipantRoom(opp); // opp défini = simulation
+      }, 1200);
+    });
+
+  // Compte à rebours visuel (ne choisit pas le chemin)
+  let cnt = 9;
+  const ci = setInterval(() => {
+    if (settled) { clearInterval(ci); return; }
+    cnt--;
+    if (cnt > 0) ce.textContent = `⚡ Recherche pair réel… ${cnt}s`;
+  }, 1000);
 }
+
 function cancelWaiting(){
   document.getElementById('waitingRoom').classList.remove('open');
+  rtcClose(); // annule aussi le signaling en attente
   if(currentDebate){currentDebate._participantBet=0;currentDebate._participantSide=null;}
   balance+=myBetAsParticipant; updateBalanceUI(); myBetAsParticipant=0;
   showToast('ok','Annulé','Mise remboursée');
 }
 
 // Live Participant Room
+// opp = null  → vrai pair WebRTC (_rtcRemoteId déjà défini)
+// opp = {...} → adversaire simulé (fallback)
 async function startParticipantRoom(opp){
+  const isReal = (opp === null); // true = WebRTC P2P réel
   debateRoomActive=true; totalDebateDuration=0; currentSpeaker='you'; turnRemaining=turnDuration;
   const room=document.getElementById('participantRoom'); room.classList.add('open');
   document.getElementById('proomTitle').textContent=currentDebate?currentDebate.title:'Débat';
@@ -3620,20 +3819,48 @@ async function startParticipantRoom(opp){
   document.getElementById('proomSideLabel1').className='proom-side-side '+(joinedSide==='yes'?'yes':'no');
   document.getElementById('proomSideLabel2').textContent=joinedSide==='yes'?(currentDebate?.noLabel||'NON'):(currentDebate?.yesLabel||'OUI');
   document.getElementById('proomSideLabel2').className='proom-side-side '+(joinedSide==='yes'?'no':'yes');
-  // Opponent info
-  document.getElementById('proomOpponentName').textContent=opp.name;
-  document.getElementById('proomOpponentNameLabel').textContent=opp.name;
-  document.getElementById('proomAvatar2').textContent=opp.avatar;
-  document.getElementById('proomAvatar2').style.background=opp.color;
+
+  // Opponent info — pair réel ou simulé
+  const oppName   = isReal ? (_rtcRemoteId || 'Pair réel') : opp.name;
+  const oppAvatar = isReal ? oppName[0].toUpperCase()      : opp.avatar;
+  const oppColor  = isReal ? 'linear-gradient(135deg,#30d158,#0a84ff)' : opp.color;
+  document.getElementById('proomOpponentName').textContent     = oppName;
+  document.getElementById('proomOpponentNameLabel').textContent = oppName;
+  document.getElementById('proomAvatar2').textContent           = oppAvatar;
+  document.getElementById('proomAvatar2').style.background      = oppColor;
+
+  // Badge "LIVE RÉEL" si WebRTC
+  if (isReal) {
+    const badge = document.createElement('div');
+    badge.style.cssText='position:absolute;top:6px;right:6px;z-index:10;padding:2px 8px;border-radius:9999px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.4);font-family:var(--fn-body);font-size:9px;font-weight:700;color:var(--elec);letter-spacing:0.08em';
+    badge.textContent='⚡ P2P';
+    document.getElementById('proomVideoArea2').style.position='relative';
+    document.getElementById('proomVideoArea2').appendChild(badge);
+  }
+
   // Speaker indicator init
   document.getElementById('proomCurrentSpeakerName').textContent='Vous';
-  // Request media
-  if(joinMode==='video'){document.getElementById('proomCamToggle').style.display='inline-block';await requestParticipantMedia(true);}
-  else await requestParticipantMedia(false);
+
+  // ── Demande accès media ──────────────────────────────────
+  const wantVideo = joinMode==='video';
+  if(wantVideo) document.getElementById('proomCamToggle').style.display='inline-block';
+  await requestParticipantMedia(wantVideo);
+
+  // ── WebRTC : démarre RTCPeerConnection avec le flux local ──
+  if (isReal && participantStream) {
+    try {
+      await rtcStart(participantStream);
+      addModerationEntry('📡 Négociation WebRTC en cours…','ok');
+    } catch(e) {
+      addModerationEntry('⚠️ WebRTC échoué — passage en simulation','warn');
+    }
+  }
+
   startRoomTimers();
   addModerationEntry('🤖 IA Modérateur connecté — analyse en temps réel','ok');
   addModerationEntry('🌐 Serveur: '+(REGIONS.find(r=>r.id===userRegion)?.server||'EU'),'ok');
-  showToast('🎙️','Arène ouverte !','Vous parlez en premier — 2 minutes');
+  const rtcLabel = isReal ? 'Flux P2P réel — en attente de connexion' : 'Adversaire simulé';
+  showToast('🎙️','Arène ouverte !', rtcLabel);
 }
 
 async function requestParticipantMedia(video){
@@ -3641,7 +3868,7 @@ async function requestParticipantMedia(video){
     participantStream=await navigator.mediaDevices.getUserMedia({audio:true,video});
     const v=document.getElementById('proomVideo1');
     if(video){v.srcObject=participantStream;v.style.display='block';document.getElementById('proomNoCam1').style.display='none';}
-  }catch(e){addModerationEntry('⚠️ Micro non disponible — simulation activée','warn');}
+  }catch(e){addModerationEntry('⚠️ Micro/caméra non disponible','warn');}
 }
 
 function startRoomTimers(){
@@ -3778,6 +4005,13 @@ function endParticipantRoom(natural){
   if(mainDebateTimer){clearInterval(mainDebateTimer);mainDebateTimer=null;}
   if(turnTimer){clearInterval(turnTimer);turnTimer=null;}
   if(participantStream){participantStream.getTracks().forEach(t=>t.stop());participantStream=null;}
+  // Ferme la connexion WebRTC et l'EventSource signaling
+  rtcClose();
+  // Reset video slots
+  const v2=document.getElementById('proomVideo2');
+  const nc2=document.getElementById('proomNoCam2');
+  if(v2){v2.srcObject=null;v2.style.display='none';}
+  if(nc2){nc2.style.display='flex';}
   document.getElementById('participantRoom').classList.remove('open');
   if(!natural)showToast('🚪','Débat quitté','Mise non remboursée (durée insuffisante)');
   // If debate is still ongoing, trigger AI verdict now for participant
