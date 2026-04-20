@@ -3739,13 +3739,7 @@ let currentSpeaker='you', turnDuration=120, turnRemaining=120;
 let totalDebateDuration=0;
 const MIN_DEBATE_DURATION=30*60;
 let userBetSideInRoom=null;
-const OPPONENTS=[
-  {name:'CryptoKing',avatar:'C',color:'linear-gradient(135deg,#f7931a,#aa55ff)'},
-  {name:'TruthSeeker',avatar:'T',color:'linear-gradient(135deg,#ff5555,#ff6432)'},
-  {name:'SigmaVoice',avatar:'S',color:'linear-gradient(135deg,#00d97e,#3d9eff)'},
-  {name:'DataBull',avatar:'D',color:'linear-gradient(135deg,#aa55ff,#667eea)'},
-  {name:'FiatPrince',avatar:'F',color:'linear-gradient(135deg,#ffc800,#ff9900)'},
-];
+// Bots supprimés — uniquement pairs réels via WebRTC
 
 // Join Modal
 function openJoinParticipantModal(){
@@ -3799,39 +3793,33 @@ function showWaitingRoom(){
 
   // ── Tentative WebRTC réelle (9 s max) ───────────────────────
   const roomId = currentDebate ? currentDebate.id : 'demo';
-  rtcJoinRoom(roomId, 9000)
-    .then(remotePeerId => {
-      if (settled) return;
-      settled = true;
-      document.getElementById('waitingSpotOpp').className  = 'waiting-spot filled';
-      document.getElementById('waitingSpotOpp').textContent = `✅ Pair réel trouvé · ${oppSide}`;
-      ce.textContent = '🔗 Connexion WebRTC…';
-      setTimeout(() => {
-        wr.classList.remove('open');
-        startParticipantRoom(null); // null = pair réel via WebRTC
-      }, 1200);
-    })
-    .catch(() => {
-      if (settled) return;
-      // Fallback simulation après 9 s
-      settled = true;
-      const opp = OPPONENTS[Math.floor(Math.random()*OPPONENTS.length)];
-      document.getElementById('waitingSpotOpp').className  = 'waiting-spot filled';
-      document.getElementById('waitingSpotOpp').textContent = `🤖 ${opp.name} · ${oppSide}`;
-      ce.textContent = 'Adversaire simulé — connexion…';
-      setTimeout(() => {
-        wr.classList.remove('open');
-        startParticipantRoom(opp); // opp défini = simulation
-      }, 1200);
-    });
-
-  // Compte à rebours visuel (ne choisit pas le chemin)
-  let cnt = 9;
-  const ci = setInterval(() => {
-    if (settled) { clearInterval(ci); return; }
-    cnt--;
-    if (cnt > 0) ce.textContent = `⚡ Recherche pair réel… ${cnt}s`;
-  }, 1000);
+  // Recherche pair réel — relance toutes les 30s si pas trouvé
+  let searchAttempt = 0;
+  function tryFind() {
+    if (settled) return;
+    searchAttempt++;
+    const dots = ['⏳', '🔍', '📡'];
+    const icon = dots[(searchAttempt - 1) % dots.length];
+    ce.textContent = `${icon} Recherche d'un adversaire réel… (tentative ${searchAttempt})`;
+    rtcJoinRoom(roomId, 30000)
+      .then(remotePeerId => {
+        if (settled) return;
+        settled = true;
+        document.getElementById('waitingSpotOpp').className   = 'waiting-spot filled';
+        document.getElementById('waitingSpotOpp').textContent = `✅ Pair réel trouvé · ${oppSide}`;
+        ce.textContent = '🔗 Connexion WebRTC en cours…';
+        setTimeout(() => {
+          wr.classList.remove('open');
+          startParticipantRoom(null); // null = pair réel via WebRTC
+        }, 1200);
+      })
+      .catch(() => {
+        if (settled) return;
+        ce.textContent = '⏳ Toujours en attente d\'un adversaire réel…';
+        setTimeout(tryFind, 2000); // réessaie dans 2s
+      });
+  }
+  tryFind();
 }
 
 function cancelWaiting(){
@@ -3857,23 +3845,21 @@ async function startParticipantRoom(opp){
   document.getElementById('proomSideLabel2').textContent=joinedSide==='yes'?(currentDebate?.noLabel||'NON'):(currentDebate?.yesLabel||'OUI');
   document.getElementById('proomSideLabel2').className='proom-side-side '+(joinedSide==='yes'?'no':'yes');
 
-  // Opponent info — pair réel ou simulé
-  const oppName   = isReal ? (_rtcRemoteId || 'Pair réel') : opp.name;
-  const oppAvatar = isReal ? oppName[0].toUpperCase()      : opp.avatar;
-  const oppColor  = isReal ? 'linear-gradient(135deg,#30d158,#0a84ff)' : opp.color;
-  document.getElementById('proomOpponentName').textContent     = oppName;
+  // Opponent info — pair réel via WebRTC
+  const oppName   = _rtcRemoteId ? `Pair #${_rtcRemoteId.slice(0,6)}` : 'Adversaire';
+  const oppAvatar = oppName[0].toUpperCase();
+  const oppColor  = 'linear-gradient(135deg,#30d158,#0a84ff)';
+  document.getElementById('proomOpponentName').textContent      = oppName;
   document.getElementById('proomOpponentNameLabel').textContent = oppName;
   document.getElementById('proomAvatar2').textContent           = oppAvatar;
   document.getElementById('proomAvatar2').style.background      = oppColor;
 
-  // Badge "LIVE RÉEL" si WebRTC
-  if (isReal) {
-    const badge = document.createElement('div');
-    badge.style.cssText='position:absolute;top:6px;right:6px;z-index:10;padding:2px 8px;border-radius:9999px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.4);font-family:var(--fn-body);font-size:9px;font-weight:700;color:var(--elec);letter-spacing:0.08em';
-    badge.textContent='⚡ P2P';
-    document.getElementById('proomVideoArea2').style.position='relative';
-    document.getElementById('proomVideoArea2').appendChild(badge);
-  }
+  // Badge ⚡ P2P toujours affiché
+  const badge = document.createElement('div');
+  badge.style.cssText='position:absolute;top:6px;right:6px;z-index:10;padding:2px 8px;border-radius:9999px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.4);font-family:var(--fn-body);font-size:9px;font-weight:700;color:var(--elec);letter-spacing:0.08em';
+  badge.textContent='⚡ P2P';
+  document.getElementById('proomVideoArea2').style.position='relative';
+  document.getElementById('proomVideoArea2').appendChild(badge);
 
   // Speaker indicator init
   document.getElementById('proomCurrentSpeakerName').textContent='Vous';
