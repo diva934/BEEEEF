@@ -19,10 +19,10 @@
 
 :root{
   /* ── Backgrounds (Apple light) ── */
-  --ink:#f5f5f7;
+  --ink:#fbfbfd;
   --ink2:#ffffff;
-  --ink3:#ebebf0;
-  --ink4:#e2e2e8;
+  --ink3:#f5f5f7;
+  --ink4:#ececf1;
 
   /* ── Glass surfaces ── */
   --s1:rgba(0,0,0,0.03);
@@ -79,10 +79,13 @@
 html{scroll-behavior:smooth}
 body{
   font-family:var(--fn-body);
-  background:var(--ink);
+  background:
+    radial-gradient(circle at top center, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0) 36%),
+    linear-gradient(180deg, var(--ink) 0%, var(--ink3) 52%, var(--ink4) 100%);
   color:var(--txt);
   min-height:100vh;
   overflow-x:hidden;
+  background-attachment:fixed;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   text-rendering:optimizeLegibility;
@@ -93,13 +96,13 @@ body{
 /* ── TEXTURE LAYERS ── */
 body::after{
   content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.018) 3px,rgba(0,0,0,0.018) 4px);
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.006) 3px,rgba(0,0,0,0.006) 4px);
   animation:scanShift 12s linear infinite
 }
 @keyframes scanShift{0%{background-position:0 0}100%{background-position:0 400px}}
 
 body::before{
-  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0.022;
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0.012;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:180px
 }
@@ -131,7 +134,7 @@ body::before{
 #header{
   position:fixed;top:0;left:0;right:0;height:var(--hh);z-index:1000;
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 24px;
-  background:rgba(245,245,247,0.92);
+  background:rgba(251,251,253,0.88);
   backdrop-filter:blur(32px) saturate(1.8);
   -webkit-backdrop-filter:blur(32px) saturate(1.8);
   border-bottom:1px solid var(--line)
@@ -2063,8 +2066,79 @@ button:active{transform:scale(0.97)!important}
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)!important;
 }
 
+/* Liquid glass buttons */
+[data-liquid-button]{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:rgba(255,255,255,0.34)!important;
+  border:1px solid rgba(255,255,255,0.58)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.92),
+    inset 0 -1px 0 rgba(255,255,255,0.22),
+    0 12px 26px rgba(15,23,42,0.08),
+    0 2px 8px rgba(255,255,255,0.45)!important;
+  backdrop-filter:blur(24px) saturate(1.35)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(1.35)!important;
+  text-shadow:0 1px 0 rgba(255,255,255,0.38);
+}
+[data-liquid-button]::before{
+  content:'';
+  position:absolute;inset:1px;
+  border-radius:inherit;
+  pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.28) 42%, rgba(255,255,255,0.16) 100%);
+  opacity:0.95;
+}
+[data-liquid-button]::after{
+  content:'';
+  position:absolute;left:12%;right:12%;top:0;height:46%;
+  border-radius:inherit;
+  pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0) 100%);
+  opacity:0.82;
+}
+[data-liquid-button] > *{
+  position:relative;
+  z-index:2;
+}
+[data-liquid-button]:hover{
+  background:rgba(255,255,255,0.46)!important;
+  border-color:rgba(255,255,255,0.78)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.96),
+    inset 0 -1px 0 rgba(255,255,255,0.24),
+    0 16px 34px rgba(15,23,42,0.12),
+    0 6px 18px rgba(255,255,255,0.38)!important;
+}
+[data-liquid-button]:active{filter:brightness(0.98)}
+.top-up-btn[data-liquid-button],
+.cta-watch[data-liquid-button],
+.join-btn[data-liquid-button],
+.btn-primary[data-liquid-button],
+.sp-edit-btn[data-liquid-button],
+.setup-btn-next[data-liquid-button],
+.di-cta[data-liquid-button],
+#joinAsParticipantBtn[data-liquid-button],
+.waiting-cancel[data-liquid-button],
+.ai-verdict-close[data-liquid-button],
+.proom-media-btn[data-liquid-button],
+.proom-ctrl-btn[data-liquid-button]{
+  color:#a54a1f!important;
+  border-color:rgba(255,133,84,0.42)!important;
+}
+.bet-btn-yes[data-liquid-button]{
+  color:#177c4a!important;
+  border-color:rgba(48,209,88,0.36)!important;
+}
+.bet-btn-no[data-liquid-button]{
+  color:#c44238!important;
+  border-color:rgba(255,69,58,0.36)!important;
+}
+
 </style>
 <script src="https://beeeef-production.up.railway.app/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/liquid-web/liquid-core.min.js"></script>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><defs>
@@ -4915,6 +4989,67 @@ class Typewriter {
   const s = document.createElement('style');
   s.textContent = '.tw-cursor { display:inline-block; transition: opacity 0.01s; }';
   document.head.appendChild(s);
+})();
+</script>
+
+<script>
+(function() {
+  const liquidSelector = 'button:not(.sp-close):not([data-no-liquid])';
+
+  function enhanceButton(button) {
+    if (!(button instanceof HTMLElement)) return;
+    if (button.dataset.liquidButton === 'true' && button.liquidWeb) return;
+
+    button.dataset.liquidButton = 'true';
+
+    if (window.LiquidWeb && !button.liquidWeb) {
+      try {
+        if (typeof window.LiquidWeb.init === 'function') {
+          window.LiquidWeb.init(button);
+        } else if (typeof window.LiquidWeb === 'function') {
+          new window.LiquidWeb(button, {
+            scale: 18,
+            blur: 1.5,
+            saturation: 145,
+            aberration: 28,
+            mode: 'standard',
+          });
+        }
+      } catch (error) {
+        console.warn('LiquidWeb button init failed', error);
+      }
+    }
+  }
+
+  function enhanceButtons(root) {
+    if (!root) return;
+    if (root.matches && root.matches(liquidSelector)) enhanceButton(root);
+    if (!root.querySelectorAll) return;
+    root.querySelectorAll(liquidSelector).forEach(enhanceButton);
+  }
+
+  function bootLiquidButtons() {
+    enhanceButtons(document);
+
+    if (!document.body) return;
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (!(node instanceof HTMLElement)) return;
+          enhanceButtons(node);
+        });
+      });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.refreshLiquidButtons = () => enhanceButtons(document);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootLiquidButtons, { once: true });
+  } else {
+    bootLiquidButtons();
+  }
 })();
 </script>
 
