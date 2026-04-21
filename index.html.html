@@ -146,13 +146,22 @@ body::before{
 }
 /* ── LOGO ── */
 .logo{
-  font-family:var(--fn-disp);font-size:26px;font-weight:900;letter-spacing:7px;cursor:pointer;
-  background:linear-gradient(135deg,#fff 0%,#ffd4b8 30%,var(--fire) 65%,var(--spark) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  filter:drop-shadow(0 0 16px rgba(255,74,14,0.55));user-select:none;
-  transition:filter 0.3s,letter-spacing 0.3s
+  display:flex;align-items:center;justify-content:flex-start;
+  padding:0;border:none;appearance:none;cursor:pointer;background:none;
+  user-select:none;line-height:0
 }
-.logo:hover{filter:drop-shadow(0 0 28px rgba(255,74,14,0.9));letter-spacing:9px}
+.logo-mark{
+  display:block;width:152px;height:46px;
+  background-image:url('assets/beeef-logo.png');
+  background-repeat:no-repeat;background-position:center 56%;
+  background-size:184% auto;
+  filter:drop-shadow(0 0 14px rgba(255,107,53,0.22));
+  transition:transform 0.18s ease,filter 0.18s ease
+}
+.logo:hover .logo-mark{
+  transform:translateY(-1px);
+  filter:drop-shadow(0 0 18px rgba(255,107,53,0.3))
+}
 
 /* ── NAV ── */
 .h-nav{display:flex;align-items:center;gap:2px;justify-content:center}
@@ -1100,7 +1109,7 @@ body::before{
   :root{--hh:56px}
   #header{padding:0 12px;grid-template-columns:auto 1fr auto}
   .h-nav{display:none}
-  .logo{font-size:22px;letter-spacing:5px}
+  .logo-mark{width:118px;height:36px}
   .top-up-btn{font-size:11px;padding:6px 10px}
   .wallet-badge{font-size:11px;padding:6px 10px}
   .hero{padding:24px 18px 0}
@@ -1463,14 +1472,17 @@ body::after{display:none!important}/* remove scanlines */
 
 /* ── LOGO — cleaner ── */
 .logo{
-  font-family:var(--fn-disp)!important;
-  font-size:20px!important;
-  font-weight:900!important;
-  letter-spacing:3px!important;
-  background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,0.7) 100%)!important;
-  -webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;
-  background-clip:text!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  background:none!important;
+  border:none!important;
+  padding:0!important;
+  line-height:0!important;
   filter:none!important;
+}
+.logo-mark{
+  filter:drop-shadow(0 0 12px rgba(255,107,53,0.18))!important;
 }
 
 /* ── NAV PILLS ── */
@@ -2190,7 +2202,9 @@ button:active{transform:scale(0.97)!important}
 
 <!-- HEADER -->
 <header id="header">
-  <div class="logo" onclick="goHome()">BEEEF</div>
+  <button class="logo" type="button" data-no-liquid onclick="goHome()" aria-label="Retour à l'accueil">
+    <span class="logo-mark" aria-hidden="true"></span>
+  </button>
   <nav class="h-nav">
     <button class="hnav-btn active"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-flame"/></svg>&nbsp;Débats</button>
     <button class="hnav-btn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-chart"/></svg>&nbsp;Mes Paris</button>
@@ -2511,7 +2525,7 @@ button:active{transform:scale(0.97)!important}
     <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Rappels de débats</div><div class="toggle-desc">Alerte 5 min avant la fin</div></div><label class="toggle-switch"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
     <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Effets sonores</div><div class="toggle-desc">Sons pour les paris et victoires</div></div><label class="toggle-switch"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
     <button class="btn-primary" onclick="saveProfile()">Enregistrer</button>
-    <button class="btn-secondary" style="margin-top:6px;color:var(--blood);border-color:rgba(255,34,68,0.3)">Déconnexion</button>
+    <button class="btn-secondary" id="logoutBtn" type="button" style="margin-top:6px;color:var(--blood);border-color:rgba(255,34,68,0.3)">Déconnexion</button>
   </div>
 </div>
 

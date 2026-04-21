@@ -144,8 +144,8 @@ window.currentUser = currentUser;
     const customValue = parseFloat(document.getElementById('customAmount').value);
     const amount = selectedPresetVal2 === 'custom' ? customValue : parseFloat(selectedPresetVal2);
 
-    if (!amount || amount < 10) {
-      showToast('err', 'Montant invalide', 'Minimum $10');
+    if (!amount || amount < 100) {
+      showToast('err', 'Pack invalide', 'Minimum 100 pts');
       return;
     }
 
@@ -157,11 +157,11 @@ window.currentUser = currentUser;
       hydrateSessionState(payload);
       document.getElementById('fundsForm').style.display = 'none';
       document.getElementById('fundsSuccessMsg').textContent = '+' + fmtBalance(payload.depositAmount || amount) + ' ajoutes !';
-      document.getElementById('fundsSuccessSub').textContent = 'Nouveau solde : ' + fmtBalance(balance);
+      document.getElementById('fundsSuccessSub').textContent = 'Nouveau total : ' + fmtBalance(balance);
       document.getElementById('fundsSuccess').style.display = 'block';
-      showToast('coins', 'Rechargement synchronise', '+' + fmtBalance(payload.depositAmount || amount));
+      showToast('coins', 'Points credites', '+' + fmtBalance(payload.depositAmount || amount));
     } catch (error) {
-      showToast('err', 'Rechargement impossible', error.message);
+      showToast('err', 'Achat impossible', error.message);
     }
   };
 
@@ -174,11 +174,11 @@ window.currentUser = currentUser;
 
     const amount = parseFloat(document.getElementById('joinBetAmount').value) || 50;
     if (amount < 50) {
-      showToast('err', 'Minimum $50', '');
+      showToast('err', 'Minimum 50 pts', '');
       return;
     }
     if (amount > balance) {
-      showToast('err', 'Fonds insuffisants', '');
+      showToast('err', 'Points insuffisants', '');
       return;
     }
 
@@ -381,6 +381,12 @@ window.currentUser = currentUser;
       .auth-modal {
         max-width: 430px;
       }
+      .auth-view {
+        display: block;
+      }
+      .auth-view.hidden {
+        display: none;
+      }
       .auth-kicker {
         font-family: var(--fn-mono);
         font-size: 10px;
@@ -466,6 +472,49 @@ window.currentUser = currentUser;
         font-size: 11px;
         line-height: 1.5;
       }
+      .auth-mail-hero {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 68px;
+        height: 68px;
+        margin: 2px auto 14px;
+        border-radius: 18px;
+        background:
+          radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6)),
+          linear-gradient(135deg, rgba(255,107,53,0.16), rgba(61,158,255,0.16));
+        border: 1px solid rgba(255,107,53,0.18);
+        color: var(--fire);
+        box-shadow: 0 16px 36px rgba(255,107,53,0.14);
+      }
+      .auth-mail-title {
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .auth-mail-copy {
+        color: var(--txt2);
+        font-size: 13px;
+        line-height: 1.7;
+        text-align: center;
+      }
+      .auth-mail-copy strong {
+        color: var(--txt);
+      }
+      .auth-mail-steps {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(61, 158, 255, 0.16);
+        background: rgba(61, 158, 255, 0.06);
+        color: var(--txt2);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .auth-mail-actions {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -476,34 +525,55 @@ window.currentUser = currentUser;
     overlay.id = 'authModal';
     overlay.innerHTML = `
       <div class="modal auth-modal">
-        <div class="auth-kicker">Compte synchronise</div>
-        <div class="modal-title" style="margin-bottom:10px">Retrouve ton solde partout</div>
-        <div class="auth-sub" id="authSub">
-          Cree ton compte puis retrouve ton solde, tes paris et tes preferences sur tous tes appareils.
+        <div class="auth-view" id="authFormView">
+          <div class="auth-kicker">Compte synchronise</div>
+          <div class="modal-title" style="margin-bottom:10px">Retrouve tes points partout</div>
+          <div class="auth-sub" id="authSub">
+            Cree ton compte puis retrouve tes points, tes paris et tes preferences sur tous tes appareils.
+          </div>
+          <div class="auth-tabs">
+            <button class="auth-tab" id="authModeSignup" type="button">Creer un compte</button>
+            <button class="auth-tab" id="authModeLogin" type="button">Connexion</button>
+          </div>
+          <form id="authForm">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input class="form-input" id="authEmail" type="email" placeholder="vous@exemple.com" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mot de passe</label>
+              <input class="form-input" id="authPassword" type="password" placeholder="6 caracteres minimum" minlength="6" required>
+            </div>
+            <div class="form-group" id="authUsernameGroup">
+              <label class="form-label">Pseudo (uniquement pour creer un compte)</label>
+              <input class="form-input" id="authUsername" type="text" placeholder="Pierrick">
+            </div>
+            <button class="btn-primary" id="authSubmitBtn" type="submit">Creer mon compte</button>
+          </form>
+          <div class="auth-inline-help" id="authInlineHelp"></div>
+          <div class="auth-status" id="authStatus"></div>
+          <div class="auth-note" id="authNote">
+            Tes paris, tes points, ton profil et tes preferences seront recharges automatiquement au prochain appareil.
+          </div>
         </div>
-        <div class="auth-tabs">
-          <button class="auth-tab" id="authModeSignup" type="button">Creer un compte</button>
-          <button class="auth-tab" id="authModeLogin" type="button">Connexion</button>
-        </div>
-        <form id="authForm">
-          <div class="form-group">
-            <label class="form-label">Email</label>
-            <input class="form-input" id="authEmail" type="email" placeholder="vous@exemple.com" required>
+        <div class="auth-view hidden" id="authMailView">
+          <div class="auth-kicker">Verification email</div>
+          <div class="auth-mail-hero">
+            <svg class="ic" width="28" height="28" viewBox="0 0 24 24"><use href="#ic-speech"/></svg>
           </div>
-          <div class="form-group">
-            <label class="form-label">Mot de passe</label>
-            <input class="form-input" id="authPassword" type="password" placeholder="6 caracteres minimum" minlength="6" required>
+          <div class="modal-title auth-mail-title" id="authMailTitle">Vérifie ton email</div>
+          <div class="auth-mail-copy" id="authMailCopy">
+            Tu vas recevoir un email d'authentification. Ouvre-le puis reviens te connecter.
           </div>
-          <div class="form-group" id="authUsernameGroup">
-            <label class="form-label">Pseudo (uniquement pour creer un compte)</label>
-            <input class="form-input" id="authUsername" type="text" placeholder="Pierrick">
+          <div class="auth-mail-steps" id="authMailSteps">
+            1. Ouvre ta boite mail.
+            <br>2. Clique sur le lien d'authentification.
+            <br>3. Reviens ici pour te connecter avec le meme compte.
           </div>
-          <button class="btn-primary" id="authSubmitBtn" type="submit">Creer mon compte</button>
-        </form>
-        <div class="auth-inline-help" id="authInlineHelp"></div>
-        <div class="auth-status" id="authStatus"></div>
-        <div class="auth-note" id="authNote">
-          Tes paris, ton solde, ton profil et tes preferences seront recharges automatiquement au prochain appareil.
+          <div class="auth-mail-actions">
+            <button class="btn-primary" id="authMailPrimaryBtn" type="button">Aller a la connexion</button>
+            <button class="btn-secondary" id="authMailSecondaryBtn" type="button">Modifier mon email</button>
+          </div>
         </div>
       </div>
     `;
@@ -519,6 +589,16 @@ window.currentUser = currentUser;
     };
   }
 
+  function getDetectedRegion() {
+    try {
+      return typeof window.detectBeeefRegion === 'function'
+        ? window.detectBeeefRegion()
+        : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   function hydrateSessionState(payload) {
     currentUser = payload.user;
     window.currentUser = currentUser;
@@ -527,7 +607,10 @@ window.currentUser = currentUser;
       localStorage.setItem(LAST_EMAIL_KEY, currentUser.email);
     }
 
-    if (currentUser.region || !userRegion) {
+    const detectedRegion = getDetectedRegion();
+    if (detectedRegion) {
+      userRegion = detectedRegion;
+    } else if (currentUser.region || !userRegion) {
       userRegion = currentUser.region || userRegion || null;
     }
     if ((currentUser.langs && currentUser.langs.length) || !userLangs.length) {
@@ -623,6 +706,17 @@ window.currentUser = currentUser;
     return Boolean(userRegion) && Array.isArray(userLangs) && userLangs.length > 0;
   }
 
+  function getLogoutButton() {
+    const directMatch = document.getElementById('logoutBtn');
+    if (directMatch) return directMatch;
+
+    const buttons = document.querySelectorAll('#profileModal .btn-secondary');
+    return Array.from(buttons).find(button => {
+      const label = String(button.textContent || '').toLowerCase();
+      return label.includes('deconnexion');
+    });
+  }
+
   function getDefaultAuthMode() {
     return localStorage.getItem(LAST_EMAIL_KEY) ? 'login' : 'signup';
   }
@@ -671,6 +765,64 @@ window.currentUser = currentUser;
     status.textContent = message;
   }
 
+  function setAuthView(view) {
+    const formView = document.getElementById('authFormView');
+    const mailView = document.getElementById('authMailView');
+
+    if (formView) formView.classList.toggle('hidden', view === 'mail');
+    if (mailView) mailView.classList.toggle('hidden', view !== 'mail');
+  }
+
+  function focusAuthField(field) {
+    const targetId = field === 'password' ? 'authPassword' : 'authEmail';
+    const input = document.getElementById(targetId);
+    if (input) input.focus();
+  }
+
+  function showAuthForm(mode, focusField = 'email') {
+    setAuthView('form');
+    if (mode) {
+      setAuthMode(mode);
+    }
+    focusAuthField(focusField);
+  }
+
+  function showAuthMailNotice({
+    email = '',
+    title = 'Vérifie ton email',
+    body = '',
+    primaryLabel = 'Aller a la connexion',
+    primaryMode = 'login',
+    primaryFocus = 'email',
+    secondaryLabel = 'Modifier mon email',
+    secondaryMode = 'signup',
+    secondaryFocus = 'email',
+  } = {}) {
+    const copy = document.getElementById('authMailCopy');
+    const heading = document.getElementById('authMailTitle');
+    const primaryBtn = document.getElementById('authMailPrimaryBtn');
+    const secondaryBtn = document.getElementById('authMailSecondaryBtn');
+
+    if (heading) heading.textContent = title;
+    if (copy) {
+      copy.innerHTML = body || (
+        email
+          ? `Un email d'authentification va etre envoye sur <strong>${email}</strong>.`
+          : `Un email d'authentification va etre envoye sur ton adresse email.`
+      );
+    }
+    if (primaryBtn) {
+      primaryBtn.textContent = primaryLabel;
+      primaryBtn.onclick = () => showAuthForm(primaryMode, primaryFocus);
+    }
+    if (secondaryBtn) {
+      secondaryBtn.textContent = secondaryLabel;
+      secondaryBtn.onclick = () => showAuthForm(secondaryMode, secondaryFocus);
+    }
+
+    setAuthView('mail');
+  }
+
   function setAuthMode(mode) {
     authMode = mode === 'login' ? 'login' : 'signup';
 
@@ -696,13 +848,13 @@ window.currentUser = currentUser;
     }
     if (sub) {
       sub.textContent = isSignup
-        ? 'Cree ton compte puis retrouve ton solde, tes paris et tes preferences sur tous tes appareils.'
+        ? 'Cree ton compte puis retrouve tes points, tes paris et tes preferences sur tous tes appareils.'
         : 'Connecte-toi avec ton email et ton mot de passe pour recuperer instantanement ton compte.';
     }
     if (note) {
       note.textContent = isSignup
         ? 'Si la confirmation email est activee dans Supabase, un message de verification pourra etre demande.'
-        : 'Utilise le meme compte sur chaque appareil pour retrouver exactement le meme solde et les memes paris.';
+        : 'Utilise le meme compte sur chaque appareil pour retrouver exactement les memes points et les memes paris.';
     }
 
     setAuthStatus('', '');
@@ -721,16 +873,10 @@ window.currentUser = currentUser;
   }
 
   function openAuthModal(mode) {
-    if (mode) {
-      setAuthMode(mode);
-    }
+    showAuthForm(mode || authMode, 'email');
     const overlay = document.getElementById('authModal');
     if (!overlay) return;
     overlay.classList.add('open');
-    const emailInput = document.getElementById('authEmail');
-    if (emailInput) {
-      emailInput.focus();
-    }
   }
 
   function closeAuthModal() {
@@ -738,6 +884,7 @@ window.currentUser = currentUser;
     if (overlay) {
       overlay.classList.remove('open');
     }
+    setAuthView('form');
     setAuthInlineHelp('');
     setAuthStatus('', '');
   }
@@ -765,7 +912,31 @@ window.currentUser = currentUser;
     clearLocalSession();
     openAuthModal('login');
     closeModal('profileModal');
-    showToast('ok', 'Session fermee', 'Reconnectez-vous pour recharger votre compte');
+    showToast('ok', 'Session fermee', 'Reconnectez-vous pour retrouver vos points');
+  }
+
+  async function handleLogout(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    try {
+      const client = requireSupabaseClient();
+      await client.auth.signOut();
+    } catch (_) {
+      // Ignore logout API failures.
+    }
+
+    closeModal('profileModal');
+    if (typeof closeSettings === 'function') closeSettings();
+    clearLocalSession();
+
+    const authPassword = document.getElementById('authPassword');
+    if (authPassword) authPassword.value = '';
+
+    openAuthModal('login');
+    showToast('ok', 'Session fermee', 'Reconnectez-vous pour retrouver vos points');
   }
 
   async function handleAuthSubmit(event) {
@@ -806,19 +977,43 @@ window.currentUser = currentUser;
         if (authMode === 'login' && rawMessage.includes('invalid login credentials')) {
           throw new Error('Compte introuvable ou mot de passe incorrect. Passe sur "Creer un compte" si besoin.');
         }
+        if (authMode === 'login' && (
+          rawMessage.includes('email not confirmed') ||
+          rawMessage.includes('email_not_confirmed')
+        )) {
+          document.getElementById('authPassword').value = '';
+          showAuthMailNotice({
+            email,
+            title: 'Confirme ton email',
+            body: `Ton compte existe deja, mais tu dois d'abord confirmer l'adresse <strong>${email}</strong> via le mail d'authentification.`,
+            primaryLabel: 'Retour a la connexion',
+            primaryMode: 'login',
+            primaryFocus: 'password',
+            secondaryLabel: 'Modifier mon email',
+            secondaryMode: 'signup',
+            secondaryFocus: 'email',
+          });
+          showToast('warn', 'Email a confirmer', 'Ouvre le mail d auth puis reconnecte-toi');
+          return;
+        }
         throw authResult.error;
       }
 
       localStorage.setItem(LAST_EMAIL_KEY, email);
 
       if (!authResult.data?.session) {
-        setAuthMode('login');
-        setAuthStatus(
-          'info',
-          'Compte cree. Verifie ton email pour confirmer, puis reconnecte-toi ici.'
-        );
-        setAuthInlineHelp('Si tu ne vois pas l email, regarde aussi dans les spams.');
         document.getElementById('authPassword').value = '';
+        showAuthMailNotice({
+          email,
+          title: 'Email d auth envoyé',
+          body: `Ton compte vient d'etre cree. Tu vas recevoir un mail d'authentification sur <strong>${email}</strong> pour valider ton compte.`,
+          primaryLabel: 'J ai compris',
+          primaryMode: 'login',
+          primaryFocus: 'email',
+          secondaryLabel: 'Changer d email',
+          secondaryMode: 'signup',
+          secondaryFocus: 'email',
+        });
         showToast('ok', 'Compte cree', 'Verifie ton email puis reconnecte-toi');
         return;
       }
@@ -831,7 +1026,7 @@ window.currentUser = currentUser;
       showToast(
         'ok',
         authMode === 'signup' ? 'Compte cree' : 'Compte connecte',
-        authReady ? 'Solde et paris synchronises' : 'Connexion en cours'
+        authReady ? 'Points et paris synchronises' : 'Connexion en cours'
       );
     } catch (error) {
       setAuthStatus('err', error.message || 'Action impossible');
@@ -865,7 +1060,7 @@ window.currentUser = currentUser;
   async function syncPrefsIfMissing() {
     if (!currentUser) return;
 
-    const shouldSyncRegion = !currentUser.region && userRegion;
+    const shouldSyncRegion = Boolean(userRegion) && currentUser.region !== userRegion;
     const shouldSyncLangs = (!currentUser.langs || !currentUser.langs.length) && Array.isArray(userLangs) && userLangs.length;
     if (!shouldSyncRegion && !shouldSyncLangs) return;
 
