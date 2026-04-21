@@ -15,6 +15,7 @@ window.currentUser = currentUser;
   };
 
   let authReady = false;
+  let authMode = 'signup';
   let supabase = null;
   let currentSession = null;
   let lastBootstrappedToken = '';
@@ -48,8 +49,7 @@ window.currentUser = currentUser;
     baseFns.setupFinish();
     if (document.getElementById('setupOverlay').classList.contains('open')) return;
     if (!currentUser) {
-      setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
-      openAuthModal();
+      openAuthModal('signup');
       return;
     }
 
@@ -307,11 +307,14 @@ window.currentUser = currentUser;
 
     const authForm = document.getElementById('authForm');
     authForm.addEventListener('submit', handleAuthSubmit);
+    document.getElementById('authModeLogin').addEventListener('click', () => setAuthMode('login'));
+    document.getElementById('authModeSignup').addEventListener('click', () => setAuthMode('signup'));
 
     const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
     if (lastEmail) {
       document.getElementById('authEmail').value = lastEmail;
     }
+    setAuthMode(lastEmail ? 'login' : 'signup');
 
     const config = await fetchPublicConfig();
     const supabaseModule = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
@@ -329,8 +332,7 @@ window.currentUser = currentUser;
       if (!session) {
         clearLocalSession();
         if (hasCompletedSetup()) {
-          setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
-          openAuthModal();
+          openAuthModal(getDefaultAuthMode());
         } else {
           closeAuthModal();
         }
@@ -351,8 +353,7 @@ window.currentUser = currentUser;
       await syncPrefsIfMissing();
     } else {
       if (hasCompletedSetup()) {
-        setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
-        openAuthModal();
+        openAuthModal(getDefaultAuthMode());
       } else {
         closeAuthModal();
       }
@@ -388,6 +389,61 @@ window.currentUser = currentUser;
         line-height: 1.65;
         margin-bottom: 18px;
       }
+      .auth-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .auth-tab {
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.65);
+        color: var(--txt2);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-family: var(--fn-disp);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+      }
+      .auth-tab:hover {
+        color: var(--txt);
+        border-color: rgba(255,107,53,0.24);
+      }
+      .auth-tab.active {
+        background: linear-gradient(135deg,var(--fire),var(--fire2));
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 8px 24px rgba(255,107,53,0.24);
+      }
+      .auth-status {
+        display: none;
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .auth-status.show {
+        display: block;
+      }
+      .auth-status.info {
+        border: 1px solid rgba(61, 158, 255, 0.22);
+        background: rgba(61, 158, 255, 0.08);
+        color: var(--ice);
+      }
+      .auth-status.err {
+        border: 1px solid rgba(255, 69, 58, 0.22);
+        background: rgba(255, 69, 58, 0.08);
+        color: var(--blood);
+      }
+      .auth-status.ok {
+        border: 1px solid rgba(48, 209, 88, 0.24);
+        background: rgba(48, 209, 88, 0.08);
+        color: var(--elec2);
+      }
       .auth-note {
         margin-top: 14px;
         padding: 10px 12px;
@@ -416,9 +472,12 @@ window.currentUser = currentUser;
       <div class="modal auth-modal">
         <div class="auth-kicker">Compte synchronise</div>
         <div class="modal-title" style="margin-bottom:10px">Retrouve ton solde partout</div>
-        <div class="auth-sub">
-          Laisse le pseudo vide pour te connecter.
-          Renseigne un pseudo pour creer un nouveau compte Supabase avec cet email.
+        <div class="auth-sub" id="authSub">
+          Cree ton compte puis retrouve ton solde, tes paris et tes preferences sur tous tes appareils.
+        </div>
+        <div class="auth-tabs">
+          <button class="auth-tab" id="authModeSignup" type="button">Creer un compte</button>
+          <button class="auth-tab" id="authModeLogin" type="button">Connexion</button>
         </div>
         <form id="authForm">
           <div class="form-group">
@@ -429,14 +488,15 @@ window.currentUser = currentUser;
             <label class="form-label">Mot de passe</label>
             <input class="form-input" id="authPassword" type="password" placeholder="6 caracteres minimum" minlength="6" required>
           </div>
-          <div class="form-group">
+          <div class="form-group" id="authUsernameGroup">
             <label class="form-label">Pseudo (uniquement pour creer un compte)</label>
             <input class="form-input" id="authUsername" type="text" placeholder="Pierrick">
           </div>
-          <button class="btn-primary" id="authSubmitBtn" type="submit">Continuer</button>
+          <button class="btn-primary" id="authSubmitBtn" type="submit">Creer mon compte</button>
         </form>
         <div class="auth-inline-help" id="authInlineHelp"></div>
-        <div class="auth-note">
+        <div class="auth-status" id="authStatus"></div>
+        <div class="auth-note" id="authNote">
           Tes paris, ton solde, ton profil et tes preferences seront recharges automatiquement au prochain appareil.
         </div>
       </div>
@@ -557,6 +617,10 @@ window.currentUser = currentUser;
     return Boolean(userRegion) && Array.isArray(userLangs) && userLangs.length > 0;
   }
 
+  function getDefaultAuthMode() {
+    return localStorage.getItem(LAST_EMAIL_KEY) ? 'login' : 'signup';
+  }
+
   function setAuthInlineHelp(message) {
     const help = document.getElementById('authInlineHelp');
     if (help) {
@@ -564,14 +628,71 @@ window.currentUser = currentUser;
     }
   }
 
+  function setAuthStatus(kind, message) {
+    const status = document.getElementById('authStatus');
+    if (!status) return;
+
+    if (!message) {
+      status.className = 'auth-status';
+      status.textContent = '';
+      return;
+    }
+
+    status.className = `auth-status show ${kind || 'info'}`;
+    status.textContent = message;
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode === 'login' ? 'login' : 'signup';
+
+    const isSignup = authMode === 'signup';
+    const signupTab = document.getElementById('authModeSignup');
+    const loginTab = document.getElementById('authModeLogin');
+    const usernameGroup = document.getElementById('authUsernameGroup');
+    const usernameInput = document.getElementById('authUsername');
+    const submitButton = document.getElementById('authSubmitBtn');
+    const sub = document.getElementById('authSub');
+    const note = document.getElementById('authNote');
+
+    if (signupTab) signupTab.classList.toggle('active', isSignup);
+    if (loginTab) loginTab.classList.toggle('active', !isSignup);
+    if (usernameGroup) usernameGroup.style.display = isSignup ? 'block' : 'none';
+    if (usernameInput) {
+      usernameInput.required = isSignup;
+      if (!isSignup) usernameInput.value = '';
+    }
+    if (submitButton) {
+      submitButton.textContent = isSignup ? 'Creer mon compte' : 'Se connecter';
+    }
+    if (sub) {
+      sub.textContent = isSignup
+        ? 'Cree ton compte puis retrouve ton solde, tes paris et tes preferences sur tous tes appareils.'
+        : 'Connecte-toi avec ton email et ton mot de passe pour recuperer instantanement ton compte.';
+    }
+    if (note) {
+      note.textContent = isSignup
+        ? 'Si la confirmation email est activee dans Supabase, un message de verification pourra etre demande.'
+        : 'Utilise le meme compte sur chaque appareil pour retrouver exactement le meme solde et les memes paris.';
+    }
+
+    setAuthStatus('', '');
+    setAuthInlineHelp(
+      isSignup
+        ? 'Mode creation: renseigne email, mot de passe et pseudo.'
+        : 'Mode connexion: email + mot de passe suffisent.'
+    );
+  }
+
   function ensureLoggedIn() {
     if (currentUser) return true;
-    setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
-    openAuthModal();
+    openAuthModal(getDefaultAuthMode());
     return false;
   }
 
-  function openAuthModal() {
+  function openAuthModal(mode) {
+    if (mode) {
+      setAuthMode(mode);
+    }
     const overlay = document.getElementById('authModal');
     if (!overlay) return;
     overlay.classList.add('open');
@@ -587,6 +708,7 @@ window.currentUser = currentUser;
       overlay.classList.remove('open');
     }
     setAuthInlineHelp('');
+    setAuthStatus('', '');
   }
 
   function clearLocalSession() {
@@ -611,8 +733,7 @@ window.currentUser = currentUser;
     }
 
     clearLocalSession();
-    setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
-    openAuthModal();
+    openAuthModal('login');
     closeModal('profileModal');
     showToast('ok', 'Session fermee', 'Reconnectez-vous pour recharger votre compte');
   }
@@ -627,12 +748,17 @@ window.currentUser = currentUser;
     const username = document.getElementById('authUsername').value.trim();
 
     help.textContent = '';
+    setAuthStatus('', '');
     submitButton.disabled = true;
+    submitButton.textContent = authMode === 'signup' ? 'Creation...' : 'Connexion...';
 
     try {
       let authResult;
 
-      if (username) {
+      if (authMode === 'signup') {
+        if (!username) {
+          throw new Error('Le pseudo est requis pour creer un compte.');
+        }
         authResult = await supabase.auth.signUp({
           email,
           password,
@@ -645,8 +771,9 @@ window.currentUser = currentUser;
       }
 
       if (authResult.error) {
-        if (!username && String(authResult.error.message || '').toLowerCase().includes('invalid login credentials')) {
-          throw new Error('Compte introuvable ou mot de passe incorrect. Ajoute un pseudo pour creer un compte.');
+        const rawMessage = String(authResult.error.message || '').toLowerCase();
+        if (authMode === 'login' && rawMessage.includes('invalid login credentials')) {
+          throw new Error('Compte introuvable ou mot de passe incorrect. Passe sur "Creer un compte" si besoin.');
         }
         throw authResult.error;
       }
@@ -654,8 +781,14 @@ window.currentUser = currentUser;
       localStorage.setItem(LAST_EMAIL_KEY, email);
 
       if (!authResult.data?.session) {
-        help.textContent = 'Compte cree. Verifie ton email pour confirmer, puis reconnecte-toi.';
+        setAuthMode('login');
+        setAuthStatus(
+          'info',
+          'Compte cree. Verifie ton email pour confirmer, puis reconnecte-toi ici.'
+        );
+        setAuthInlineHelp('Si tu ne vois pas l email, regarde aussi dans les spams.');
         document.getElementById('authPassword').value = '';
+        showToast('ok', 'Compte cree', 'Verifie ton email puis reconnecte-toi');
         return;
       }
 
@@ -666,13 +799,17 @@ window.currentUser = currentUser;
       await syncPrefsIfMissing();
       showToast(
         'ok',
-        username ? 'Compte cree' : 'Compte connecte',
+        authMode === 'signup' ? 'Compte cree' : 'Compte connecte',
         authReady ? 'Solde et paris synchronises' : 'Connexion en cours'
       );
     } catch (error) {
-      help.textContent = error.message;
+      setAuthStatus('err', error.message || 'Action impossible');
+      help.textContent = authMode === 'signup'
+        ? 'Si tu as deja un compte, passe sur l onglet Connexion.'
+        : 'Si tu n as pas encore de compte, passe sur l onglet Creer un compte.';
     } finally {
       submitButton.disabled = false;
+      submitButton.textContent = authMode === 'signup' ? 'Creer mon compte' : 'Se connecter';
     }
   }
 
@@ -822,7 +959,7 @@ window.currentUser = currentUser;
     if (!response.ok) {
       if (response.status === 401) {
         clearLocalSession();
-        openAuthModal();
+        openAuthModal('login');
       }
       const error = new Error(payload.error || 'Requete impossible');
       error.status = response.status;
