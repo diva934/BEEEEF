@@ -16,6 +16,7 @@ window.currentUser = currentUser;
 
   let authReady = false;
   let authMode = 'signup';
+  let authInitError = '';
   let supabase = null;
   let currentSession = null;
   let lastBootstrappedToken = '';
@@ -77,8 +78,9 @@ window.currentUser = currentUser;
     const emailChanged = nextEmail && nextEmail !== currentUser.email;
 
     try {
+      const client = requireSupabaseClient();
       if (emailChanged) {
-        const { error } = await supabase.auth.updateUser({ email: nextEmail });
+        const { error } = await client.auth.updateUser({ email: nextEmail });
         if (error) throw error;
       }
 
@@ -122,7 +124,8 @@ window.currentUser = currentUser;
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({ password: nextPassword });
+      const client = requireSupabaseClient();
+      const { error } = await client.auth.updateUser({ password: nextPassword });
       if (error) throw error;
 
       document.getElementById('newPwd1').value = '';
@@ -290,11 +293,11 @@ window.currentUser = currentUser;
 
   init().catch(error => {
     console.error('[sync] init failed', error);
-    const help = document.getElementById('authInlineHelp');
-    if (help) {
-      help.textContent = error.message || 'Configuration Supabase manquante';
-    }
-    openAuthModal();
+    authInitError = error.message || 'Configuration Supabase manquante';
+    setAuthFormEnabled(false, 'Indisponible');
+    setAuthStatus('err', authInitError);
+    setAuthInlineHelp('Vérifie Railway puis redéploie le backend avant de reessayer.');
+    openAuthModal(getDefaultAuthMode());
   });
 
   async function init() {
@@ -309,6 +312,7 @@ window.currentUser = currentUser;
     authForm.addEventListener('submit', handleAuthSubmit);
     document.getElementById('authModeLogin').addEventListener('click', () => setAuthMode('login'));
     document.getElementById('authModeSignup').addEventListener('click', () => setAuthMode('signup'));
+    setAuthFormEnabled(false, 'Chargement...');
 
     const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
     if (lastEmail) {
@@ -325,6 +329,8 @@ window.currentUser = currentUser;
         detectSessionInUrl: true,
       },
     });
+    authInitError = '';
+    setAuthFormEnabled(true);
 
     supabase.auth.onAuthStateChange((event, session) => {
       currentSession = session || null;
@@ -628,6 +634,36 @@ window.currentUser = currentUser;
     }
   }
 
+  function setAuthFormEnabled(enabled, label) {
+    const submitButton = document.getElementById('authSubmitBtn');
+    const email = document.getElementById('authEmail');
+    const password = document.getElementById('authPassword');
+    const username = document.getElementById('authUsername');
+    const signupTab = document.getElementById('authModeSignup');
+    const loginTab = document.getElementById('authModeLogin');
+
+    if (submitButton) {
+      submitButton.disabled = !enabled;
+      submitButton.textContent = label || (authMode === 'signup' ? 'Creer mon compte' : 'Se connecter');
+    }
+    if (email) email.disabled = !enabled;
+    if (password) password.disabled = !enabled;
+    if (username) username.disabled = !enabled || authMode !== 'signup';
+    if (signupTab) signupTab.disabled = !enabled;
+    if (loginTab) loginTab.disabled = !enabled;
+  }
+
+  function requireSupabaseClient() {
+    if (supabase && supabase.auth) {
+      return supabase;
+    }
+
+    throw new Error(
+      authInitError ||
+      'Supabase n est pas pret. Redéploie Railway avec SUPABASE_URL et SUPABASE_PUBLISHABLE_KEY.'
+    );
+  }
+
   function setAuthStatus(kind, message) {
     const status = document.getElementById('authStatus');
     if (!status) return;
@@ -660,6 +696,7 @@ window.currentUser = currentUser;
     if (usernameInput) {
       usernameInput.required = isSignup;
       if (!isSignup) usernameInput.value = '';
+      usernameInput.disabled = !supabase || !isSignup;
     }
     if (submitButton) {
       submitButton.textContent = isSignup ? 'Creer mon compte' : 'Se connecter';
@@ -681,6 +718,7 @@ window.currentUser = currentUser;
         ? 'Mode creation: renseigne email, mot de passe et pseudo.'
         : 'Mode connexion: email + mot de passe suffisent.'
     );
+    setAuthFormEnabled(Boolean(supabase), authMode === 'signup' ? 'Creer mon compte' : 'Se connecter');
   }
 
   function ensureLoggedIn() {
@@ -725,9 +763,8 @@ window.currentUser = currentUser;
 
   async function handleLogout() {
     try {
-      if (supabase) {
-        await supabase.auth.signOut();
-      }
+      const client = requireSupabaseClient();
+      await client.auth.signOut();
     } catch (_) {
       // Ignore logout API failures.
     }
@@ -753,13 +790,14 @@ window.currentUser = currentUser;
     submitButton.textContent = authMode === 'signup' ? 'Creation...' : 'Connexion...';
 
     try {
+      const client = requireSupabaseClient();
       let authResult;
 
       if (authMode === 'signup') {
         if (!username) {
           throw new Error('Le pseudo est requis pour creer un compte.');
         }
-        authResult = await supabase.auth.signUp({
+        authResult = await client.auth.signUp({
           email,
           password,
           options: {
@@ -767,7 +805,7 @@ window.currentUser = currentUser;
           },
         });
       } else {
-        authResult = await supabase.auth.signInWithPassword({ email, password });
+        authResult = await client.auth.signInWithPassword({ email, password });
       }
 
       if (authResult.error) {
