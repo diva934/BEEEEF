@@ -46,8 +46,12 @@ window.currentUser = currentUser;
 
   setupFinish = async function syncedSetupFinish() {
     baseFns.setupFinish();
-    if (!currentUser) return;
     if (document.getElementById('setupOverlay').classList.contains('open')) return;
+    if (!currentUser) {
+      setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
+      openAuthModal();
+      return;
+    }
 
     try {
       const payload = await api('/me/profile', {
@@ -324,7 +328,12 @@ window.currentUser = currentUser;
 
       if (!session) {
         clearLocalSession();
-        openAuthModal();
+        if (hasCompletedSetup()) {
+          setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
+          openAuthModal();
+        } else {
+          closeAuthModal();
+        }
         return;
       }
 
@@ -341,7 +350,12 @@ window.currentUser = currentUser;
       closeAuthModal();
       await syncPrefsIfMissing();
     } else {
-      openAuthModal();
+      if (hasCompletedSetup()) {
+        setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
+        openAuthModal();
+      } else {
+        closeAuthModal();
+      }
     }
 
     authReady = true;
@@ -539,8 +553,20 @@ window.currentUser = currentUser;
     return Array.from(buttons).find(button => button.textContent.includes('Deconnexion') || button.textContent.includes('DÃ©connexion'));
   }
 
+  function hasCompletedSetup() {
+    return Boolean(userRegion) && Array.isArray(userLangs) && userLangs.length > 0;
+  }
+
+  function setAuthInlineHelp(message) {
+    const help = document.getElementById('authInlineHelp');
+    if (help) {
+      help.textContent = message || '';
+    }
+  }
+
   function ensureLoggedIn() {
     if (currentUser) return true;
+    setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
     openAuthModal();
     return false;
   }
@@ -560,6 +586,7 @@ window.currentUser = currentUser;
     if (overlay) {
       overlay.classList.remove('open');
     }
+    setAuthInlineHelp('');
   }
 
   function clearLocalSession() {
@@ -584,6 +611,7 @@ window.currentUser = currentUser;
     }
 
     clearLocalSession();
+    setAuthInlineHelp('Ajoute un pseudo pour creer ton compte, ou laisse vide pour te connecter.');
     openAuthModal();
     closeModal('profileModal');
     showToast('ok', 'Session fermee', 'Reconnectez-vous pour recharger votre compte');

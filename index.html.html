@@ -2625,11 +2625,11 @@ button:active{transform:scale(0.97)!important}
     <div class="setup-step" id="setupStep2">
       <div class="setup-icon"><svg class="ic" width="40" height="40" viewBox="0 0 24 24"><use href="#ic-speech"/></svg></div>
       <div class="setup-title">Vos langues</div>
-      <p class="setup-sub">Sélectionnez une ou plusieurs langues. Vous ne verrez que les débats dans ces langues et ne pourrez y participer qu'en tant qu'orateur.</p>
+      <p class="setup-sub">Sélectionnez une ou plusieurs langues. Juste après, vous passerez à l'écran de création ou connexion de compte pour synchroniser votre solde sur tous vos appareils.</p>
       <div class="setup-grid" id="langGrid"></div>
       <div class="setup-nav">
         <button class="setup-btn-back" onclick="setupBack(2)">← RETOUR</button>
-        <button class="setup-btn-next" onclick="setupFinish()">TERMINER ✓</button>
+        <button class="setup-btn-next" onclick="setupFinish()">CONTINUER VERS LE COMPTE ✓</button>
       </div>
     </div>
   </div>
@@ -3785,6 +3785,7 @@ let turnTimer=null, mainDebateTimer=null;
 let currentSpeaker='you', turnDuration=120, turnRemaining=120;
 let totalDebateDuration=0;
 const MIN_DEBATE_DURATION=30*60;
+let _timersStarted=false; // true once server timestamps received and timers running
 let userBetSideInRoom=null;
 // Bots supprimés — uniquement pairs réels via WebRTC
 
@@ -3929,7 +3930,9 @@ async function startParticipantRoom(opp){
     }
   }
 
-  startRoomTimers();
+  // startRoomTimers() is intentionally NOT called here.
+  // It starts inside applyServerState() on first server sync,
+  // guaranteeing the timers only run once we have server timestamps.
 
   // ── Persist context for refresh/reconnect ───────────────────
   try {
@@ -4776,6 +4779,8 @@ class Typewriter {
   document.head.appendChild(s);
 })();
 </script>
+
+<script src="/sync.js"></script>
 
 <!-- SETTINGS PANEL -->
 <div class="settings-panel" id="settingsPanel">

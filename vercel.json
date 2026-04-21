@@ -1,6 +1,7 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/sync.js", "dest": "/sync.js" },
     { "src": "/", "dest": "/index.html.html" },
     { "src": "/(.*)", "dest": "/index.html.html" }
   ]
