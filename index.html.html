@@ -655,12 +655,12 @@ body::before{
 .bet-input-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 .bet-input-wrap{flex:1;position:relative}
 .bet-input-wrap::before{
-  content:'$';position:absolute;left:12px;top:50%;transform:translateY(-50%);
-  color:var(--txt3);font-size:13px;font-weight:600;font-family:var(--fn-mono)
+  content:'PTS';position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--txt3);font-size:11px;font-weight:700;font-family:var(--fn-mono);letter-spacing:0.8px
 }
 .bet-input{
   width:100%;background:var(--ink);border:1px solid var(--line);border-radius:var(--rs);
-  padding:10px 12px 10px 24px;font-size:14px;font-weight:600;color:var(--txt);
+  padding:10px 12px 10px 46px;font-size:14px;font-weight:600;color:var(--txt);
   font-family:var(--fn-mono);outline:none;transition:border-color 0.18s
 }
 .bet-input:focus{border-color:var(--line2)}
@@ -2063,7 +2063,7 @@ button:active{transform:scale(0.97)!important}
     <div class="live-ticker" id="liveDebateCount">8 LIVE</div>
   </nav>
   <div class="h-right">
-    <button class="top-up-btn" onclick="openFunds()">+ RECHARGER</button>
+    <button class="top-up-btn" onclick="openFunds()">+ ACHETER DES POINTS</button>
     <div class="av" onclick="openProfile()" id="headerAvatar">P</div>
     <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()" title="Paramètres"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-gear"/></svg></button>
   </div>
@@ -2101,8 +2101,8 @@ button:active{transform:scale(0.97)!important}
       </div>
       <div class="hero-stats">
         <div class="hstat">
-          <div class="hstat-val fire" id="statPool">$2.1M</div>
-          <div class="hstat-lbl">Cagnotte totale</div>
+          <div class="hstat-val fire" id="statPool">2.1M pts</div>
+          <div class="hstat-lbl">Points en jeu</div>
         </div>
         <div class="hstat">
           <div class="hstat-val green" id="statDebaters">1,240</div>
@@ -2146,11 +2146,11 @@ button:active{transform:scale(0.97)!important}
       <div class="mp-stats" id="mpStats">
         <div class="mp-stat-card">
           <div class="mp-stat-lbl">Total misé</div>
-          <div class="mp-stat-val" id="mpTotalStaked">$0</div>
+          <div class="mp-stat-val" id="mpTotalStaked">0 pts</div>
         </div>
         <div class="mp-stat-card">
           <div class="mp-stat-lbl">Gains nets</div>
-          <div class="mp-stat-val" id="mpNetGain" style="color:var(--elec)">+$0</div>
+          <div class="mp-stat-val" id="mpNetGain" style="color:var(--elec)">+0 pts</div>
         </div>
         <div class="mp-stat-card">
           <div class="mp-stat-lbl">ROI</div>
@@ -2282,7 +2282,7 @@ button:active{transform:scale(0.97)!important}
             </div>
           </div>
           <div class="big-bet-bar"><div class="big-bet-fill" id="bigBarFill" style="width:50%"></div></div>
-          <div class="pool-total">Cagnotte totale : <span id="poolTotal">$0</span></div>
+          <div class="pool-total">Points en jeu : <span id="poolTotal">0 pts</span></div>
           <div class="bet-input-row">
             <div class="bet-input-wrap">
               <input class="bet-input" id="betAmount" type="number" value="50" min="1">
@@ -2327,10 +2327,10 @@ button:active{transform:scale(0.97)!important}
     <div class="profile-since">Membre depuis Avril 2026</div>
     <div class="profile-balance-card">
       <div>
-        <div class="profile-balance-label">Solde disponible</div>
-        <div class="profile-balance-amount" id="profileBalance">$2,840.00</div>
+        <div class="profile-balance-label">Points disponibles</div>
+        <div class="profile-balance-amount" id="profileBalance">0 pts</div>
       </div>
-      <button class="top-up-btn" onclick="closeModal('profileModal');openFunds()">+ RECHARGER</button>
+      <button class="top-up-btn" onclick="closeModal('profileModal');openFunds()">+ ACHETER DES POINTS</button>
     </div>
     <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" value="pierrickmanchec55@gmail.com" id="profileEmail"></div>
     <div class="form-group">
@@ -2386,28 +2386,28 @@ button:active{transform:scale(0.97)!important}
 <div class="modal-overlay" id="fundsModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Recharger</div>
+      <div class="modal-title">Acheter des points</div>
       <div class="modal-close" onclick="closeModal('fundsModal')">✕</div>
     </div>
     <div id="fundsForm">
       <div style="text-align:center;margin-bottom:24px">
-        <div style="font-family:var(--fn-disp);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px">Solde actuel</div>
-        <div style="font-family:var(--fn-disp);font-size:36px;font-weight:900" id="fundsCurrentBalance">$2,840.00</div>
+        <div style="font-family:var(--fn-disp);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px">Points disponibles</div>
+        <div style="font-family:var(--fn-disp);font-size:36px;font-weight:900" id="fundsCurrentBalance">0 pts</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Montant</label>
+        <label class="form-label">Pack de points</label>
         <div class="funds-presets">
-          <div class="funds-preset" data-val="50" onclick="selectPreset(this)">$50</div>
-          <div class="funds-preset selected" data-val="100" onclick="selectPreset(this)">$100</div>
-          <div class="funds-preset" data-val="250" onclick="selectPreset(this)">$250</div>
-          <div class="funds-preset" data-val="500" onclick="selectPreset(this)">$500</div>
-          <div class="funds-preset" data-val="1000" onclick="selectPreset(this)">$1K</div>
-          <div class="funds-preset" data-val="2500" onclick="selectPreset(this)">$2.5K</div>
-          <div class="funds-preset" data-val="5000" onclick="selectPreset(this)">$5K</div>
+          <div class="funds-preset" data-val="500" onclick="selectPreset(this)">500 pts · 4,99 €</div>
+          <div class="funds-preset selected" data-val="1200" onclick="selectPreset(this)">1 200 pts · 9,99 €</div>
+          <div class="funds-preset" data-val="2500" onclick="selectPreset(this)">2 500 pts · 19,99 €</div>
+          <div class="funds-preset" data-val="6000" onclick="selectPreset(this)">6 000 pts · 39,99 €</div>
+          <div class="funds-preset" data-val="15000" onclick="selectPreset(this)">15 000 pts · 89,99 €</div>
+          <div class="funds-preset" data-val="40000" onclick="selectPreset(this)">40 000 pts · 199,99 €</div>
+          <div class="funds-preset" data-val="100000" onclick="selectPreset(this)">100 000 pts · 399,99 €</div>
           <div class="funds-preset" data-val="custom" onclick="selectPreset(this)">Autre</div>
         </div>
         <div id="customAmountWrap" style="display:none;margin-top:10px">
-          <div class="bet-input-wrap"><input class="bet-input form-input" type="number" id="customAmount" placeholder="Montant" min="10"></div>
+          <div class="bet-input-wrap"><input class="bet-input form-input" type="number" id="customAmount" placeholder="Nombre de points" min="100" step="1"></div>
         </div>
       </div>
       <div class="form-group">
@@ -2427,11 +2427,11 @@ button:active{transform:scale(0.97)!important}
           <input class="form-input" type="text" placeholder="CVC" maxlength="3">
         </div>
       </div>
-      <button class="btn-primary" onclick="confirmDeposit()">Confirmer le rechargement</button>
+      <button class="btn-primary" onclick="confirmDeposit()">Payer et crÃ©diter mes points</button>
     </div>
     <div class="funds-success" id="fundsSuccess">
       <div class="funds-success-icon" style="color:var(--elec)"><svg class="ic" width="44" height="44" viewBox="0 0 24 24"><use href="#ic-check"/></svg></div>
-      <div class="funds-success-msg" id="fundsSuccessMsg">Solde rechargé !</div>
+      <div class="funds-success-msg" id="fundsSuccessMsg">Points crédités !</div>
       <div class="funds-success-sub" id="fundsSuccessSub"></div>
       <button class="btn-primary" style="margin-top:20px" onclick="closeModal('fundsModal')">Fermer</button>
     </div>
@@ -2464,7 +2464,7 @@ button:active{transform:scale(0.97)!important}
       </div>
     </div>
     <div class="join-required-bet">
-      <div style="font-family:var(--fn-disp);font-size:11px;color:var(--fire);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">⚡ Mise requise — min. $50</div>
+      <div style="font-family:var(--fn-disp);font-size:11px;color:var(--fire);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">⚡ Mise requise — min. 50 pts</div>
       <div class="bet-input-wrap" style="max-width:180px">
         <input class="bet-input" id="joinBetAmount" type="number" value="50" min="50" style="height:42px">
       </div>
@@ -2625,7 +2625,7 @@ button:active{transform:scale(0.97)!important}
     <div class="setup-step" id="setupStep2">
       <div class="setup-icon"><svg class="ic" width="40" height="40" viewBox="0 0 24 24"><use href="#ic-speech"/></svg></div>
       <div class="setup-title">Vos langues</div>
-      <p class="setup-sub">Sélectionnez une ou plusieurs langues. Juste après, vous passerez à l'écran de création ou connexion de compte pour synchroniser votre solde sur tous vos appareils.</p>
+      <p class="setup-sub">Sélectionnez une ou plusieurs langues. Juste après, vous passerez à l'écran de création ou connexion de compte pour synchroniser vos points sur tous vos appareils.</p>
       <div class="setup-grid" id="langGrid"></div>
       <div class="setup-nav">
         <button class="setup-btn-back" onclick="setupBack(2)">← RETOUR</button>
@@ -2640,7 +2640,7 @@ button:active{transform:scale(0.97)!important}
 //  BEEEF — Core State
 // ═══════════════════════════════════════════════════════════
 const SPEED = 1;
-let balance = 2840;
+let balance = 0;
 let currentDebate = null;
 let livePool = 0, liveYesPct = 50, liveViewers = 0;
 let liveAnimFrame = null, chatInterval = null, betInterval = null;
@@ -2877,13 +2877,13 @@ let debates = [
 // ═══════════════════════════════════════════════════════════
 //  FORMAT UTILS
 // ═══════════════════════════════════════════════════════════
-function fmt(n){if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1000)return'$'+(n/1000).toFixed(1)+'K';return'$'+n.toFixed(0)}
+function fmt(n){const v=Number(n)||0;if(Math.abs(v)>=1e6)return(v/1e6).toFixed(1)+'M pts';if(Math.abs(v)>=1000)return(v/1000).toFixed(1)+'K pts';return v.toFixed(0)+' pts'}
 function fmtV(n){return n>=1000?(n/1000).toFixed(1)+'K':String(n)}
 function calcOdds(pct){if(pct<=0||pct>=100)return'—';return(100/pct).toFixed(2)+'x'}
 function timeStr(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
 function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;if(h>0)return h+'h'+m.toString().padStart(2,'0')+'m';return m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0')}
 function catLabel(c){const m={politics:'Politique',sports:'Sport',crypto:'Crypto',geopolitics:'Géopolitique',economy:'Économie',technology:'Tech',society:'Société'};return m[c]||c}
-function fmtBalance(n){return'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtBalance(n){const v=Number(n)||0;return v.toLocaleString('fr-FR',{minimumFractionDigits:Number.isInteger(v)?0:2,maximumFractionDigits:2})+' pts'}
 function makeId(){return ++nextId}
 function getTimerDuration(pool){if(pool>200000)return 5400000;if(pool>100000)return 3600000;if(pool>50000)return 2700000;return 1800000}
 
@@ -3066,7 +3066,7 @@ function showVerdictOverlay(verdict, debate, payout) {
       if(partPayout>0) rows+=`<div class="ai-payout-row"><span>Mise participant (×${odds.toFixed(2)})</span><span style="color:var(--elec)">+${fmtBalance(partPayout)}</span></div>`;
       else rows+=`<div class="ai-payout-row"><span>Mise participant</span><span style="color:var(--blood)">−${fmtBalance(partBet)}</span></div>`;
     }
-    rows+=`<div class="ai-payout-row"><span>Nouveau solde</span><span>${fmtBalance(balance)}</span></div>`;
+    rows+=`<div class="ai-payout-row"><span>Total de points</span><span>${fmtBalance(balance)}</span></div>`;
     document.getElementById('aiPayoutRows').innerHTML=rows;
   } else { ps.style.display='none'; }
 
@@ -3313,7 +3313,7 @@ function placeBet(side) {
   if(!currentDebate||currentDebate.closed)return;
   const amt=parseFloat(document.getElementById('betAmount').value)||50;
   if(amt<=0)return;
-  if(amt>balance){showToast('err','Fonds insuffisants','Rechargez votre solde');return;}
+  if(amt>balance){showToast('err','Points insuffisants','Achetez un pack de points');return;}
   pendingBetSide=side;
   const sl=side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON');
   document.getElementById('confirmAmt').textContent=fmt(amt);
@@ -3515,19 +3515,19 @@ function savePwd(){
 function toggle2FA(el){document.getElementById('twofaSection').classList.toggle('visible',el.checked);}
 function verifyPhone(){const p=document.getElementById('phoneInput').value;if(!p||p.length<8){showToast('err','Numéro invalide','');return;}document.getElementById('phoneCodeWrap').style.display='block';showToast('📱','Code envoyé','');}
 function confirmPhone(){const c=document.getElementById('phoneCode').value;if(c.length!==6){showToast('err','Code invalide','6 chiffres');return;}showToast('ok','Téléphone vérifié','2FA actif');document.getElementById('twofaSection').classList.remove('visible');}
-let selectedPresetVal2=100;
+let selectedPresetVal2=1200;
 function selectPreset(el){document.querySelectorAll('.funds-preset').forEach(p=>p.classList.remove('selected'));el.classList.add('selected');selectedPresetVal2=el.dataset.val;document.getElementById('customAmountWrap').style.display=selectedPresetVal2==='custom'?'block':'none';}
 function selectPayment(el){document.querySelectorAll('.payment-method').forEach(m=>m.classList.remove('selected'));el.classList.add('selected');const isCard=el.querySelector('.payment-method-icon').textContent==='💳';document.getElementById('cardFields').style.display=isCard?'block':'none';}
 function formatCard(input){let v=input.value.replace(/\D/g,'');if(v.length>16)v=v.slice(0,16);input.value=v.replace(/(.{4})/g,'$1 ').trim();}
 function confirmDeposit(){
   let amount=selectedPresetVal2==='custom'?parseFloat(document.getElementById('customAmount').value):parseFloat(selectedPresetVal2);
-  if(!amount||amount<10){showToast('err','Montant invalide','Minimum $10');return;}
+  if(!amount||amount<100){showToast('err','Pack invalide','Minimum 100 pts');return;}
   balance+=amount;updateBalanceUI();
   document.getElementById('fundsForm').style.display='none';
-  document.getElementById('fundsSuccessMsg').textContent='+'+fmtBalance(amount)+' ajoutés !';
-  document.getElementById('fundsSuccessSub').textContent='Nouveau solde : '+fmtBalance(balance);
+  document.getElementById('fundsSuccessMsg').textContent='+'+fmtBalance(amount)+' crédités !';
+  document.getElementById('fundsSuccessSub').textContent='Nouveau total : '+fmtBalance(balance);
   document.getElementById('fundsSuccess').style.display='block';
-  showToast('coins','Rechargement réussi','+'+fmtBalance(amount));
+  showToast('coins','Points crédités','+'+fmtBalance(amount));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3814,8 +3814,8 @@ function selectJoinMode(mode){joinMode=mode;document.getElementById('joinModeAud
 function submitJoinParticipant(){
   if(!joinedSide){showToast('warn','Choisissez votre camp','');return;}
   const amt=parseFloat(document.getElementById('joinBetAmount').value)||50;
-  if(amt<50){showToast('err','Minimum $50','');return;}
-  if(amt>balance){showToast('err','Fonds insuffisants','');return;}
+  if(amt<50){showToast('err','Minimum 50 pts','');return;}
+  if(amt>balance){showToast('err','Points insuffisants','');return;}
   closeModal('joinParticipantModal');
   myBetAsParticipant=amt; userBetSideInRoom=joinedSide;
   balance-=amt; updateBalanceUI();
@@ -4310,7 +4310,7 @@ function endParticipantRoom(natural){
     const clr = getCat(d);
     const yPct = d.yesPct || 55;
     const nPct = 100 - yPct;
-    const pool = d.pool ? '$'+Math.round(d.pool/1000)+'K' : '$12K';
+    const pool = d.pool ? Math.round(d.pool/1000)+'K pts' : '12K pts';
     const participants = d.participants || Math.floor(Math.random()*800+200);
     const timerSecs = d.timeLeft || (Math.floor(Math.random()*3600)+900);
     const mulY = (100/yPct).toFixed(2);
