@@ -294,7 +294,7 @@ window.currentUser = currentUser;
   init().catch(error => {
     console.error('[sync] init failed', error);
     authInitError = error.message || 'Configuration Supabase manquante';
-    setAuthFormEnabled(false, 'Indisponible');
+    setAuthFormEnabled(false, 'Reessayer');
     setAuthStatus('err', authInitError);
     setAuthInlineHelp('Vérifie Railway puis redéploie le backend avant de reessayer.');
     openAuthModal(getDefaultAuthMode());
@@ -639,8 +639,9 @@ window.currentUser = currentUser;
     const username = document.getElementById('authUsername');
 
     if (submitButton) {
-      submitButton.disabled = !enabled;
+      submitButton.disabled = false;
       submitButton.textContent = label || (authMode === 'signup' ? 'Creer mon compte' : 'Se connecter');
+      submitButton.dataset.ready = enabled ? 'true' : 'false';
     }
     if (username) username.disabled = authMode !== 'signup';
   }
