@@ -3170,6 +3170,7 @@ setTimeout(()=>{if(typeof initDebateIntro==='function') initDebateIntro();},0);
 if(userLangs.length>0) applyUserPrefs();
 else setTimeout(openSetupModal, 1500);
 
+
 // Viewer updates
 setInterval(()=>{
   document.querySelectorAll('.debate-card:not(.closed)').forEach(card=>{
@@ -3540,7 +3541,32 @@ const RTC_CFG = { iceServers: [
   { urls: 'stun:stun1.l.google.com:19302' },
 ] };
 
-let _socket         = null; // Socket.IO instance
+// ── Auto-rejoin after page refresh ────────────────────────────────────────
+// setTimeout(0) ensures all function declarations below are parsed first.
+setTimeout(function checkRejoin(){
+  const raw=sessionStorage.getItem('beeef_rejoin');
+  if(!raw)return;
+  let ctx;
+  try{ctx=JSON.parse(raw);}catch(e){sessionStorage.removeItem('beeef_rejoin');return;}
+  if(!ctx||!ctx.debateId)return;
+  fetch(BACKEND_URL+'/debates/'+ctx.debateId)
+    .then(r=>r.json())
+    .then(state=>{
+      if(state&&state.status==='live'&&(state.participants||[]).length>0){
+        currentDebate      = ctx.debate;
+        joinedSide         = ctx.joinedSide;
+        joinMode           = ctx.joinMode||'audio';
+        myBetAsParticipant = ctx.myBetAsParticipant||0;
+        showToast('🔄','Reconnexion…','Recherche du pair en cours');
+        showWaitingRoom();
+      }else{
+        sessionStorage.removeItem('beeef_rejoin');
+      }
+    })
+    .catch(()=>sessionStorage.removeItem('beeef_rejoin'));
+},0);
+
+let _socket         = null; // Socket.IO instance (single, persistent)
 let _rtcPeerId      = null; // my socket ID
 let _rtcRemoteId    = null; // opponent's socket ID
 let _rtcRoom        = null; // debate ID used as room
@@ -3551,9 +3577,23 @@ let _rtcIgnoreOff   = false;
 let _rtcPending     = [];   // signals queued before pc exists
 let _rtcConnected   = false;// true once P2P link is up
 
+// Server-authoritative timestamps (ms Unix)
+let _serverTurnEndsAt = null;  // absolute end of current turn
+let _serverStartedAt  = null;  // when the debate started
+let _clockOffset      = 0;     // server_ms - client_ms (corrects clock skew)
+
 function _getSocket() {
-  if (!_socket || _socket.disconnected) {
+  if (!_socket) {
     _socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    // Re-register in the debate room on every (re)connect — including auto-reconnects
+    _socket.on('connect', () => {
+      if (_rtcRoom && debateRoomActive) {
+        const username = (typeof currentUser !== 'undefined' && currentUser?.username)
+          ? currentUser.username : 'Anonyme';
+        _socket.emit('join_debate', { debateId: _rtcRoom, username });
+        console.log('[socket] reconnected → re-joined room', _rtcRoom);
+      }
+    });
   }
   return _socket;
 }
@@ -3891,6 +3931,17 @@ async function startParticipantRoom(opp){
 
   startRoomTimers();
 
+  // ── Persist context for refresh/reconnect ───────────────────
+  try {
+    sessionStorage.setItem('beeef_rejoin', JSON.stringify({
+      debateId:           String(currentDebate?.id || 'demo'),
+      debate:             currentDebate,
+      joinedSide,
+      joinMode,
+      myBetAsParticipant,
+    }));
+  } catch(_) {}
+
   // ── Server-authoritative sync ────────────────────────────────
   // Register debate_state listener: every broadcast from server resyncs all
   // timers and currentSpeaker on every connected device simultaneously.
@@ -3918,28 +3969,27 @@ async function requestParticipantMedia(video){
 }
 
 function startRoomTimers(){
-  // Main debate timer — local display only (counts up for smooth UX).
-  // Gets corrected by server debate_state on every turn change.
+  // Single merged interval — all display derived from server timestamps.
+  // _serverTurnEndsAt and _serverStartedAt are set by applyServerState().
+  // _clockOffset corrects any drift between server and client clocks.
+  // Result: both devices show identical countdowns at all times.
   if(mainDebateTimer)clearInterval(mainDebateTimer);
+  if(turnTimer){clearInterval(turnTimer);turnTimer=null;}
   mainDebateTimer=setInterval(()=>{
     if(!debateRoomActive)return;
-    totalDebateDuration++;
+    const clientNow=Date.now()+_clockOffset;
+    // Turn countdown — computed from absolute server timestamp (zero drift)
+    if(_serverTurnEndsAt){
+      turnRemaining=Math.max(0,Math.round((_serverTurnEndsAt-clientNow)/1000));
+    }
+    // Total duration — computed from debate start timestamp
+    if(_serverStartedAt){
+      totalDebateDuration=Math.max(0,Math.round((clientNow-_serverStartedAt)/1000));
+    }
+    updateTurnDisplay();
     updateMainTimerDisplay();
     updateMinWarning();
     simulateAIMod();
-  },1000);
-
-  // Turn countdown — display only.
-  // NEVER triggers speaker switch locally; server handles that via auto-turn timeout.
-  // debate_state resets turnRemaining on each turn change.
-  if(turnTimer)clearInterval(turnTimer);
-  turnTimer=setInterval(()=>{
-    if(!debateRoomActive)return;
-    if(turnRemaining>0){
-      turnRemaining--;
-      updateTurnDisplay();
-    }
-    // No local switchSpeaker() — server is the only authority
   },1000);
 }
 function updateMainTimerDisplay(){
@@ -3965,28 +4015,31 @@ function applyServerState(state) {
   if (!debateRoomActive || !state) return;
   const socket = _getSocket();
 
-  // Derive speaker from server (socket IDs, not 'you'/'opponent' strings)
-  const iAmSpeaker = state.currentSpeaker === socket.id;
+  // ── 1. Clock correction ──────────────────────────────────
+  // Compute the offset between server clock and local clock once per event.
+  // This makes both clients compute identical countdowns from Date.now().
+  if (typeof state.serverNow === 'number') {
+    _clockOffset = state.serverNow - Date.now();
+  }
+
+  // ── 2. Store server timestamps ───────────────────────────
+  if (typeof state.turnEndsAt === 'number') _serverTurnEndsAt = state.turnEndsAt;
+  if (typeof state.startedAt  === 'number') _serverStartedAt  = state.startedAt;
+
+  // ── 3. Compute display values (zero drift) ───────────────
+  const clientNow = Date.now() + _clockOffset;
+  if (_serverTurnEndsAt) turnRemaining     = Math.max(0, Math.round((_serverTurnEndsAt - clientNow) / 1000));
+  if (_serverStartedAt)  totalDebateDuration = Math.max(0, Math.round((clientNow - _serverStartedAt) / 1000));
+
+  // ── 4. Speaker sync ──────────────────────────────────────
+  const iAmSpeaker  = state.currentSpeaker === socket.id;
   const prevSpeaker = currentSpeaker;
-  currentSpeaker = iAmSpeaker ? 'you' : 'opponent';
+  currentSpeaker    = iAmSpeaker ? 'you' : 'opponent';
 
-  // Compute remaining turn time using server timestamps
-  const now = typeof state.serverNow === 'number' ? state.serverNow : Date.now();
-  if (typeof state.turnEndsAt === 'number' && state.turnEndsAt > 0) {
-    turnRemaining = Math.max(0, Math.round((state.turnEndsAt - now) / 1000));
-  }
-
-  // Sync total debate duration
-  if (typeof state.startedAt === 'number' && state.startedAt > 0) {
-    totalDebateDuration = Math.max(0, Math.round((now - state.startedAt) / 1000));
-  }
-
-  // Update displays
   updateTurnDisplay();
   updateMainTimerDisplay();
   updateMinWarning();
 
-  // Only update speaker UI + muting when it actually changes (avoids UI flash)
   if (prevSpeaker !== currentSpeaker) {
     updateSpeakerRoomUI();
     enforceMuting();
@@ -3996,6 +4049,22 @@ function applyServerState(state) {
       currentSpeaker === 'you' ? 'C\'est votre tour !' : 'Adversaire parle…',
       '2 minutes'
     );
+  }
+
+  // ── 5. Detect peer reconnect (different socket ID for same opponent) ─
+  // Happens when the other device refreshes or reconnects.
+  const others = (state.participants || []).filter(p => p.socketId !== socket.id);
+  if (others.length > 0 && _rtcRemoteId && others[0].socketId !== _rtcRemoteId) {
+    const newPeerId = others[0].socketId;
+    console.log(`[rtc] peer reconnected: ${_rtcRemoteId} → ${newPeerId}`);
+    _rtcRemoteId = newPeerId;
+    _rtcPolite   = true; // we're the one staying — let them initiate
+    if (participantStream) {
+      if (_rtcPc) { try { _rtcPc.close(); } catch(_){} _rtcPc = null; }
+      _rtcConnected = false; _rtcPending = [];
+      rtcStart(participantStream).catch(e => console.warn('rtc restart failed', e));
+      addModerationEntry('🔄 Pair reconnecté — relance WebRTC…', 'ok');
+    }
   }
 }
 
@@ -4091,6 +4160,8 @@ function leaveParticipantRoom(){
 }
 function endParticipantRoom(natural){
   debateRoomActive=false;
+  sessionStorage.removeItem('beeef_rejoin'); // clear rejoin context
+  _serverTurnEndsAt=null; _serverStartedAt=null; _clockOffset=0;
   if(mainDebateTimer){clearInterval(mainDebateTimer);mainDebateTimer=null;}
   if(turnTimer){clearInterval(turnTimer);turnTimer=null;}
   if(participantStream){participantStream.getTracks().forEach(t=>t.stop());participantStream=null;}
