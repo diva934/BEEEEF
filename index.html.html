@@ -3815,6 +3815,9 @@ function showWaitingRoom(){
         document.getElementById('waitingSpotOpp').className   = 'waiting-spot filled';
         document.getElementById('waitingSpotOpp').textContent = `✅ Pair réel trouvé · ${oppSide}`;
         ce.textContent = '🔗 Connexion WebRTC en cours…';
+        // Remove peer-detection debate_state listener so startParticipantRoom
+        // can register its own server-sync listener cleanly
+        _getSocket().off('debate_state');
         setTimeout(() => {
           wr.classList.remove('open');
           startParticipantRoom(null); // null = pair réel via WebRTC
@@ -3887,6 +3890,19 @@ async function startParticipantRoom(opp){
   }
 
   startRoomTimers();
+
+  // ── Server-authoritative sync ────────────────────────────────
+  // Register debate_state listener: every broadcast from server resyncs all
+  // timers and currentSpeaker on every connected device simultaneously.
+  const _syncSocket = _getSocket();
+  _syncSocket.off('debate_state'); // remove any leftover peer-detection listener
+  _syncSocket.on('debate_state', (state) => {
+    if (String(state.id) !== String(currentDebate?.id || 'demo')) return;
+    applyServerState(state);
+  });
+  // Tell server to start (idempotent — second call ignored if already live)
+  _syncSocket.emit('start_debate', { debateId: String(currentDebate?.id || 'demo') });
+
   addModerationEntry('🤖 IA Modérateur connecté — analyse en temps réel','ok');
   addModerationEntry('🌐 Serveur: '+(REGIONS.find(r=>r.id===userRegion)?.server||'EU'),'ok');
   const rtcLabel = isReal ? 'Flux P2P réel — en attente de connexion' : 'Adversaire simulé';
@@ -3902,6 +3918,9 @@ async function requestParticipantMedia(video){
 }
 
 function startRoomTimers(){
+  // Main debate timer — local display only (counts up for smooth UX).
+  // Gets corrected by server debate_state on every turn change.
+  if(mainDebateTimer)clearInterval(mainDebateTimer);
   mainDebateTimer=setInterval(()=>{
     if(!debateRoomActive)return;
     totalDebateDuration++;
@@ -3909,7 +3928,19 @@ function startRoomTimers(){
     updateMinWarning();
     simulateAIMod();
   },1000);
-  startTurnTimer();
+
+  // Turn countdown — display only.
+  // NEVER triggers speaker switch locally; server handles that via auto-turn timeout.
+  // debate_state resets turnRemaining on each turn change.
+  if(turnTimer)clearInterval(turnTimer);
+  turnTimer=setInterval(()=>{
+    if(!debateRoomActive)return;
+    if(turnRemaining>0){
+      turnRemaining--;
+      updateTurnDisplay();
+    }
+    // No local switchSpeaker() — server is the only authority
+  },1000);
 }
 function updateMainTimerDisplay(){
   const m=Math.floor(totalDebateDuration/60),s=totalDebateDuration%60;
@@ -3925,27 +3956,55 @@ function updateMinWarning(){
   }else{mw.textContent='✅ Durée minimum atteinte — vous pouvez terminer';mw.style.color='var(--elec)';}
 }
 
-// Turn system — ENFORCED, cannot be overridden by user
-function startTurnTimer(){
-  turnRemaining=turnDuration; updateTurnDisplay(); updateSpeakerRoomUI(); enforceMuting();
-  if(turnTimer)clearInterval(turnTimer);
-  turnTimer=setInterval(()=>{
-    if(!debateRoomActive)return;
-    turnRemaining--;updateTurnDisplay();
-    if(turnRemaining<=0)switchSpeaker();
-  },1000);
+// ─────────────────────────────────────────────────────────────
+//  SERVER-AUTHORITATIVE STATE SYNC
+//  Called every time debate_state arrives from backend.
+//  Resets all timers and speaker to match server truth.
+// ─────────────────────────────────────────────────────────────
+function applyServerState(state) {
+  if (!debateRoomActive || !state) return;
+  const socket = _getSocket();
+
+  // Derive speaker from server (socket IDs, not 'you'/'opponent' strings)
+  const iAmSpeaker = state.currentSpeaker === socket.id;
+  const prevSpeaker = currentSpeaker;
+  currentSpeaker = iAmSpeaker ? 'you' : 'opponent';
+
+  // Compute remaining turn time using server timestamps
+  const now = typeof state.serverNow === 'number' ? state.serverNow : Date.now();
+  if (typeof state.turnEndsAt === 'number' && state.turnEndsAt > 0) {
+    turnRemaining = Math.max(0, Math.round((state.turnEndsAt - now) / 1000));
+  }
+
+  // Sync total debate duration
+  if (typeof state.startedAt === 'number' && state.startedAt > 0) {
+    totalDebateDuration = Math.max(0, Math.round((now - state.startedAt) / 1000));
+  }
+
+  // Update displays
+  updateTurnDisplay();
+  updateMainTimerDisplay();
+  updateMinWarning();
+
+  // Only update speaker UI + muting when it actually changes (avoids UI flash)
+  if (prevSpeaker !== currentSpeaker) {
+    updateSpeakerRoomUI();
+    enforceMuting();
+    addModerationEntry('🔄 Tour → ' + (currentSpeaker === 'you' ? 'VOUS' : 'ADVERSAIRE'), 'ok');
+    showToast(
+      currentSpeaker === 'you' ? '🎙️' : '🔇',
+      currentSpeaker === 'you' ? 'C\'est votre tour !' : 'Adversaire parle…',
+      '2 minutes'
+    );
+  }
 }
+
+// Turn display — display only, corrected on every debate_state
 function updateTurnDisplay(){
   const m=Math.floor(turnRemaining/60),s=turnRemaining%60;
   const el=document.getElementById('proomTurnTimer');if(!el)return;
   el.textContent=m+':'+s.toString().padStart(2,'0');
   el.style.color=turnRemaining<=20?'var(--blood)':turnRemaining<=45?'var(--spark)':'var(--fire)';
-}
-function switchSpeaker(){
-  currentSpeaker=currentSpeaker==='you'?'opponent':'you';
-  addModerationEntry('🔄 Tour → '+(currentSpeaker==='you'?'VOUS':'ADVERSAIRE'),'ok');
-  startTurnTimer();
-  showToast(currentSpeaker==='you'?'🎙️':'🔇',currentSpeaker==='you'?'C\'est votre tour !':'Adversaire parle…','2 minutes');
 }
 function updateSpeakerRoomUI(){
   const isYour=currentSpeaker==='you';
@@ -4035,7 +4094,9 @@ function endParticipantRoom(natural){
   if(mainDebateTimer){clearInterval(mainDebateTimer);mainDebateTimer=null;}
   if(turnTimer){clearInterval(turnTimer);turnTimer=null;}
   if(participantStream){participantStream.getTracks().forEach(t=>t.stop());participantStream=null;}
-  // Ferme la connexion WebRTC et l'EventSource signaling
+  // Remove server-sync listener before closing socket
+  if(_socket)_socket.off('debate_state');
+  // Ferme la connexion WebRTC et le signaling
   rtcClose();
   // Reset video slots
   const v2=document.getElementById('proomVideo2');

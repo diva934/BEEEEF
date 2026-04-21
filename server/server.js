@@ -35,7 +35,6 @@ app.use(express.json());
 // ─────────────────────────────────────────────────────────────
 //  In-memory state
 // ─────────────────────────────────────────────────────────────
-// Rooms créées dynamiquement pour tout debateId envoyé par le frontend
 const debates = {};
 
 function getOrCreateRoom(debateId) {
@@ -47,6 +46,9 @@ function getOrCreateRoom(debateId) {
       participants:   [],
       currentSpeaker: null,
       turnEndsAt:     null,
+      startedAt:      null,
+      turnDurationMs: 120000,   // 2 min per turn — server-authoritative
+      _turnTimeout:   null,     // internal, never serialized to clients
       createdAt:      new Date().toISOString(),
       updatedAt:      new Date().toISOString(),
     };
@@ -63,26 +65,63 @@ function touch(debate) {
   return debate;
 }
 
-function nextTurnEnd(seconds = 30) {
-  return new Date(Date.now() + seconds * 1000).toISOString();
-}
-
+// Broadcast state to all sockets in the room.
+// Strips internal fields and injects serverNow (Unix ms).
 function broadcastDebate(debateId) {
   const debate = debates[debateId];
-  if (debate) io.to(debateId).emit('debate_state', debate);
+  if (!debate) return;
+
+  // Build clean payload — no internal fields
+  const { _turnTimeout, ...state } = debate;
+  io.to(debateId).emit('debate_state', {
+    ...state,
+    serverNow: Date.now(),   // clients use this to compute remaining time
+  });
 }
 
 // ─────────────────────────────────────────────────────────────
-//  REST — GET /debates/:id
+//  Server-authoritative turn advancement
+// ─────────────────────────────────────────────────────────────
+function scheduleNextTurn(debateId) {
+  const debate = debates[debateId];
+  if (!debate) return;
+
+  // Clear any existing timer
+  if (debate._turnTimeout) {
+    clearTimeout(debate._turnTimeout);
+    debate._turnTimeout = null;
+  }
+
+  if (debate.status !== 'live' || debate.participants.length < 2) return;
+
+  const delay = debate.turnDurationMs;
+
+  debate._turnTimeout = setTimeout(() => {
+    const d = debates[debateId];
+    if (!d || d.status !== 'live' || d.participants.length < 2) return;
+
+    const ids     = d.participants.map(p => p.socketId);
+    const current = ids.indexOf(d.currentSpeaker);
+    d.currentSpeaker = ids[(current + 1) % ids.length];
+    d.turnEndsAt     = Date.now() + d.turnDurationMs;
+
+    touch(d);
+    broadcastDebate(debateId);
+    console.log(`[auto-turn] ${debateId} → ${d.currentSpeaker}`);
+
+    // Schedule the following turn
+    scheduleNextTurn(debateId);
+  }, delay);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  REST
 // ─────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
   res.json({
     status: 'ok',
     app: 'BEEEF backend',
-    routes: {
-      debates:    'GET /debates',
-      debate:     'GET /debates/:id',
-    },
+    routes:        { debates: 'GET /debates', debate: 'GET /debates/:id' },
     socket_events: [
       'join_debate', 'start_debate', 'change_turn',
       'webrtc_offer', 'webrtc_answer', 'webrtc_ice_candidate',
@@ -91,13 +130,14 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/debates', (_req, res) => {
-  res.json(Object.values(debates));
+  res.json(Object.values(debates).map(({ _turnTimeout, ...d }) => d));
 });
 
 app.get('/debates/:id', (req, res) => {
   const debate = debates[req.params.id];
   if (!debate) return res.status(404).json({ error: 'Debate not found' });
-  res.json(debate);
+  const { _turnTimeout, ...d } = debate;
+  res.json({ ...d, serverNow: Date.now() });
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -107,15 +147,13 @@ io.on('connection', socket => {
   console.log(`[+] ${socket.id} connected`);
 
   // ── join_debate ────────────────────────────────────────────
-  // payload: { debateId, username }
   socket.on('join_debate', ({ debateId, username }) => {
     const debate = getOrCreateRoom(debateId);
 
     socket.join(debateId);
-    socket.data.debateId  = debateId;
-    socket.data.username  = username;
+    socket.data.debateId = debateId;
+    socket.data.username = username;
 
-    // Add participant if not already present
     const already = debate.participants.find(p => p.socketId === socket.id);
     if (!already) {
       debate.participants.push({ socketId: socket.id, username });
@@ -125,27 +163,30 @@ io.on('connection', socket => {
     touch(debate);
     broadcastDebate(debateId);
 
-    // Send the joining socket the full room member list so it can show others
+    // Send the joining socket the full peer list (for peer detection)
     socket.emit('room_peers', debate.participants.map(p => p.socketId));
   });
 
   // ── start_debate ───────────────────────────────────────────
-  // payload: { debateId }
+  // Idempotent: only starts if status is 'waiting'
   socket.on('start_debate', ({ debateId }) => {
     const debate = debates[String(debateId)];
     if (!debate) return;
+    if (debate.status === 'live') return; // already running — ignore
 
     debate.status         = 'live';
+    debate.startedAt      = Date.now();
     debate.currentSpeaker = debate.participants[0]?.socketId ?? null;
-    debate.turnEndsAt     = nextTurnEnd(30);
+    debate.turnEndsAt     = Date.now() + debate.turnDurationMs;
 
     touch(debate);
     broadcastDebate(debateId);
+    scheduleNextTurn(debateId);
     console.log(`[start] ${debateId} — speaker: ${debate.currentSpeaker}`);
   });
 
   // ── change_turn ────────────────────────────────────────────
-  // payload: { debateId }
+  // Manual request from client (e.g. early handoff)
   socket.on('change_turn', ({ debateId }) => {
     const debate = debates[String(debateId)];
     if (!debate || debate.participants.length < 2) return;
@@ -153,11 +194,12 @@ io.on('connection', socket => {
     const ids     = debate.participants.map(p => p.socketId);
     const current = ids.indexOf(debate.currentSpeaker);
     debate.currentSpeaker = ids[(current + 1) % ids.length];
-    debate.turnEndsAt     = nextTurnEnd(30);
+    debate.turnEndsAt     = Date.now() + debate.turnDurationMs;
 
     touch(debate);
     broadcastDebate(debateId);
-    console.log(`[turn] ${debateId} → ${debate.currentSpeaker}`);
+    scheduleNextTurn(debateId); // reset the auto-advance timer
+    console.log(`[manual-turn] ${debateId} → ${debate.currentSpeaker}`);
   });
 
   // ── disconnect ─────────────────────────────────────────────
@@ -171,14 +213,18 @@ io.on('connection', socket => {
     const wasCurrentSpeaker = debate.currentSpeaker === socket.id;
     debate.participants = debate.participants.filter(p => p.socketId !== socket.id);
 
-    // Re-assign speaker if needed
-    if (wasCurrentSpeaker && debate.participants.length > 0) {
-      debate.currentSpeaker = debate.participants[0].socketId;
-      debate.turnEndsAt     = nextTurnEnd(30);
-    } else if (debate.participants.length === 0) {
+    if (debate.participants.length === 0) {
+      // Room empty — stop everything, reset
+      if (debate._turnTimeout) { clearTimeout(debate._turnTimeout); debate._turnTimeout = null; }
       debate.currentSpeaker = null;
       debate.turnEndsAt     = null;
-      debate.status         = 'waiting'; // reset if empty
+      debate.startedAt      = null;
+      debate.status         = 'waiting';
+    } else if (wasCurrentSpeaker) {
+      // Hand off to next participant, reset turn timer
+      debate.currentSpeaker = debate.participants[0].socketId;
+      debate.turnEndsAt     = Date.now() + debate.turnDurationMs;
+      scheduleNextTurn(debateId);
     }
 
     touch(debate);
@@ -190,31 +236,16 @@ io.on('connection', socket => {
   //  WebRTC signaling — pure relay, no media handling
   // ─────────────────────────────────────────────────────────
 
-  // ── webrtc_offer ──────────────────────────────────────────
-  // payload: { targetSocketId, offer }
   socket.on('webrtc_offer', ({ targetSocketId, offer }) => {
-    io.to(targetSocketId).emit('webrtc_offer', {
-      fromSocketId: socket.id,
-      offer,
-    });
+    io.to(targetSocketId).emit('webrtc_offer', { fromSocketId: socket.id, offer });
   });
 
-  // ── webrtc_answer ─────────────────────────────────────────
-  // payload: { targetSocketId, answer }
   socket.on('webrtc_answer', ({ targetSocketId, answer }) => {
-    io.to(targetSocketId).emit('webrtc_answer', {
-      fromSocketId: socket.id,
-      answer,
-    });
+    io.to(targetSocketId).emit('webrtc_answer', { fromSocketId: socket.id, answer });
   });
 
-  // ── webrtc_ice_candidate ──────────────────────────────────
-  // payload: { targetSocketId, candidate }
   socket.on('webrtc_ice_candidate', ({ targetSocketId, candidate }) => {
-    io.to(targetSocketId).emit('webrtc_ice_candidate', {
-      fromSocketId: socket.id,
-      candidate,
-    });
+    io.to(targetSocketId).emit('webrtc_ice_candidate', { fromSocketId: socket.id, candidate });
   });
 });
 
