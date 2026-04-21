@@ -636,21 +636,13 @@ window.currentUser = currentUser;
 
   function setAuthFormEnabled(enabled, label) {
     const submitButton = document.getElementById('authSubmitBtn');
-    const email = document.getElementById('authEmail');
-    const password = document.getElementById('authPassword');
     const username = document.getElementById('authUsername');
-    const signupTab = document.getElementById('authModeSignup');
-    const loginTab = document.getElementById('authModeLogin');
 
     if (submitButton) {
       submitButton.disabled = !enabled;
       submitButton.textContent = label || (authMode === 'signup' ? 'Creer mon compte' : 'Se connecter');
     }
-    if (email) email.disabled = !enabled;
-    if (password) password.disabled = !enabled;
-    if (username) username.disabled = !enabled || authMode !== 'signup';
-    if (signupTab) signupTab.disabled = !enabled;
-    if (loginTab) loginTab.disabled = !enabled;
+    if (username) username.disabled = authMode !== 'signup';
   }
 
   function requireSupabaseClient() {
