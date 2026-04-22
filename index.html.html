@@ -2812,6 +2812,7 @@ let liveAnimFrame = null, chatInterval = null, betInterval = null;
 let activeFilter = 'all';
 let selectedPresetVal = 100;
 let debateTimers = {};
+const BACKEND_URL = 'https://beeeef-production.up.railway.app';
 
 // ═══════════════════════════════════════════════════════════
 //  LANGUAGE / REGION / SERVER SYSTEM
@@ -3077,7 +3078,7 @@ function getNextTopic(cat) {
   return t;
 }
 
-let debates = [
+const FALLBACK_DEBATES = [
   {id:1,title:"Bitcoin est-il l'avenir de la monnaie ?",category:"crypto",trending:true,ai:false,yesPct:68,pool:142500,viewers:4200,gradColors:["#f7931a","#ff6432","#1a1a2e"],yesLabel:"OUI",noLabel:"NON",lang:'fr',photo:null},
   {id:2,title:"Will AI replace most jobs by 2030?",category:"technology",trending:true,ai:false,yesPct:55,pool:89300,viewers:3100,gradColors:["#3d9eff","#667eea","#0d0d1a"],yesLabel:"YES",noLabel:"NO",lang:'en',photo:null},
   {id:3,title:"Le revenu universel de base devrait-il être mis en place ?",category:"economy",trending:false,ai:false,yesPct:41,pool:56700,viewers:1800,gradColors:["#00d97e","#00b865","#0a1a12"],yesLabel:"OUI",noLabel:"NON",lang:'fr',photo:null},
@@ -3087,6 +3088,35 @@ let debates = [
   {id:7,title:"Le télétravail est-il meilleur que le bureau ?",category:"society",trending:false,ai:false,yesPct:61,pool:44100,viewers:1400,gradColors:["#ffc800","#ff9900","#1a1500"],yesLabel:"TÉLÉTRAVAIL",noLabel:"BUREAU",lang:'fr',photo:null},
   {id:8,title:"Will Trump win again?",category:"politics",trending:true,ai:false,yesPct:44,pool:312000,viewers:9800,gradColors:["#ff6432","#dd3311","#1a0a00"],yesLabel:"YES",noLabel:"NO",lang:'en',photo:"img-politics-trump.jpg"},
 ];
+
+let debates = [];
+let debatesClockOffset = 0;
+let debateUiTimer = null;
+let debateSyncTimer = null;
+
+function seedFallbackDebate(seed, index) {
+  const durationMs = getTimerDuration(seed.pool);
+  const progressRatios = [0.18, 0.42, 0.27, 0.61, 0.34, 0.22, 0.49, 0.13];
+  const openedAt = Date.now() - Math.round(durationMs * progressRatios[index % progressRatios.length]);
+  const endsAt = openedAt + durationMs;
+  return {
+    ...seed,
+    id: String(seed.id),
+    durationMs,
+    openedAt,
+    endsAt,
+    closed: Date.now() >= endsAt,
+    closedAt: Date.now() >= endsAt ? endsAt : null,
+    winnerSide: null,
+    winnerLabel: null,
+    verdictReasoning: '',
+    verdictScores: null,
+  };
+}
+
+function createFallbackDebates() {
+  return FALLBACK_DEBATES.map(seedFallbackDebate);
+}
 
 // ═══════════════════════════════════════════════════════════
 //  FORMAT UTILS
@@ -3104,32 +3134,162 @@ function getTimerDuration(pool){if(pool>200000)return 5400000;if(pool>100000)ret
 // ═══════════════════════════════════════════════════════════
 //  TIMERS
 // ═══════════════════════════════════════════════════════════
-function startTimer(debate) {
-  if(debateTimers[debate.id]) return;
-  if(!debate.timerRemaining) debate.timerRemaining = getTimerDuration(debate.pool)/SPEED;
-  debateTimers[debate.id] = setInterval(()=>tickTimer(debate), 1000);
+function getDebateNowMs() {
+  return Date.now() + debatesClockOffset;
 }
-function tickTimer(debate) {
-  debate.timerRemaining -= 1000;
-  if(debate.timerRemaining <= 0) {
-    debate.timerRemaining = 0; debate.closed = true;
-    clearInterval(debateTimers[debate.id]); delete debateTimers[debate.id];
-    onDebateClosed(debate);
+
+function getDebateRemainingMs(debate, nowMs = getDebateNowMs()) {
+  if (!debate) return 0;
+  if (debate.closed) return 0;
+  if (typeof debate.endsAt === 'number') return Math.max(0, debate.endsAt - nowMs);
+  return Math.max(0, Number(debate.timerRemaining) || 0);
+}
+
+function buildClientVerdictFromDebate(debate) {
+  if (!debate) return null;
+
+  const winnerSide = debate.winnerSide || (Number(debate.yesPct) >= 50 ? 'yes' : 'no');
+  const winner = debate.winnerLabel || (winnerSide === 'yes' ? (debate.yesLabel || 'OUI') : (debate.noLabel || 'NON'));
+  const lead = winnerSide === 'yes' ? Number(debate.yesPct || 50) : 100 - Number(debate.yesPct || 50);
+  const gap = Math.max(6, Math.abs(lead - (100 - lead)));
+  const strong = Math.min(10, Math.max(7, Math.round(7 + gap / 18)));
+  const mid = Math.max(4, strong - 1);
+  const soft = Math.max(4, strong - 2);
+
+  return {
+    winner,
+    winnerSide,
+    conviction: debate.verdictScores?.conviction || (winnerSide === 'yes' ? { yes: strong, no: soft } : { yes: soft, no: strong }),
+    logic: debate.verdictScores?.logic || (winnerSide === 'yes' ? { yes: mid, no: soft } : { yes: soft, no: mid }),
+    originality: debate.verdictScores?.originality || (winnerSide === 'yes' ? { yes: mid, no: soft } : { yes: soft, no: mid }),
+    reasoning: debate.verdictReasoning || `${winner} garde l'avantage a la cloture du debat avec une dynamique plus solide sur la duree.`,
+  };
+}
+
+function applyDebatePayload(payload, { rerender = false } = {}) {
+  if (!payload) return;
+
+  if (typeof payload.serverNow === 'number') {
+    debatesClockOffset = payload.serverNow - Date.now();
   }
-  updateCardTimer(debate);
-  if(currentDebate && currentDebate.id===debate.id) updateLiveTimer(debate);
+
+  const incoming = Array.isArray(payload.debates) ? payload.debates : [];
+  if (!incoming.length) return;
+
+  const previousById = new Map(debates.map(debate => [String(debate.id), debate]));
+  const currentDebateId = currentDebate ? String(currentDebate.id) : '';
+  const nextDebates = incoming.map((debate, index) => {
+    const previous = previousById.get(String(debate.id));
+    return {
+      ...(previous || {}),
+      ...debate,
+      id: String(debate.id),
+      order: index,
+    };
+  });
+
+  const closedTransition = [];
+  nextDebates.forEach(nextDebate => {
+    const previous = previousById.get(String(nextDebate.id));
+    if (previous && !previous.closed && nextDebate.closed) {
+      closedTransition.push(nextDebate);
+    }
+  });
+
+  debates = nextDebates;
+  if (typeof syncDebateBetState === 'function') syncDebateBetState();
+
+  if (currentDebateId) {
+    const freshCurrent = debates.find(debate => String(debate.id) === currentDebateId);
+    if (freshCurrent) currentDebate = freshCurrent;
+  }
+
+  if (currentDebate) {
+    livePool = Number(currentDebate.pool || 0);
+    liveYesPct = Number(currentDebate.yesPct || 50);
+    liveViewers = Number(currentDebate.viewers || 0);
+    updateBettingUI();
+  }
+
+  if (rerender) {
+    renderGrid(activeFilter);
+    if (typeof initDebateIntro === 'function') initDebateIntro();
+  }
+
+  closedTransition.forEach(debate => {
+    if (!currentDebate || String(currentDebate.id) !== String(debate.id)) return;
+    document.getElementById('endedBanner').style.display = 'block';
+    document.getElementById('betYesBtn').disabled = true;
+    document.getElementById('betNoBtn').disabled = true;
+    document.getElementById('joinAsParticipantBtn').disabled = true;
+    document.getElementById('aiThinkingIndicator').style.display = 'none';
+    const verdict = buildClientVerdictFromDebate(debate);
+    if (verdict && !debate._verdictApplied) {
+      debate._verdictApplied = true;
+      applyVerdict(verdict, debate);
+    }
+  });
+
+  refreshDebateCountdowns();
 }
-function updateCardTimer(debate) {
+
+async function refreshDebatesFromServer() {
+  try {
+    const response = await fetch(BACKEND_URL + '/debates');
+    if (!response.ok) throw new Error('Impossible de charger les debats');
+    const payload = await response.json();
+    applyDebatePayload(payload, { rerender: true });
+  } catch (_) {
+    if (!debates.length) {
+      debates = createFallbackDebates();
+      refreshDebateCountdowns();
+    }
+  }
+}
+
+window.refreshDebatesFromServer = refreshDebatesFromServer;
+
+function updateCardTimer(debate, nowMs = getDebateNowMs()) {
+  const remainingMs = getDebateRemainingMs(debate, nowMs);
   const el = document.querySelector(`.debate-card[data-id="${debate.id}"] .card-timer`);
-  if(el) el.textContent = fmtTime(debate.timerRemaining);
+  if (el) el.textContent = '⏱ ' + fmtTime(remainingMs);
   const card = document.querySelector(`.debate-card[data-id="${debate.id}"]`);
-  if(card){debate.timerRemaining<60000?card.classList.add('ending'):card.classList.remove('ending');}
+  if (card) {
+    remainingMs < 60000 && !debate.closed ? card.classList.add('ending') : card.classList.remove('ending');
+  }
 }
-function updateLiveTimer(debate) {
-  const cd=document.getElementById('liveCountdown'),vt=document.getElementById('videoTimerOverlay');
-  const t=fmtTime(debate.timerRemaining);
-  if(cd){cd.textContent=t;cd.className='live-countdown'+(debate.timerRemaining<60000?' ending':'');}
-  if(vt)vt.textContent=t;
+
+function updateLiveTimer(debate, nowMs = getDebateNowMs()) {
+  const cd = document.getElementById('liveCountdown'), vt = document.getElementById('videoTimerOverlay');
+  const remainingMs = getDebateRemainingMs(debate, nowMs);
+  const t = fmtTime(remainingMs);
+  if (cd) {
+    cd.textContent = t;
+    cd.className = 'live-countdown' + (remainingMs < 60000 && !debate.closed ? ' ending' : '');
+  }
+  if (vt) vt.textContent = t;
+}
+
+function refreshDebateCountdowns() {
+  const nowMs = getDebateNowMs();
+  debates.forEach(debate => updateCardTimer(debate, nowMs));
+  if (currentDebate) {
+    const freshCurrent = debates.find(debate => String(debate.id) === String(currentDebate.id)) || currentDebate;
+    currentDebate = freshCurrent;
+    updateLiveTimer(freshCurrent, nowMs);
+  }
+}
+
+function startDebateSync() {
+  if (debateUiTimer) clearInterval(debateUiTimer);
+  debateUiTimer = setInterval(refreshDebateCountdowns, 1000);
+
+  if (debateSyncTimer) clearInterval(debateSyncTimer);
+  debateSyncTimer = setInterval(() => {
+    refreshDebatesFromServer();
+  }, 10000);
+
+  refreshDebateCountdowns();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3229,13 +3389,11 @@ function applyVerdict(verdict, debate) {
   const totalGain = betPayout + partPayout;
   const totalLoss = lostBet + (partBet>0 && partPayout===0 ? partBet : 0);
 
-  if(totalGain > 0) { balance += totalGain; updateBalanceUI(); }
-
   // Update payout info in banner
   const epi = document.getElementById('endedPayoutInfo');
   if(epi) {
-    if(totalGain > 0) { epi.textContent='Gains crédités : +'+fmtBalance(totalGain); epi.style.color='var(--elec)'; }
-    else if(totalLoss > 0) { epi.textContent='📉 Mise perdue : -'+fmtBalance(totalLoss); epi.style.color='var(--blood)'; }
+    if(totalGain > 0) { epi.textContent='Règlement serveur en cours : +'+fmtBalance(totalGain); epi.style.color='var(--elec)'; }
+    else if(totalLoss > 0) { epi.textContent='Résultat enregistré : -'+fmtBalance(totalLoss); epi.style.color='var(--blood)'; }
     else { epi.textContent=''; }
   }
 
@@ -3280,7 +3438,7 @@ function showVerdictOverlay(verdict, debate, payout) {
       if(partPayout>0) rows+=`<div class="ai-payout-row"><span>Mise participant (×${odds.toFixed(2)})</span><span style="color:var(--elec)">+${fmtBalance(partPayout)}</span></div>`;
       else rows+=`<div class="ai-payout-row"><span>Mise participant</span><span style="color:var(--blood)">−${fmtBalance(partBet)}</span></div>`;
     }
-    rows+=`<div class="ai-payout-row"><span>Total de points</span><span>${fmtBalance(balance)}</span></div>`;
+    rows+=`<div class="ai-payout-row"><span>Total actuel</span><span>${fmtBalance(balance)}</span></div>`;
     document.getElementById('aiPayoutRows').innerHTML=rows;
   } else { ps.style.display='none'; }
 
@@ -3316,8 +3474,9 @@ function buildCard(d) {
   const card=document.createElement('div');
   card.className='debate-card'+(d.closed?' closed':'');
   card.setAttribute('data-id',d.id); card.setAttribute('data-cat',d.category);
-  const timerStr=d.timerRemaining>0?fmtTime(d.timerRemaining):'00:00';
+  const timerStr=fmtTime(getDebateRemainingMs(d));
   const langTag=d.lang?LANG_LABELS[d.lang]||'':'';
+  const closedLabel=d.winnerLabel?`${d.winnerLabel} gagne`:'Cloturee';
   card.innerHTML=`
     <div class="card-thumb">
       ${d.photo?`<img class="thumb-img" src="${d.photo}" alt="" loading="lazy">`
@@ -3350,6 +3509,10 @@ function buildCard(d) {
     ${!d.closed?`<div class="join-cta"><button class="join-btn">REJOINDRE →</button></div>`:''}
     ${d.closed?`<div class="closed-overlay"><div class="closed-label">TERMINÉ</div><div class="closed-winner" id="cw${d.id}">🤖 Analyse…</div></div>`:''}
   `;
+  if(d.closed){
+    const winnerEl=card.querySelector('.closed-winner');
+    if(winnerEl) winnerEl.textContent=closedLabel;
+  }
   if(!d.closed) card.addEventListener('click',()=>openLive(d));
   return card;
 }
@@ -3378,21 +3541,14 @@ document.getElementById('catBar').addEventListener('click',e=>{
 });
 
 // Init
+debates = createFallbackDebates();
 renderGrid();
-debates.forEach(d=>{d.timerRemaining=getTimerDuration(d.pool)/SPEED; startTimer(d);});
+startDebateSync();
+refreshDebatesFromServer();
 setTimeout(()=>{if(typeof initDebateIntro==='function') initDebateIntro();},0);
 if(userLangs.length>0) applyUserPrefs();
 else setTimeout(openSetupModal, 1500);
 
-
-// Viewer updates
-setInterval(()=>{
-  document.querySelectorAll('.debate-card:not(.closed)').forEach(card=>{
-    const id=parseInt(card.dataset.id);
-    const d=debates.find(x=>x.id===id); if(!d||d.closed) return;
-    d.viewers+=Math.floor((Math.random()-0.3)*40); d.viewers=Math.max(200,d.viewers);
-  });
-},4000);
 
 // ═══════════════════════════════════════════════════════════
 //  SPEAKER ANIMATION (live view strip)
@@ -3600,16 +3756,7 @@ function startSimulation(){
     const u=chatUsers[Math.floor(Math.random()*chatUsers.length)];
     addChatMsg(u,getChatMsgs()[Math.floor(Math.random()*getChatMsgs().length)]);
   },1800+Math.random()*2200);
-  betInterval=setInterval(()=>{
-    if(!currentDebate||currentDebate.closed)return;
-    const side=Math.random()>0.47?'yes':'no', amt=Math.round((10+Math.random()*600)*10)/10;
-    const user=chatUsers[Math.floor(Math.random()*chatUsers.length)];
-    if(side==='yes'){const nt=livePool+amt;liveYesPct=Math.min(95,Math.max(5,Math.round(((livePool*(liveYesPct/100)+amt)/nt)*100)));}
-    else{const nt=livePool+amt;liveYesPct=Math.min(95,Math.max(5,Math.round(((livePool*(liveYesPct/100))/nt)*100)));}
-    livePool+=amt; liveViewers+=Math.floor((Math.random()-0.3)*35); liveViewers=Math.max(500,liveViewers);
-    updateBettingUI();
-    addBetEntry(user,amt,side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON'),side);
-  },2500+Math.random()*2500);
+  if(betInterval){clearInterval(betInterval);betInterval=null;}
 }
 function stopSimulation(){
   if(chatInterval){clearInterval(chatInterval);chatInterval=null;}
@@ -3761,7 +3908,6 @@ function confirmDeposit(){
 //  Signaling : SSE GET /signal?room=X&peer=Y  (push)
 //  WebRTC signaling via Socket.IO (Railway backend)
 // ═══════════════════════════════════════════════════════════
-const BACKEND_URL = 'https://beeeef-production.up.railway.app';
 const RTC_CFG = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },

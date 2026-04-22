@@ -21,6 +21,29 @@ window.currentUser = currentUser;
   let currentSession = null;
   let lastBootstrappedToken = '';
 
+  function applyReturnedDebate(payload, { rerender = false } = {}) {
+    if (!payload?.debate || typeof applyDebatePayload !== 'function') return;
+
+    const debateId = String(payload.debate.id);
+    let found = false;
+    const mergedDebates = Array.isArray(debates)
+      ? debates.map(item => {
+        if (String(item.id) !== debateId) return item;
+        found = true;
+        return { ...item, ...payload.debate };
+      })
+      : [];
+
+    if (!found) {
+      mergedDebates.push({ ...payload.debate });
+    }
+
+    applyDebatePayload({
+      serverNow: typeof payload.serverNow === 'number' ? payload.serverNow : Date.now(),
+      debates: mergedDebates,
+    }, { rerender });
+  }
+
   injectStyles();
   injectAuthModal();
   wireButtons();
@@ -63,6 +86,7 @@ window.currentUser = currentUser;
         },
       });
       hydrateSessionState(payload);
+      applyReturnedDebate(payload);
     } catch (error) {
       showToast('warn', 'Prefs locales uniquement', error.message);
     }
@@ -197,6 +221,7 @@ window.currentUser = currentUser;
         },
       });
       hydrateSessionState(payload);
+      applyReturnedDebate(payload);
     } catch (error) {
       showToast('err', 'Participation impossible', error.message);
       return;
@@ -205,10 +230,6 @@ window.currentUser = currentUser;
     closeModal('joinParticipantModal');
     myBetAsParticipant = amount;
     userBetSideInRoom = joinedSide;
-    if (currentDebate) {
-      currentDebate._participantBet = amount;
-      currentDebate._participantSide = joinedSide;
-    }
     showWaitingRoom();
   };
 
@@ -220,6 +241,7 @@ window.currentUser = currentUser;
           body: { debateId: String(currentDebate.id) },
         });
         hydrateSessionState(payload);
+        applyReturnedDebate(payload);
       } catch (error) {
         showToast('err', 'Remboursement impossible', error.message);
         return;
@@ -254,6 +276,7 @@ window.currentUser = currentUser;
             body: { debateId: String(currentDebate.id) },
           });
           hydrateSessionState(payload);
+          applyReturnedDebate(payload);
         } catch (error) {
           showToast('err', 'Abandon impossible', error.message);
           return;
@@ -286,6 +309,7 @@ window.currentUser = currentUser;
         },
       });
       hydrateSessionState(payload);
+      applyReturnedDebate(payload, { rerender: true });
     } catch (error) {
       showToast('warn', 'Synchro differee', error.message);
     }
@@ -629,15 +653,29 @@ window.currentUser = currentUser;
     applyUserPrefs();
     updateSettingsPanel();
     syncProfileDom();
+    if (typeof window.refreshDebatesFromServer === 'function') {
+      window.refreshDebatesFromServer();
+    }
 
     const parisView = document.getElementById('mes-paris-view');
     const classementView = document.getElementById('classement-view');
     if (parisView && parisView.style.display !== 'none') renderMyBets();
     if (classementView && classementView.style.display !== 'none') renderClassement();
+
+    if (Array.isArray(payload.autoSettlements) && payload.autoSettlements.length) {
+      showToast(
+        'ok',
+        'Paris resynchronises',
+        payload.autoSettlements.length + ' debat(s) soldes pendant votre absence'
+      );
+    }
   }
 
   function syncDebateBetState() {
     if (!Array.isArray(debates)) return;
+
+    myBetAsParticipant = 0;
+    userBetSideInRoom = null;
 
     debates.forEach(debate => {
       debate._userBetYes = 0;
@@ -895,6 +933,10 @@ window.currentUser = currentUser;
     currentUser = null;
     window.currentUser = null;
     balance = 0;
+    myBetAsParticipant = 0;
+    userBetSideInRoom = null;
+    joinedSide = null;
+    pendingBetSide = null;
     myBets.splice(0, myBets.length);
     syncDebateBetState();
     updateBalanceUI();
@@ -1103,22 +1145,11 @@ window.currentUser = currentUser;
         },
       });
       hydrateSessionState(payload);
+      applyReturnedDebate(payload);
     } catch (error) {
       showToast('err', 'Pari refuse', error.message);
       return;
     }
-
-    if (side === 'yes') {
-      const nextTotal = livePool + amount;
-      const nextYes = livePool * (liveYesPct / 100) + amount;
-      liveYesPct = Math.min(95, Math.max(5, Math.round((nextYes / nextTotal) * 100)));
-    } else {
-      const nextTotal = livePool + amount;
-      liveYesPct = Math.min(95, Math.max(5, Math.round(((livePool * (liveYesPct / 100)) / nextTotal) * 100)));
-    }
-
-    livePool += amount;
-    updateBettingUI();
     flashScreen(side);
     addBetEntry(
       currentUser.username || 'Vous',
