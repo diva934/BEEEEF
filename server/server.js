@@ -2,8 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const supabaseApi = require('./supabase');
 const {
-  autoSettleDebates,
   bootstrapState,
   cancelParticipantBet,
   createError,
@@ -14,7 +14,10 @@ const {
   settleDebateBets,
   updateProfile,
   verifyAccessToken,
-} = require('./supabase');
+} = supabaseApi;
+const autoSettleDebates = typeof supabaseApi.autoSettleDebates === 'function'
+  ? supabaseApi.autoSettleDebates
+  : async () => [];
 const {
   applyBetToDebate,
   buildClientVerdict,
