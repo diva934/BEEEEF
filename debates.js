@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -145,6 +146,11 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function normalizeText(value, fallback = '') {
+  if (value === null || value === undefined) return fallback;
+  return String(value).replace(/\s+/g, ' ').trim();
+}
+
 function getDebateDurationMs(pool) {
   const amount = Number(pool) || 0;
   if (amount > 200000) return 5_400_000;
@@ -205,6 +211,13 @@ function sanitizeDebate(raw, index = 0) {
     noLabel: String(raw.noLabel || 'NON'),
     lang: raw.lang ? String(raw.lang) : null,
     photo: raw.photo ? String(raw.photo) : null,
+    description: normalizeText(raw.description),
+    sourceUrl: normalizeText(raw.sourceUrl),
+    sourceTitle: normalizeText(raw.sourceTitle),
+    sourceKey: normalizeText(raw.sourceKey).toLowerCase(),
+    newsPublishedAt: raw.newsPublishedAt ? String(raw.newsPublishedAt) : null,
+    createdFromNews: Boolean(raw.createdFromNews),
+    listed: raw.listed !== false,
     durationMs,
     openedAt,
     endsAt,
@@ -307,12 +320,14 @@ let debates = loadDebates();
 function reconcileDebates() {
   const currentNow = nowMs();
   let changed = false;
+  const closedIds = [];
 
   debates = debates.map((debate, index) => {
     const safeDebate = sanitizeDebate(debate, index);
     if (!safeDebate.closed && currentNow >= safeDebate.endsAt) {
       const verdict = createVerdict(safeDebate);
       changed = true;
+      closedIds.push(safeDebate.id);
       return {
         ...safeDebate,
         closed: true,
@@ -334,6 +349,11 @@ function reconcileDebates() {
   if (changed) {
     persistDebates(debates);
   }
+
+  return {
+    changed,
+    closedIds,
+  };
 }
 
 function toPublicDebate(debate) {
@@ -351,6 +371,13 @@ function toPublicDebate(debate) {
     noLabel: debate.noLabel,
     lang: debate.lang,
     photo: debate.photo,
+    description: debate.description,
+    sourceUrl: debate.sourceUrl,
+    sourceTitle: debate.sourceTitle,
+    sourceKey: debate.sourceKey,
+    newsPublishedAt: debate.newsPublishedAt,
+    createdFromNews: debate.createdFromNews,
+    listed: debate.listed,
     durationMs: debate.durationMs,
     openedAt: debate.openedAt,
     endsAt: debate.endsAt,
@@ -365,10 +392,12 @@ function toPublicDebate(debate) {
   };
 }
 
-function listDebates() {
+function listDebates(options = {}) {
+  const { includeUnlisted = false } = options;
   reconcileDebates();
   return debates
     .slice()
+    .filter(debate => includeUnlisted || debate.listed !== false)
     .sort((left, right) => left.order - right.order)
     .map(toPublicDebate);
 }
@@ -377,6 +406,84 @@ function getDebateById(debateId) {
   reconcileDebates();
   const match = debates.find(debate => String(debate.id) === String(debateId));
   return match ? toPublicDebate(match) : null;
+}
+
+function countActiveDebates(options = {}) {
+  const { includeUnlisted = false } = options;
+  reconcileDebates();
+  return debates.filter(debate => !debate.closed && (includeUnlisted || debate.listed !== false)).length;
+}
+
+function findDebateConflict(rawDebate) {
+  const sourceKey = normalizeText(rawDebate.sourceKey).toLowerCase();
+  const title = normalizeText(rawDebate.title).toLowerCase();
+
+  return debates.find(debate => {
+    if (sourceKey && debate.sourceKey === sourceKey) {
+      return true;
+    }
+    if (title && String(debate.title || '').trim().toLowerCase() === title) {
+      return true;
+    }
+    return false;
+  }) || null;
+}
+
+function createDebate(rawDebate) {
+  reconcileDebates();
+  const duplicate = findDebateConflict(rawDebate);
+  if (duplicate) {
+    return null;
+  }
+
+  const order = debates.reduce((maxOrder, debate) => Math.max(maxOrder, Number(debate.order) || 0), -1) + 1;
+  const createdAt = nowIso();
+  const nextDebate = sanitizeDebate({
+    ...rawDebate,
+    id: rawDebate.id || crypto.randomUUID(),
+    openedAt: Number(rawDebate.openedAt) > 0 ? Number(rawDebate.openedAt) : nowMs(),
+    endsAt: Number(rawDebate.endsAt) > 0 ? Number(rawDebate.endsAt) : null,
+    createdAt,
+    updatedAt: createdAt,
+    listed: rawDebate.listed !== false,
+    order,
+  }, order);
+
+  debates.push(nextDebate);
+  persistDebates(debates);
+  return toPublicDebate(nextDebate);
+}
+
+function hideSurplusActiveDebates(maxVisibleActive) {
+  const limit = Math.max(0, Math.floor(Number(maxVisibleActive) || 0));
+  if (!limit) return [];
+
+  reconcileDebates();
+
+  const activeListedDebates = debates
+    .filter(debate => !debate.closed && debate.listed !== false)
+    .sort((left, right) => left.order - right.order);
+
+  if (activeListedDebates.length <= limit) {
+    return [];
+  }
+
+  const hiddenIds = new Set(activeListedDebates.slice(limit).map(debate => String(debate.id)));
+  const updatedAt = nowIso();
+
+  debates = debates.map(debate => {
+    if (!hiddenIds.has(String(debate.id))) {
+      return debate;
+    }
+    return {
+      ...debate,
+      listed: false,
+      updatedAt,
+    };
+  });
+
+  persistDebates(debates);
+  return [...hiddenIds];
 }
 
 function updateDebatePool(debateId, side, amountDelta, { viewerDelta = 0 } = {}) {
@@ -437,7 +544,10 @@ function buildClientVerdict(debateId) {
 module.exports = {
   applyBetToDebate,
   buildClientVerdict,
+  countActiveDebates,
+  createDebate,
   getDebateById,
+  hideSurplusActiveDebates,
   listDebates,
   removeBetFromDebate,
   reconcileDebates,
