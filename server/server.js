@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const {
+  autoSettleDebates,
   bootstrapState,
   cancelParticipantBet,
   createError,
@@ -14,6 +15,14 @@ const {
   updateProfile,
   verifyAccessToken,
 } = require('./supabase');
+const {
+  applyBetToDebate,
+  buildClientVerdict,
+  getDebateById,
+  listDebates,
+  removeBetFromDebate,
+  reconcileDebates,
+} = require('./debates');
 
 const PORT = process.env.PORT || 3001;
 
@@ -75,15 +84,43 @@ app.use(cors({
 }));
 app.use(express.json());
 
+function setNoStoreHeaders(res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+}
+
+app.use((req, res, next) => {
+  if (
+    req.path === '/public/config' ||
+    req.path.startsWith('/debates') ||
+    req.path.startsWith('/auth') ||
+    req.path.startsWith('/me/')
+  ) {
+    setNoStoreHeaders(res);
+  }
+  next();
+});
+
 // ─────────────────────────────────────────────────────────────
 //  In-memory state (live debate rooms)
 // ─────────────────────────────────────────────────────────────
-const debates = {};
+const debateRooms = {};
+
+function getRoomState(debateId) {
+  return debateRooms[String(debateId)] || null;
+}
 
 function getOrCreateRoom(debateId) {
   const id = String(debateId);
-  if (!debates[id]) {
-    debates[id] = {
+  const debateMeta = getDebateById(id);
+  if (!debateMeta || debateMeta.closed) {
+    return null;
+  }
+
+  if (!debateRooms[id]) {
+    debateRooms[id] = {
       id,
       status: 'waiting',
       participants: [],
@@ -97,26 +134,57 @@ function getOrCreateRoom(debateId) {
     };
     console.log(`[room] created: ${id}`);
   }
-  return debates[id];
+  return debateRooms[id];
 }
 
-function serializeDebate(debate) {
-  if (!debate) return null;
-  const { _turnTimeout, ...state } = debate;
+function serializeDebateRoom(room) {
+  if (!room) return null;
+  const { _turnTimeout, ...state } = room;
   return state;
 }
 
-function touch(debate) {
-  debate.updatedAt = new Date().toISOString();
-  return debate;
+function buildDebatePayload(debateId) {
+  reconcileDebates();
+  const debate = getDebateById(debateId);
+  if (!debate) return null;
+
+  const room = getRoomState(debateId);
+  const roomPayload = room
+    ? serializeDebateRoom(room)
+    : {
+        id: String(debate.id),
+        status: 'waiting',
+        participants: [],
+        currentSpeaker: null,
+        turnEndsAt: null,
+        startedAt: null,
+        turnDurationMs: 120000,
+        createdAt: debate.createdAt,
+        updatedAt: debate.updatedAt,
+      };
+
+  return {
+    ...debate,
+    ...roomPayload,
+    verdict: debate.closed ? buildClientVerdict(debate.id) : null,
+  };
+}
+
+function listDebatePayloads() {
+  return listDebates().map(debate => buildDebatePayload(debate.id));
+}
+
+function touch(room) {
+  room.updatedAt = new Date().toISOString();
+  return room;
 }
 
 function broadcastDebate(debateId) {
-  const debate = debates[debateId];
-  if (!debate) return;
+  const payload = buildDebatePayload(debateId);
+  if (!payload) return;
 
-  io.to(debateId).emit('debate_state', {
-    ...serializeDebate(debate),
+  io.to(String(debateId)).emit('debate_state', {
+    ...payload,
     serverNow: Date.now(),
   });
 }
@@ -125,7 +193,7 @@ function broadcastDebate(debateId) {
 //  Server-authoritative turn advancement
 // ─────────────────────────────────────────────────────────────
 function scheduleNextTurn(debateId) {
-  const debate = debates[debateId];
+  const debate = debateRooms[String(debateId)];
   if (!debate) return;
 
   if (debate._turnTimeout) {
@@ -136,7 +204,7 @@ function scheduleNextTurn(debateId) {
   if (debate.status !== 'live' || debate.participants.length < 2) return;
 
   debate._turnTimeout = setTimeout(() => {
-    const activeDebate = debates[debateId];
+    const activeDebate = debateRooms[String(debateId)];
     if (!activeDebate || activeDebate.status !== 'live' || activeDebate.participants.length < 2) return;
 
     const ids = activeDebate.participants.map(participant => participant.socketId);
@@ -196,6 +264,47 @@ async function requireAuth(req, res, next) {
   }
 }
 
+function calcDebateOdds(yesPct, winnerSide) {
+  const pct = winnerSide === 'no' ? 100 - Number(yesPct || 0) : Number(yesPct || 0);
+  if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return 2;
+  return Math.round((100 / pct) * 100) / 100;
+}
+
+async function buildBootstrapPayload(accessToken, authUser) {
+  let payload = await bootstrapState(accessToken, authUser);
+  const closedPendingDebates = payload.bets
+    .filter(bet => bet.status === 'pending')
+    .map(bet => {
+      const debate = getDebateById(bet.debateId);
+      if (!debate || !debate.closed || !debate.winnerSide) return null;
+      return {
+        debateId: debate.id,
+        winnerSide: debate.winnerSide,
+        odds: calcDebateOdds(debate.yesPct, debate.winnerSide),
+      };
+    })
+    .filter(Boolean);
+
+  if (closedPendingDebates.length > 0) {
+    const uniqueDebates = [];
+    const seen = new Set();
+    closedPendingDebates.forEach(debate => {
+      const key = `${debate.debateId}:${debate.winnerSide}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      uniqueDebates.push(debate);
+    });
+
+    const autoSettlements = await autoSettleDebates(accessToken, authUser, uniqueDebates);
+    payload = await bootstrapState(accessToken, authUser);
+    if (autoSettlements.length) {
+      payload.autoSettlements = autoSettlements;
+    }
+  }
+
+  return payload;
+}
+
 // ─────────────────────────────────────────────────────────────
 //  REST
 // ─────────────────────────────────────────────────────────────
@@ -232,18 +341,21 @@ app.get('/public/config', withApi(async () => {
 }));
 
 app.get('/debates', (_req, res) => {
-  res.json(Object.values(debates).map(serializeDebate));
+  res.json({
+    serverNow: Date.now(),
+    debates: listDebatePayloads(),
+  });
 });
 
 app.get('/debates/:id', (req, res) => {
-  const debate = debates[req.params.id];
+  const debate = buildDebatePayload(req.params.id);
   if (!debate) {
     res.status(404).json({ error: 'Debate not found' });
     return;
   }
 
   res.json({
-    ...serializeDebate(debate),
+    ...debate,
     serverNow: Date.now(),
   });
 });
@@ -254,7 +366,7 @@ app.post('/auth/session', withApi(async () => {
 }));
 
 app.get('/auth/session', requireAuth, withApi(async req => {
-  return bootstrapState(req.accessToken, req.authUser);
+  return buildBootstrapPayload(req.accessToken, req.authUser);
 }));
 
 app.delete('/auth/session', requireAuth, withApi(async () => {
@@ -262,7 +374,7 @@ app.delete('/auth/session', requireAuth, withApi(async () => {
 }));
 
 app.get('/me/bootstrap', requireAuth, withApi(async req => {
-  return bootstrapState(req.accessToken, req.authUser);
+  return buildBootstrapPayload(req.accessToken, req.authUser);
 }));
 
 app.put('/me/profile', requireAuth, withApi(async req => {
@@ -278,7 +390,21 @@ app.post('/me/deposit', requireAuth, withApi(async req => {
 }));
 
 app.post('/me/bets', requireAuth, withApi(async req => {
-  return placeBet(req.accessToken, req.authUser, req.body || {});
+  const debate = getDebateById(req.body?.debateId);
+  if (!debate) {
+    throw createError('Debat introuvable', 404);
+  }
+  if (debate.closed) {
+    throw createError('Ce debat est deja termine', 409);
+  }
+
+  const payload = await placeBet(req.accessToken, req.authUser, req.body || {});
+  applyBetToDebate(req.body?.debateId, req.body?.side, req.body?.amount);
+  return {
+    ...payload,
+    debate: buildDebatePayload(req.body?.debateId),
+    serverNow: Date.now(),
+  };
 }));
 
 app.post('/me/bets/settle', requireAuth, withApi(async req => {
@@ -286,11 +412,34 @@ app.post('/me/bets/settle', requireAuth, withApi(async req => {
 }));
 
 app.post('/me/bets/participant/cancel', requireAuth, withApi(async req => {
-  return cancelParticipantBet(req.accessToken, req.authUser, req.body?.debateId);
+  const debateId = String(req.body?.debateId || '');
+  const before = await bootstrapState(req.accessToken, req.authUser);
+  const participantBet = before.bets.find(bet =>
+    String(bet.debateId) === debateId &&
+    bet.kind === 'participant' &&
+    bet.status === 'pending'
+  );
+
+  const payload = await cancelParticipantBet(req.accessToken, req.authUser, debateId);
+  if (participantBet) {
+    removeBetFromDebate(participantBet.debateId, participantBet.side, participantBet.amt);
+  }
+
+  return {
+    ...payload,
+    debate: buildDebatePayload(debateId),
+    serverNow: Date.now(),
+  };
 }));
 
 app.post('/me/bets/participant/forfeit', requireAuth, withApi(async req => {
-  return forfeitParticipantBet(req.accessToken, req.authUser, req.body?.debateId);
+  const debateId = String(req.body?.debateId || '');
+  const payload = await forfeitParticipantBet(req.accessToken, req.authUser, debateId);
+  return {
+    ...payload,
+    debate: buildDebatePayload(debateId),
+    serverNow: Date.now(),
+  };
 }));
 
 // ─────────────────────────────────────────────────────────────
@@ -301,6 +450,10 @@ io.on('connection', socket => {
 
   socket.on('join_debate', ({ debateId, username }) => {
     const debate = getOrCreateRoom(debateId);
+    if (!debate) {
+      socket.emit('debate_error', { debateId: String(debateId), error: 'Debate unavailable' });
+      return;
+    }
 
     socket.join(debateId);
     socket.data.debateId = debateId;
@@ -318,12 +471,13 @@ io.on('connection', socket => {
   });
 
   socket.on('start_debate', ({ debateId }) => {
-    const debate = debates[String(debateId)];
-    if (!debate) return;
+    const debateMeta = getDebateById(debateId);
+    const debate = debateRooms[String(debateId)];
+    if (!debateMeta || debateMeta.closed || !debate) return;
 
     if (debate.status === 'live') {
       socket.emit('debate_state', {
-        ...serializeDebate(debate),
+        ...buildDebatePayload(debateId),
         serverNow: Date.now(),
       });
       console.log(`[resync] ${debateId} -> ${socket.id}`);
@@ -342,7 +496,7 @@ io.on('connection', socket => {
   });
 
   socket.on('change_turn', ({ debateId }) => {
-    const debate = debates[String(debateId)];
+    const debate = debateRooms[String(debateId)];
     if (!debate || debate.participants.length < 2) return;
 
     const ids = debate.participants.map(participant => participant.socketId);
@@ -360,7 +514,7 @@ io.on('connection', socket => {
     const { debateId, username } = socket.data;
     if (!debateId) return;
 
-    const debate = debates[String(debateId)];
+    const debate = debateRooms[String(debateId)];
     if (!debate) return;
 
     const wasCurrentSpeaker = debate.currentSpeaker === socket.id;
@@ -375,6 +529,7 @@ io.on('connection', socket => {
       debate.turnEndsAt = null;
       debate.startedAt = null;
       debate.status = 'waiting';
+      debate.participants = [];
     } else if (wasCurrentSpeaker) {
       debate.currentSpeaker = debate.participants[0].socketId;
       debate.turnEndsAt = Date.now() + debate.turnDurationMs;
@@ -403,6 +558,11 @@ io.on('connection', socket => {
 // ─────────────────────────────────────────────────────────────
 //  Start
 // ─────────────────────────────────────────────────────────────
+reconcileDebates();
+setInterval(() => {
+  reconcileDebates();
+}, 5000);
+
 server.listen(PORT, () => {
   console.log(`\nBEEEF backend running on http://localhost:${PORT}`);
   console.log('REST : GET /public/config | GET /debates | GET /debates/:id');
