@@ -3095,22 +3095,19 @@ let debateUiTimer = null;
 let debateSyncTimer = null;
 
 function seedFallbackDebate(seed, index) {
-  const durationMs = getTimerDuration(seed.pool);
-  const progressRatios = [0.18, 0.42, 0.27, 0.61, 0.34, 0.22, 0.49, 0.13];
-  const openedAt = Date.now() - Math.round(durationMs * progressRatios[index % progressRatios.length]);
-  const endsAt = openedAt + durationMs;
   return {
     ...seed,
     id: String(seed.id),
-    durationMs,
-    openedAt,
-    endsAt,
-    closed: Date.now() >= endsAt,
-    closedAt: Date.now() >= endsAt ? endsAt : null,
+    durationMs: getTimerDuration(seed.pool),
+    openedAt: null,
+    endsAt: null,
+    closed: false,
+    closedAt: null,
     winnerSide: null,
     winnerLabel: null,
     verdictReasoning: '',
     verdictScores: null,
+    _syncPending: true,
   };
 }
 
@@ -3143,6 +3140,14 @@ function getDebateRemainingMs(debate, nowMs = getDebateNowMs()) {
   if (debate.closed) return 0;
   if (typeof debate.endsAt === 'number') return Math.max(0, debate.endsAt - nowMs);
   return Math.max(0, Number(debate.timerRemaining) || 0);
+}
+
+function getDebateTimerLabel(debate, nowMs = getDebateNowMs()) {
+  if (!debate) return '--:--';
+  if (!debate.closed && typeof debate.endsAt !== 'number' && !Number.isFinite(Number(debate.timerRemaining))) {
+    return 'SYNC...';
+  }
+  return fmtTime(getDebateRemainingMs(debate, nowMs));
 }
 
 function buildClientVerdictFromDebate(debate) {
@@ -3185,6 +3190,7 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
       ...debate,
       id: String(debate.id),
       order: index,
+      _syncPending: false,
     };
   });
 
@@ -3235,7 +3241,13 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
 
 async function refreshDebatesFromServer() {
   try {
-    const response = await fetch(BACKEND_URL + '/debates');
+    const response = await fetch(BACKEND_URL + '/debates', {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    });
     if (!response.ok) throw new Error('Impossible de charger les debats');
     const payload = await response.json();
     applyDebatePayload(payload, { rerender: true });
@@ -3252,7 +3264,7 @@ window.refreshDebatesFromServer = refreshDebatesFromServer;
 function updateCardTimer(debate, nowMs = getDebateNowMs()) {
   const remainingMs = getDebateRemainingMs(debate, nowMs);
   const el = document.querySelector(`.debate-card[data-id="${debate.id}"] .card-timer`);
-  if (el) el.textContent = '⏱ ' + fmtTime(remainingMs);
+  if (el) el.textContent = '⏱ ' + getDebateTimerLabel(debate, nowMs);
   const card = document.querySelector(`.debate-card[data-id="${debate.id}"]`);
   if (card) {
     remainingMs < 60000 && !debate.closed ? card.classList.add('ending') : card.classList.remove('ending');
@@ -3262,7 +3274,7 @@ function updateCardTimer(debate, nowMs = getDebateNowMs()) {
 function updateLiveTimer(debate, nowMs = getDebateNowMs()) {
   const cd = document.getElementById('liveCountdown'), vt = document.getElementById('videoTimerOverlay');
   const remainingMs = getDebateRemainingMs(debate, nowMs);
-  const t = fmtTime(remainingMs);
+  const t = getDebateTimerLabel(debate, nowMs);
   if (cd) {
     cd.textContent = t;
     cd.className = 'live-countdown' + (remainingMs < 60000 && !debate.closed ? ' ending' : '');
@@ -3474,7 +3486,7 @@ function buildCard(d) {
   const card=document.createElement('div');
   card.className='debate-card'+(d.closed?' closed':'');
   card.setAttribute('data-id',d.id); card.setAttribute('data-cat',d.category);
-  const timerStr=fmtTime(getDebateRemainingMs(d));
+  const timerStr=getDebateTimerLabel(d);
   const langTag=d.lang?LANG_LABELS[d.lang]||'':'';
   const closedLabel=d.winnerLabel?`${d.winnerLabel} gagne`:'Cloturee';
   card.innerHTML=`
@@ -3921,7 +3933,13 @@ setTimeout(function checkRejoin(){
   let ctx;
   try{ctx=JSON.parse(raw);}catch(e){sessionStorage.removeItem('beeef_rejoin');return;}
   if(!ctx||!ctx.debateId)return;
-  fetch(BACKEND_URL+'/debates/'+ctx.debateId)
+  fetch(BACKEND_URL+'/debates/'+ctx.debateId, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
+  })
     .then(r=>r.json())
     .then(state=>{
       if(state&&state.status==='live'&&(state.participants||[]).length>0){

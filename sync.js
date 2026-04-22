@@ -1165,7 +1165,13 @@ window.currentUser = currentUser;
   }
 
   async function fetchPublicConfig() {
-    const response = await fetch(BACKEND_URL + '/public/config');
+    const response = await fetch(BACKEND_URL + '/public/config', {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    });
     const raw = await response.text();
     let payload = {};
     try {
@@ -1188,6 +1194,7 @@ window.currentUser = currentUser;
   async function api(path, options, overrideToken) {
     const headers = { ...(options?.headers || {}) };
     let body = options?.body;
+    const method = options?.method || 'GET';
     const token = overrideToken || currentSession?.access_token || '';
 
     if (token) {
@@ -1200,9 +1207,10 @@ window.currentUser = currentUser;
     }
 
     const response = await fetch(BACKEND_URL + path, {
-      method: options?.method || 'GET',
+      method,
       headers,
       body,
+      cache: method === 'GET' ? 'no-store' : 'default',
     });
 
     const raw = await response.text();
