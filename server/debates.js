@@ -191,6 +191,7 @@ function sanitizeDebate(raw, index = 0) {
   const base = {
     id: String(raw.id),
     title: String(raw.title || 'Debat'),
+    description: raw.description ? String(raw.description) : '',
     category: String(raw.category || 'general'),
     trending: Boolean(raw.trending),
     ai: Boolean(raw.ai),
@@ -216,6 +217,13 @@ function sanitizeDebate(raw, index = 0) {
     createdAt: raw.createdAt || nowIso(),
     updatedAt: raw.updatedAt || nowIso(),
     order: Number.isFinite(Number(raw.order)) ? Number(raw.order) : index,
+    // News metadata fields (optional — only present on news-generated debates)
+    sourceUrl: raw.sourceUrl ? String(raw.sourceUrl) : null,
+    sourceTitle: raw.sourceTitle ? String(raw.sourceTitle) : null,
+    sourceKey: raw.sourceKey ? String(raw.sourceKey) : null,
+    newsPublishedAt: raw.newsPublishedAt ? Number(raw.newsPublishedAt) : null,
+    createdFromNews: Boolean(raw.createdFromNews),
+    listed: raw.listed !== undefined ? Boolean(raw.listed) : true,
   };
 
   if (base.closed && !base.winnerSide) {
@@ -322,6 +330,7 @@ function toPublicDebate(debate) {
   return {
     id: debate.id,
     title: debate.title,
+    description: debate.description || '',
     category: debate.category,
     trending: debate.trending,
     ai: debate.ai,
@@ -344,6 +353,13 @@ function toPublicDebate(debate) {
     verdictScores: debate.verdictScores,
     createdAt: debate.createdAt,
     updatedAt: debate.updatedAt,
+    // News metadata
+    sourceUrl: debate.sourceUrl || null,
+    sourceTitle: debate.sourceTitle || null,
+    sourceKey: debate.sourceKey || null,
+    newsPublishedAt: debate.newsPublishedAt || null,
+    createdFromNews: debate.createdFromNews || false,
+    listed: debate.listed !== undefined ? debate.listed : true,
   };
 }
 
@@ -416,10 +432,85 @@ function buildClientVerdict(debateId) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+//  News pipeline helpers
+// ─────────────────────────────────────────────────────────────
+
+const MAX_ACTIVE_DEBATES = 5;
+
+/**
+ * Count debates that are currently open (not closed).
+ */
+function countActiveDebates() {
+  reconcileDebates();
+  return debates.filter(d => !d.closed).length;
+}
+
+/**
+ * Create and persist a new debate from a plain object.
+ * Assigns a stable numeric-style order so it sorts after existing debates.
+ * @param {object} debateObj - raw debate data (from news-debate-generator)
+ * @returns {object} the sanitized public debate
+ */
+function createDebate(debateObj) {
+  reconcileDebates();
+  const maxOrder = debates.reduce((max, d) => Math.max(max, d.order || 0), 0);
+  const withOrder = { ...debateObj, order: maxOrder + 1 };
+  const sanitized = sanitizeDebate(withOrder, debates.length);
+  debates.push(sanitized);
+  persistDebates(debates);
+  console.log(`[debates] created debate id=${sanitized.id} title="${sanitized.title}"`);
+  return toPublicDebate(sanitized);
+}
+
+/**
+ * If there are more than MAX_ACTIVE_DEBATES open debates, hide the oldest
+ * (by openedAt) by setting listed=false on the surplus ones.
+ */
+function hideSurplusActiveDebates() {
+  reconcileDebates();
+  const active = debates
+    .filter(d => !d.closed && d.listed !== false)
+    .sort((a, b) => a.openedAt - b.openedAt);
+
+  if (active.length <= MAX_ACTIVE_DEBATES) return;
+
+  const surplus = active.slice(0, active.length - MAX_ACTIVE_DEBATES);
+  let changed = false;
+  surplus.forEach(d => {
+    const idx = debates.findIndex(x => x.id === d.id);
+    if (idx !== -1) {
+      debates[idx] = { ...debates[idx], listed: false, updatedAt: nowIso() };
+      changed = true;
+      console.log(`[debates] hid surplus debate id=${d.id} title="${d.title}"`);
+    }
+  });
+
+  if (changed) persistDebates(debates);
+}
+
+/**
+ * Return a Set of "sourceKey:url" strings for all debates that were
+ * created from news, so the pipeline can avoid duplicates.
+ */
+function getUsedSourceKeys() {
+  const keys = new Set();
+  debates.forEach(d => {
+    if (d.sourceKey && d.sourceUrl) {
+      keys.add(`${d.sourceKey}:${d.sourceUrl}`);
+    }
+  });
+  return keys;
+}
+
 module.exports = {
   applyBetToDebate,
   buildClientVerdict,
+  countActiveDebates,
+  createDebate,
   getDebateById,
+  getUsedSourceKeys,
+  hideSurplusActiveDebates,
   listDebates,
   removeBetFromDebate,
   reconcileDebates,

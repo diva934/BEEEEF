@@ -21,13 +21,46 @@ const autoSettleDebates = typeof supabaseApi.autoSettleDebates === 'function'
 const {
   applyBetToDebate,
   buildClientVerdict,
+  countActiveDebates,
   getDebateById,
+  hideSurplusActiveDebates,
   listDebates,
   removeBetFromDebate,
   reconcileDebates,
 } = require('./debates');
+const { runPipeline, getStatus: getPipelineStatus } = require('./news-pipeline');
 
 const PORT = process.env.PORT || 3001;
+
+// ─────────────────────────────────────────────────────────────
+//  News pipeline config
+// ─────────────────────────────────────────────────────────────
+const DEBATE_TARGET_ACTIVE = Number(process.env.DEBATE_TARGET_ACTIVE) || 4;
+const NEWS_POLL_INTERVAL_MS = Number(process.env.NEWS_POLL_INTERVAL_MS) || 300_000; // 5 min
+
+/**
+ * Refill debates from news if we are below the target active count.
+ * Runs the pipeline once per missing slot (up to 2 at a time to avoid hammering feeds).
+ */
+async function refillDebatesIfNeeded() {
+  reconcileDebates();
+  hideSurplusActiveDebates();
+  const active = countActiveDebates();
+  const needed = DEBATE_TARGET_ACTIVE - active;
+  if (needed <= 0) {
+    console.log(`[news-pipeline] refill check: ${active} active debates, no refill needed`);
+    return;
+  }
+  console.log(`[news-pipeline] refill check: ${active} active, need ${needed} more`);
+  const slots = Math.min(needed, 2);
+  for (let i = 0; i < slots; i++) {
+    const created = await runPipeline();
+    if (!created) {
+      console.log('[news-pipeline] pipeline returned no debate, stopping refill');
+      break;
+    }
+  }
+}
 
 // Allowed origins: local dev + Vercel frontend + optional custom domains.
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -320,6 +353,7 @@ app.get('/', (_req, res) => {
       publicConfig: 'GET /public/config',
       debates: 'GET /debates',
       debate: 'GET /debates/:id',
+      newsStatus: 'GET /news/status',
       bootstrap: 'GET /me/bootstrap',
       profile: 'PUT /me/profile',
       deposit: 'POST /me/deposit',
@@ -360,6 +394,19 @@ app.get('/debates/:id', (req, res) => {
   res.json({
     ...debate,
     serverNow: Date.now(),
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+//  News pipeline status
+// ─────────────────────────────────────────────────────────────
+app.get('/news/status', (_req, res) => {
+  res.json({
+    serverNow: Date.now(),
+    targetActive: DEBATE_TARGET_ACTIVE,
+    currentActive: countActiveDebates(),
+    pollIntervalMs: NEWS_POLL_INTERVAL_MS,
+    pipeline: getPipelineStatus(),
   });
 });
 
@@ -562,14 +609,38 @@ io.on('connection', socket => {
 //  Start
 // ─────────────────────────────────────────────────────────────
 reconcileDebates();
+
+// Reconcile debate state every 5 seconds; trigger a refill check when
+// any debate transitions to closed so new news debates fill the gap.
+let _lastClosedCount = 0;
 setInterval(() => {
   reconcileDebates();
+  const closedNow = listDebates().filter(d => d.closed).length;
+  if (closedNow > _lastClosedCount) {
+    _lastClosedCount = closedNow;
+    console.log('[news-pipeline] debate closed, triggering refill check');
+    refillDebatesIfNeeded().catch(err =>
+      console.error('[news-pipeline] refill error (on close):', err.message || err)
+    );
+  }
 }, 5000);
+
+// Poll news every NEWS_POLL_INTERVAL_MS (default 5 min)
+setInterval(() => {
+  refillDebatesIfNeeded().catch(err =>
+    console.error('[news-pipeline] refill error (poll):', err.message || err)
+  );
+}, NEWS_POLL_INTERVAL_MS);
 
 server.listen(PORT, () => {
   console.log(`\nBEEEF backend running on http://localhost:${PORT}`);
-  console.log('REST : GET /public/config | GET /debates | GET /debates/:id');
+  console.log('REST : GET /public/config | GET /debates | GET /debates/:id | GET /news/status');
   console.log('SYNC : GET /me/bootstrap | PUT /me/profile | POST /me/bets');
   console.log('AUTH : Bearer token Supabase requis sur les routes /me/*');
   console.log('WS   : join_debate | start_debate | change_turn | webrtc_*\n');
+
+  // Initial refill on startup
+  refillDebatesIfNeeded().catch(err =>
+    console.error('[news-pipeline] startup refill error:', err.message || err)
+  );
 });
