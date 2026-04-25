@@ -907,6 +907,50 @@ body::before{
 .live-bet-kpi-value.yes{color:var(--elec)}
 .live-bet-kpi-value.no{color:var(--blood)}
 
+/* Rebuilt debate live page (clean light layout) */
+#live-view{background:#f5f5f7;color:#111827;min-height:100vh}
+.live-page-header{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;
+  border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:30
+}
+.live-page-title{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-page-meta{display:flex;align-items:center;gap:8px}
+.live-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;padding:16px;max-width:1440px;margin:0 auto;height:auto;overflow:visible}
+.live-main-column{display:flex;flex-direction:column;gap:14px;min-width:0}
+.live-video-card,.live-info-card,.betting-panel,.live-right{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:none}
+.live-video-card{overflow:hidden}
+.video-container{background:#0f1115}
+#liveCanvas{display:none}
+.context-video-shell{inset:0;position:absolute}
+.context-video-label{background:rgba(0,0,0,.6);color:#fff}
+.video-fallback-card{
+  position:absolute;left:16px;right:16px;bottom:16px;z-index:6;background:rgba(255,255,255,.95);
+  border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:none
+}
+.video-fallback-card.show{display:block}
+.video-fallback-label{font-size:11px;font-weight:700;letter-spacing:.08em;color:#6b7280;text-transform:uppercase}
+.video-fallback-title{font-size:15px;font-weight:700;color:#111827;margin-top:4px}
+.video-fallback-link{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:#f97316;text-decoration:none}
+.video-fallback-link:hover{text-decoration:underline}
+.live-info-card{padding:14px}
+.live-info-title{font-size:20px;font-weight:800;line-height:1.25}
+.live-info-description{margin-top:8px;color:#4b5563;font-size:14px;line-height:1.5}
+.live-info-link{display:inline-block;margin-top:10px;font-weight:700;font-size:13px;color:#f97316;text-decoration:none}
+.live-info-link:hover{text-decoration:underline}
+.live-source-card{margin-top:12px}
+.betting-panel{padding:16px}
+.live-right{display:flex;flex-direction:column;position:sticky;top:74px;height:calc(100vh - 90px);overflow:hidden}
+.chat-messages{background:#fff}
+.chat-input-wrap{margin-top:auto;background:#fff;position:sticky;bottom:0}
+
+@media(max-width:980px){
+  .live-layout{grid-template-columns:1fr;padding:10px;gap:10px}
+  .live-right{position:static;height:420px;width:100%}
+  .live-page-header{padding:10px}
+  #live-view.show-chat .live-left{display:block}
+  #live-view:not(.show-chat) .live-right{display:flex}
+}
+
 /* ══════════════════════════════════════════════════
    MODALS
 ══════════════════════════════════════════════════ */
@@ -3269,219 +3313,107 @@ body{
 
   <!-- LIVE VIEW -->
   <div id="live-view">
-    <div class="live-topbar">
-      <div class="back-btn" id="backBtn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-back"/></svg> RETOUR</div>
-      <div class="live-topbar-title" id="liveTopTitle"></div>
-      <div class="live-topbar-meta">
-        <div class="live-badge-big"><div class="live-dot"></div>LIVE</div>
-        <div class="live-countdown" id="liveCountdown">--:--</div>
-        <div class="viewers-count"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></div>
-      </div>
-    </div>
-
-    <div class="mobile-live-split" id="mobileLiveSplit" aria-label="Live debat mobile split screen">
-      <div class="mlive-split-stage" aria-hidden="true">
-        <div class="mlive-video-pane is-speaking" id="mlivePane1" data-speaker="1">
-          <video class="mlive-video" id="mliveVideo1" muted loop playsinline preload="metadata"></video>
-          <div class="mlive-bg" id="mliveBg1"></div>
-          <div class="mlive-person-badge yes">
-            <span id="mliveName1">Alex_D</span>
-            <strong id="mliveSide1">YES</strong>
-          </div>
-        </div>
-        <div class="mlive-video-pane" id="mlivePane2" data-speaker="2">
-          <video class="mlive-video" id="mliveVideo2" muted loop playsinline preload="metadata"></video>
-          <div class="mlive-bg" id="mliveBg2"></div>
-          <div class="mlive-person-badge no">
-            <span id="mliveName2">Maya_T</span>
-            <strong id="mliveSide2">NO</strong>
-          </div>
-        </div>
-        <div class="mlive-split-divider"></div>
-      </div>
-
-      <div class="mlive-top-overlay">
-        <div class="mlive-host">
-          <div class="mlive-host-avatar" id="mliveHostAvatar">B</div>
-          <div class="mlive-host-copy">
-            <div class="mlive-host-name" id="mliveHostName">BEEEF Live</div>
-            <div class="mlive-host-room" id="mliveTitle"></div>
-          </div>
-          <button class="mlive-follow" type="button">Follow</button>
-        </div>
-        <div class="viewers-count"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="mliveViewers">0</span></div>
-        <button class="mlive-back" type="button" onclick="goHome()" aria-label="Quitter le live">X</button>
-      </div>
-
-      <div class="mlive-center-status">
-        <span class="mlive-live-dot"></span>
-        <span>LIVE</span>
-        <span id="mliveTimer">--:--</span>
-      </div>
-
-      <div class="mlive-score-card" aria-label="Score du débat">
-        <div class="mlive-score-row">
-          <div class="mlive-score-side yes"><span id="mliveYesLabel">YES</span><strong id="mliveYesScore">0</strong></div>
-          <div class="mlive-score-vs">VS</div>
-          <div class="mlive-score-side no"><strong id="mliveNoScore">0</strong><span id="mliveNoLabel">NO</span></div>
-        </div>
-        <div class="mlive-score-track"><div class="mlive-score-fill" id="mliveScoreFill" style="width:50%"></div></div>
-      </div>
-
-      <div class="mlive-chat-overlay">
-        <div class="mlive-chat-messages" id="mliveChatMessages"></div>
-      </div>
-
-      <div class="mlive-side-actions">
-        <button class="mlive-icon-btn" id="mliveMuteBtn" type="button" aria-label="Mute"><svg class="ic" width="20" height="20" viewBox="0 0 24 24"><use href="#ic-vol"/></svg></button>
-        <button class="mlive-icon-btn" id="mliveCamBtn" type="button" aria-label="Camera"><svg class="ic" width="20" height="20" viewBox="0 0 24 24"><use href="#ic-cam"/></svg></button>
-        <button class="mlive-icon-btn" id="mliveShareBtn" type="button" aria-label="Partager"><svg class="ic" width="20" height="20" viewBox="0 0 24 24"><use href="#ic-speech"/></svg></button>
-      </div>
-
-      <div class="mlive-bet-actions">
-        <button class="mlive-bet yes" id="mliveBetYesBtn" type="button">Parier YES</button>
-        <button class="mlive-bet no" id="mliveBetNoBtn" type="button">Parier NO</button>
-      </div>
-
-      <div class="mlive-chat-input">
-        <button class="mlive-emoji" type="button" aria-label="Emoji">+</button>
-        <input id="mliveChatInput" type="text" placeholder="Type..." maxlength="120">
-        <button class="mlive-send" id="mliveChatSendBtn" type="button" aria-label="Envoyer">&gt;</button>
+    <div class="live-page-header">
+      <button class="back-btn" id="backBtn" type="button"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-back"/></svg> BACK</button>
+      <div class="live-page-title" id="liveTopTitle"></div>
+      <div class="live-page-meta">
+        <span class="live-badge-big"><div class="live-dot"></div>LIVE</span>
+        <span class="live-countdown" id="liveCountdown">--:--</span>
+        <span class="viewers-count"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></span>
       </div>
     </div>
 
     <div class="live-layout">
-      <div class="live-left">
-        <!-- VIDEO -->
-        <div class="video-container">
-          <div class="context-video-shell no-video" id="contextVideoShell">
-            <video id="contextVideo" class="context-video" muted loop playsinline preload="metadata"></video>
-            <iframe id="contextVideoFrame" class="context-video-frame" title="Live debate stream" allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-            <div class="context-video-fallback" id="contextVideoFallback"></div>
-            <div class="context-video-label">Contexte</div>
-          </div>
-          <canvas id="liveCanvas"></canvas>
-          <div class="video-live-badge"><div class="live-dot"></div>LIVE</div>
-          <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
-          <div class="video-timer-overlay" id="videoTimerOverlay"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-clock"/></svg> --:--</div>
-          <div class="live-progress-wrap" id="liveProgressWrap">
-            <span class="live-progress-time" id="liveProgressCurrent">00:00</span>
-            <input type="range" id="liveProgressSlider" class="live-progress-slider" min="0" max="100" value="0" step="0.1" aria-label="Progression du direct">
-            <span class="live-progress-time" id="liveProgressTotal">00:00</span>
-          </div>
-          <div class="video-mute" id="muteBtn"><svg class="ic" width="16" height="16" viewBox="0 0 24 24"><use href="#ic-vol"/></svg></div>
-        </div>
-
-        <!-- PARTICIPANTS STRIP -->
-        <div class="participants-strip">
-          <div class="pstrip-side ps-yes" id="pstripSide1">
-            <div class="pstrip-av" id="ps1Av" style="background:linear-gradient(135deg,#f7931a,#ff6432)">A</div>
-            <div class="pstrip-info">
-              <div class="pstrip-name" id="ps1Name">Alex_D</div>
-              <div class="pstrip-pos yes" id="ps1Pos">OUI</div>
+      <section class="live-main-column">
+        <div class="live-video-card">
+          <div class="video-container">
+            <div class="context-video-shell no-video" id="contextVideoShell">
+              <video id="contextVideo" class="context-video" muted playsinline preload="metadata"></video>
+              <iframe id="contextVideoFrame" class="context-video-frame" title="Live debate stream" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+              <div class="context-video-fallback" id="contextVideoFallback"></div>
+              <div class="video-fallback-card" id="videoFallbackCard">
+                <div class="video-fallback-label" id="videoFallbackSource">LIVE SOURCE</div>
+                <div class="video-fallback-title">Video unavailable</div>
+                <a id="videoFallbackLink" class="video-fallback-link" href="#" target="_blank" rel="noopener noreferrer">Open source</a>
+              </div>
             </div>
-            <div class="pstrip-wave"><span></span><span></span><span></span><span></span><span></span></div>
-            <div class="pstrip-badge-on" id="ps1BadgeOn" style="display:none">PARLE</div>
-            <div class="pstrip-badge-off" id="ps1BadgeOff">MUET</div>
-          </div>
-          <div class="pstrip-vs">
-            <div class="pstrip-vs-lbl">VS</div>
-          </div>
-          <div class="pstrip-side ps-no" id="pstripSide2">
-            <div class="pstrip-av" id="ps2Av" style="background:linear-gradient(135deg,#3d9eff,#667eea)">M</div>
-            <div class="pstrip-info" style="text-align:right">
-              <div class="pstrip-name" id="ps2Name">Maya_T</div>
-              <div class="pstrip-pos no" id="ps2Pos">NON</div>
+            <canvas id="liveCanvas"></canvas>
+            <div class="video-live-badge"><div class="live-dot"></div>LIVE</div>
+            <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
+            <div class="video-timer-overlay" id="videoTimerOverlay"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-clock"/></svg> --:--</div>
+            <div class="live-progress-wrap" id="liveProgressWrap">
+              <span class="live-progress-time" id="liveProgressCurrent">00:00</span>
+              <input type="range" id="liveProgressSlider" class="live-progress-slider" min="0" max="100" value="0" step="0.1" aria-label="Live progress">
+              <span class="live-progress-time" id="liveProgressTotal">00:00</span>
             </div>
-            <div class="pstrip-wave"><span></span><span></span><span></span><span></span><span></span></div>
-            <div class="pstrip-badge-on" id="ps2BadgeOn" style="display:none">PARLE</div>
-            <div class="pstrip-badge-off" id="ps2BadgeOff" style="display:none">MUET</div>
+            <button class="video-mute" id="muteBtn" type="button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24"><use href="#ic-vol"/></svg></button>
           </div>
         </div>
 
-        <!-- MOBILE TABS -->
-        <div class="mobile-tabs-bar" id="mobileTabs">
-          <button class="mobile-tab active" id="tabBet" onclick="setMobileTab('bet')"> PARIER</button>
-          <button class="mobile-tab" id="tabChat" onclick="setMobileTab('chat')"> CHAT</button>
-        </div>
+        <article class="live-info-card">
+          <div class="live-info-title" id="liveTitle"></div>
+          <div class="live-info-description" id="liveInfoDescription">Live debate analysis and source context update in real time.</div>
+          <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Open source</a>
+          <div class="live-source-card" id="liveSourceCard"></div>
+          <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()" style="display:none">PARTICIPATE</button>
+        </article>
 
-        <!-- ENDED BANNER -->
         <div class="ended-banner" id="endedBanner">
-          <h3>DÉBAT TERMINÉ</h3>
+          <h3>DEBATE ENDED</h3>
           <div class="winner-side" id="endedWinner"></div>
           <div id="endedPayoutInfo" style="font-size:13px;color:var(--elec);margin:6px 0;font-weight:700;font-family:var(--fn-disp);letter-spacing:0.5px"></div>
-          <p>L'IA analyse les arguments et détermine le vainqueur…</p>
+          <p>AI moderation is finalizing the result.</p>
           <div class="ai-thinking" id="aiThinkingIndicator">
-            <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-ai"/></svg>&nbsp;MODÉRATION IA EN COURS
+            <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-ai"/></svg>&nbsp;AI MODERATION RUNNING
             <div class="ai-thinking-dots"><span></span><span></span><span></span></div>
           </div>
         </div>
 
-        <!-- DEBATE INFO -->
-        <div class="debate-info-row">
-          <div class="debate-info-title" id="liveTitle"></div>
-          <div class="live-source-card" id="liveSourceCard"></div>
-          <div class="debate-participants">
-            <div class="participant-chip">
-              <div class="participant-avatar" id="p1Avatar" style="background:linear-gradient(135deg,#f7931a,#ff6432)">A</div>
-              <span id="p1Name">Alex_D</span>
-            </div>
-            <div class="dp-vs">vs</div>
-            <div class="participant-chip">
-              <div class="participant-avatar" id="p2Avatar" style="background:linear-gradient(135deg,#3d9eff,#667eea)">M</div>
-              <span id="p2Name">Maya_T</span>
-            </div>
-            <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-mic"/></svg>&nbsp;PARTICIPER</button>
-          </div>
-        </div>
-
-        <!-- BETTING PANEL -->
-        <div class="betting-panel">
-          <div class="panel-title">Paris en direct</div>
+        <section class="betting-panel">
+          <div class="panel-title">Live betting</div>
           <div class="big-bet-labels">
             <div class="big-label label-yes">
-              <div class="big-label-name" id="sideLabelYes">OUI</div>
+              <div class="big-label-name" id="sideLabelYes">YES</div>
               <div class="big-label-pct" id="pctYes">0%</div>
               <div class="big-label-odd" id="oddYes">—</div>
             </div>
             <div class="big-label label-no">
-              <div class="big-label-name" id="sideLabelNo">NON</div>
+              <div class="big-label-name" id="sideLabelNo">NO</div>
               <div class="big-label-pct" id="pctNo">0%</div>
               <div class="big-label-odd" id="oddNo">—</div>
             </div>
           </div>
           <div class="big-bet-bar"><div class="big-bet-fill" id="bigBarFill" style="width:50%"></div></div>
-          <div class="pool-total">Points en jeu : <span id="poolTotal">0 pts</span></div>
+          <div class="pool-total">Total pool: <span id="poolTotal">0 pts</span></div>
           <div class="bet-input-row">
             <div class="bet-input-wrap">
               <input class="bet-input" id="betAmount" type="number" value="50" min="1">
             </div>
           </div>
           <div class="bet-btns">
-            <button class="bet-btn bet-btn-yes" id="betYesBtn">MISER OUI</button>
-            <button class="bet-btn bet-btn-no" id="betNoBtn">MISER NON</button>
+            <button class="bet-btn bet-btn-yes" id="betYesBtn">Bet YES</button>
+            <button class="bet-btn bet-btn-no" id="betNoBtn">Bet NO</button>
           </div>
           <div class="bets-feed">
-            <div class="bets-feed-title">Paris récents</div>
+            <div class="bets-feed-title">Recent bets</div>
             <div id="betsFeed"></div>
           </div>
-        </div>
-      </div>
+        </section>
+      </section>
 
-      <!-- CHAT -->
-      <div class="live-right">
+      <aside class="live-chat-column live-right">
         <div class="chat-header">
-          CHAT LIVE
+          LIVE CHAT
           <div class="chat-live-indicator">LIVE</div>
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-wrap">
-          <input class="chat-input" id="chatInput" placeholder="Réagis…" maxlength="120">
-          <button class="chat-send-btn" id="chatSendBtn">→</button>
+          <input class="chat-input" id="chatInput" placeholder="Write a message..." maxlength="120">
+          <button class="chat-send-btn" id="chatSendBtn" type="button">Send</button>
         </div>
         <div class="live-bet-strip" id="liveBetStrip">
           <div class="live-bet-kpi">
-            <div class="live-bet-kpi-label">Pool live</div>
+            <div class="live-bet-kpi-label">Pool</div>
             <div class="live-bet-kpi-value" id="livePoolKpi">0 pts</div>
           </div>
           <div class="live-bet-kpi">
@@ -3489,15 +3421,15 @@ body{
             <div class="live-bet-kpi-value" id="liveViewersKpi">0</div>
           </div>
           <div class="live-bet-kpi">
-            <div class="live-bet-kpi-label">Cote YES</div>
+            <div class="live-bet-kpi-label">YES odds</div>
             <div class="live-bet-kpi-value yes" id="liveOddYesKpi">--</div>
           </div>
           <div class="live-bet-kpi">
-            <div class="live-bet-kpi-label">Cote NO</div>
+            <div class="live-bet-kpi-label">NO odds</div>
             <div class="live-bet-kpi-value no" id="liveOddNoKpi">--</div>
           </div>
         </div>
-      </div>
+      </aside>
     </div>
   </div>
 </div>
@@ -4383,6 +4315,10 @@ function buildClientVerdictFromDebate(debate) {
 
 function updateLiveSourceCard(debate) {
   const card = document.getElementById('liveSourceCard');
+  const infoDescription = document.getElementById('liveInfoDescription');
+  const infoSourceLink = document.getElementById('liveInfoSourceLink');
+  const fallbackSource = document.getElementById('videoFallbackSource');
+  const fallbackLink = document.getElementById('videoFallbackLink');
   if (!card) return;
 
   const excerpt = debate?.sourceExcerpt || debate?.sourceDescription || '';
@@ -4400,6 +4336,32 @@ function updateLiveSourceCard(debate) {
   const date = sourceDateLabel(debate?.newsPublishedAt);
   const label = debate?.sourceFeedLabel || 'BBC News';
   const linkText = sourceTitle || sourceUrl;
+
+  if (infoDescription) {
+    infoDescription.textContent = excerpt || debate?.description || 'Live debate data is updating in real time.';
+  }
+  if (infoSourceLink) {
+    if (sourceUrl) {
+      infoSourceLink.href = sourceUrl;
+      infoSourceLink.textContent = `Source: ${linkText}`;
+      infoSourceLink.style.display = 'inline-block';
+    } else {
+      infoSourceLink.removeAttribute('href');
+      infoSourceLink.style.display = 'none';
+    }
+  }
+  if (fallbackSource) {
+    fallbackSource.textContent = `${label} ${host ? '· ' + host : ''}`.trim();
+  }
+  if (fallbackLink) {
+    if (sourceUrl) {
+      fallbackLink.href = sourceUrl;
+      fallbackLink.style.display = 'inline-block';
+    } else {
+      fallbackLink.removeAttribute('href');
+      fallbackLink.style.display = 'none';
+    }
+  }
 
   card.innerHTML = `
     ${imageUrl ? `<div class="live-source-image"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(sourceTitle || debate?.title || 'Image source')}" loading="lazy"></div>` : '<div class="live-source-image"></div>'}
@@ -4426,6 +4388,7 @@ function prepareContextVideo(debate) {
   const video = document.getElementById('contextVideo');
   const frame = document.getElementById('contextVideoFrame');
   const fallback = document.getElementById('contextVideoFallback');
+  const fallbackCard = document.getElementById('videoFallbackCard');
   if (!shell || !video || !frame || !fallback) return;
 
   const image = getDebatePreviewImage(debate);
@@ -4434,12 +4397,28 @@ function prepareContextVideo(debate) {
   const streamUrl = getDebateStreamUrl(debate,{muted});
   const useDirectVideo = isDirectPlayableVideoUrl(streamUrl);
 
+  const showFallbackCard = () => {
+    if (fallbackCard) fallbackCard.classList.add('show');
+  };
+  const hideFallbackCard = () => {
+    if (fallbackCard) fallbackCard.classList.remove('show');
+  };
+
   if (useDirectVideo && streamUrl) {
+    hideFallbackCard();
     if (video.dataset.src !== streamUrl) {
       video.dataset.src = streamUrl;
       video.src = streamUrl;
       video.load();
     }
+    video.onerror = () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.dataset.src = '';
+      shell.classList.remove('has-video');
+      shell.classList.add('no-video');
+      showFallbackCard();
+    };
     frame.src = 'about:blank';
     frame.dataset.src = '';
     frame.dataset.mode = '';
@@ -4451,18 +4430,18 @@ function prepareContextVideo(debate) {
     const pending = video.play();
     if (pending && typeof pending.catch === 'function') pending.catch(() => {});
   } else if (streamUrl) {
+    showFallbackCard();
     video.pause();
     video.removeAttribute('src');
     video.dataset.src = '';
-    if (frame.dataset.src !== streamUrl) {
-      frame.dataset.src = streamUrl;
-      frame.src = streamUrl;
-    }
-    frame.dataset.mode = 'embed';
+    frame.src = 'about:blank';
+    frame.dataset.src = '';
+    frame.dataset.mode = '';
     shell.classList.remove('has-video');
-    shell.classList.add('has-frame');
+    shell.classList.remove('has-frame');
     shell.classList.remove('no-video');
   } else {
+    showFallbackCard();
     video.pause();
     video.removeAttribute('src');
     video.dataset.src = '';
@@ -5137,8 +5116,6 @@ function seedChat(){
   const mm=document.getElementById('mliveChatMessages');
   if(m)m.innerHTML='';
   if(mm)mm.innerHTML='';
-  for(let i=0;i<10;i++){const u=chatUsers[Math.floor(Math.random()*chatUsers.length)];addChatMsg(u,getChatMsgs()[Math.floor(Math.random()*getChatMsgs().length)],false);}
-  if(m)m.scrollTop=m.scrollHeight;
 }
 function buildChatNode(user,text){
   const d=document.createElement('div');d.className='chat-msg';
@@ -5290,8 +5267,6 @@ function startLiveFallbackFeed(){
     const stale=Date.now()-lastLiveMetricsTs>7000;
     const disconnected=!liveSocket||!liveSocket.connected;
     if(!stale&&!disconnected)return;
-    const u=chatUsers[Math.floor(Math.random()*chatUsers.length)];
-    addChatMsg(u,getChatMsgs()[Math.floor(Math.random()*getChatMsgs().length)]);
     liveViewers=Math.max(120,liveViewers+Math.round((Math.random()*60)-30));
     livePool=Math.max(0,livePool+Math.round((Math.random()*260)-90));
     liveYesPct=Math.max(5,Math.min(95,liveYesPct+Math.round((Math.random()*4)-2)));
@@ -5435,6 +5410,10 @@ setMobileCameraState(true);
 function setMobileTab(tab){
   const lv=document.getElementById('live-view');
   const tb=document.getElementById('tabBet'),tc=document.getElementById('tabChat');
+  if(!tb||!tc){
+    lv.classList.remove('show-chat');
+    return;
+  }
   if(tab==='chat'){lv.classList.add('show-chat');tc.classList.add('active');tb.classList.remove('active');
     setTimeout(()=>{const m=document.getElementById('chatMessages');if(m)m.scrollTop=m.scrollHeight;},50);}
   else{lv.classList.remove('show-chat');tb.classList.add('active');tc.classList.remove('active');}
