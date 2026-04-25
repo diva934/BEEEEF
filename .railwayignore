@@ -1,0 +1,17 @@
+.git/
+.vercel/
+.agents/
+.claude/
+remotion-hello-world/
+assets/
+supabase/
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.mov
+*.webm
+index.html.html
+patch.js
+sync.js
+sprite.svg
