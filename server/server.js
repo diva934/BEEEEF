@@ -36,6 +36,10 @@ const stripeLib = require('./stripe');
 const { listTokenTransactions } = supabaseApi;
 
 const PORT = process.env.PORT || 3001;
+const DEBATE_CHAT_HISTORY_LIMIT = 120;
+const DEBATE_CHAT_MESSAGE_LIMIT = 260;
+
+const debateChatByRoom = new Map();
 
 // Allowed origins: local dev + Vercel frontend + optional custom domains.
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -198,6 +202,63 @@ function broadcastDebate(debateId) {
   });
 }
 
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function roomHash(roomId) {
+  return String(roomId).split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+}
+
+function calcLiveMetrics(debateId, now = Date.now()) {
+  const debate = getDebateById(debateId);
+  if (!debate) return null;
+
+  const id = String(debateId);
+  const hash = roomHash(id);
+  const waveA = Math.sin(now / 5000 + hash * 0.13);
+  const waveB = Math.cos(now / 3500 + hash * 0.07);
+  const yesPct = clamp(Math.round(Number(debate.yesPct || 50) + waveA * 1.6), 5, 95);
+  const pool = Math.max(0, Math.round(Number(debate.pool || 0) + waveB * 180));
+  const viewers = Math.max(120, Math.round(Number(debate.viewers || 0) + waveA * 55 + waveB * 25));
+  const durationMs = Math.max(1, Number(debate.durationMs || 1));
+  const openedAt = Number(debate.openedAt || now);
+  const progressPct = debate.closed
+    ? 100
+    : clamp(((now - openedAt) / durationMs) * 100, 0, 100);
+
+  return {
+    debateId: id,
+    serverNow: now,
+    closed: Boolean(debate.closed),
+    winnerSide: debate.winnerSide || null,
+    winnerLabel: debate.winnerLabel || null,
+    yesPct,
+    pool,
+    viewers,
+    progressPct: Math.round(progressPct * 10) / 10,
+    openedAt,
+    durationMs,
+    endsAt: Number(debate.endsAt || openedAt + durationMs),
+  };
+}
+
+function ensureDebateChatRoom(roomId) {
+  const key = String(roomId);
+  if (!debateChatByRoom.has(key)) {
+    debateChatByRoom.set(key, []);
+  }
+  return debateChatByRoom.get(key);
+}
+
+function pushDebateChatMessage(roomId, message) {
+  const history = ensureDebateChatRoom(roomId);
+  history.push(message);
+  if (history.length > DEBATE_CHAT_HISTORY_LIMIT) {
+    history.splice(0, history.length - DEBATE_CHAT_HISTORY_LIMIT);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 //  Server-authoritative turn advancement
 // ─────────────────────────────────────────────────────────────
@@ -315,6 +376,12 @@ app.get('/', (_req, res) => {
     socket_events: [
       'subscribe_stats',
       'debate_state',
+      'subscribe_debate',
+      'unsubscribe_debate',
+      'debate_chat_send',
+      'debate_chat_history',
+      'debate_chat_message',
+      'live_metrics',
     ],
   });
 });
@@ -390,6 +457,7 @@ app.post('/me/bets', requireAuth, withApi(async req => {
 
   const payload = await placeBet(req.accessToken, req.authUser, req.body || {});
   applyBetToDebate(req.body?.debateId, req.body?.side, req.body?.amount);
+  broadcastDebate(req.body?.debateId);
   return {
     ...payload,
     debate: buildDebatePayload(req.body?.debateId),
@@ -414,6 +482,7 @@ app.post('/me/bets/participant/cancel', requireAuth, withApi(async req => {
   if (participantBet) {
     removeBetFromDebate(participantBet.debateId, participantBet.side, participantBet.amt);
   }
+  broadcastDebate(debateId);
 
   return {
     ...payload,
@@ -425,6 +494,7 @@ app.post('/me/bets/participant/cancel', requireAuth, withApi(async req => {
 app.post('/me/bets/participant/forfeit', requireAuth, withApi(async req => {
   const debateId = String(req.body?.debateId || '');
   const payload = await forfeitParticipantBet(req.accessToken, req.authUser, debateId);
+  broadcastDebate(debateId);
   return {
     ...payload,
     debate: buildDebatePayload(debateId),
@@ -503,6 +573,66 @@ io.on('connection', socket => {
     socket.emit('global_stats', buildGlobalStats());
   });
 
+  socket.on('subscribe_debate', payload => {
+    const debateId = String(payload?.debateId || '').trim();
+    if (!debateId) return;
+
+    const debate = buildDebatePayload(debateId);
+    if (!debate) {
+      socket.emit('debate_error', { debateId, error: 'Debate not found' });
+      return;
+    }
+
+    socket.join(debateId);
+    socket.emit('debate_state', {
+      ...debate,
+      serverNow: Date.now(),
+    });
+
+    const liveMetrics = calcLiveMetrics(debateId);
+    if (liveMetrics) {
+      socket.emit('live_metrics', liveMetrics);
+    }
+
+    socket.emit('debate_chat_history', {
+      debateId,
+      messages: ensureDebateChatRoom(debateId),
+      serverNow: Date.now(),
+    });
+  });
+
+  socket.on('unsubscribe_debate', payload => {
+    const debateId = String(payload?.debateId || '').trim();
+    if (!debateId) return;
+    socket.leave(debateId);
+  });
+
+  socket.on('debate_chat_send', payload => {
+    const debateId = String(payload?.debateId || '').trim();
+    if (!debateId) return;
+
+    const room = io.sockets.adapter.rooms.get(debateId);
+    if (!room || !room.has(socket.id)) return;
+
+    const usernameRaw = String(payload?.user || payload?.username || '').trim();
+    const textRaw = String(payload?.text || '').trim();
+    if (!textRaw) return;
+
+    const username = usernameRaw || `viewer_${socket.id.slice(0, 6)}`;
+    const text = textRaw.slice(0, DEBATE_CHAT_MESSAGE_LIMIT);
+
+    const message = {
+      id: `${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+      debateId,
+      user: username,
+      text,
+      ts: Date.now(),
+    };
+
+    pushDebateChatMessage(debateId, message);
+    io.to(debateId).emit('debate_chat_message', message);
+  });
+
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -537,6 +667,16 @@ setInterval(() => {
   const stats = buildGlobalStats();
   io.to('lobby').emit('global_stats', stats);
 }, 5000);
+
+setInterval(() => {
+  const now = Date.now();
+  const activeDebates = listDebates().filter(debate => !debate.closed);
+  activeDebates.forEach(debate => {
+    const metrics = calcLiveMetrics(debate.id, now);
+    if (!metrics) return;
+    io.to(String(debate.id)).emit('live_metrics', metrics);
+  });
+}, 1800);
 
 // ─────────────────────────────────────────────────────────────
 //  Start

@@ -636,6 +636,22 @@ body::before{
   color:rgba(255,255,255,0.8);background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);
   padding:4px 10px;border-radius:var(--rs)
 }
+.live-progress-wrap{
+  position:absolute;left:12px;right:12px;bottom:58px;z-index:4;
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;
+  background:rgba(0,0,0,0.52);border:1px solid rgba(255,255,255,0.14);backdrop-filter:blur(12px)
+}
+.live-progress-time{font-family:var(--fn-mono);font-size:10px;color:rgba(255,255,255,0.82);min-width:42px;text-align:center}
+.live-progress-slider{
+  flex:1;appearance:none;height:4px;border-radius:999px;outline:none;
+  background:linear-gradient(90deg,#30d158 0%,#30d158 var(--live-progress,50%),rgba(255,255,255,0.25) var(--live-progress,50%),rgba(255,255,255,0.25) 100%)
+}
+.live-progress-slider::-webkit-slider-thumb{
+  appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #30d158;cursor:pointer;box-shadow:0 0 0 2px rgba(0,0,0,0.32)
+}
+.live-progress-slider::-moz-range-thumb{
+  width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #30d158;cursor:pointer
+}
 @media(max-width:640px){
   .video-container.context-active .context-video-shell{inset:0;width:auto;height:auto;top:0;left:0;border-radius:0}
   .video-container.context-active .video-live-badge{left:12px;top:12px}
@@ -846,7 +862,7 @@ body::before{
 
 /* ── LIVE CHAT ── */
 .live-right{
-  width:280px;flex-shrink:0;display:flex;flex-direction:column;
+  width:360px;flex-shrink:0;display:flex;flex-direction:column;
   border-left:1px solid var(--line);background:rgba(245,245,247,0.72);backdrop-filter:blur(12px)
 }
 .chat-header{
@@ -879,6 +895,17 @@ body::before{
   padding:0 10px;font-size:15px;color:var(--txt3);cursor:pointer;transition:all 0.18s
 }
 .chat-send-btn:hover{border-color:var(--line2);color:var(--txt)}
+.live-bet-strip{
+  border-top:1px solid var(--line);padding:10px;background:rgba(255,255,255,0.62);
+  display:grid;grid-template-columns:1fr 1fr;gap:8px
+}
+.live-bet-kpi{
+  border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:7px 8px;background:rgba(255,255,255,0.8)
+}
+.live-bet-kpi-label{font-family:var(--fn-mono);font-size:9px;letter-spacing:1.4px;color:var(--txt3);text-transform:uppercase}
+.live-bet-kpi-value{font-family:var(--fn-disp);font-size:14px;font-weight:800;margin-top:2px}
+.live-bet-kpi-value.yes{color:var(--elec)}
+.live-bet-kpi-value.no{color:var(--blood)}
 
 /* ══════════════════════════════════════════════════
    MODALS
@@ -3337,6 +3364,11 @@ body{
           <div class="video-live-badge"><div class="live-dot"></div>LIVE</div>
           <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
           <div class="video-timer-overlay" id="videoTimerOverlay"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-clock"/></svg> --:--</div>
+          <div class="live-progress-wrap" id="liveProgressWrap">
+            <span class="live-progress-time" id="liveProgressCurrent">00:00</span>
+            <input type="range" id="liveProgressSlider" class="live-progress-slider" min="0" max="100" value="0" step="0.1" aria-label="Progression du direct">
+            <span class="live-progress-time" id="liveProgressTotal">00:00</span>
+          </div>
           <div class="video-mute" id="muteBtn"><svg class="ic" width="16" height="16" viewBox="0 0 24 24"><use href="#ic-vol"/></svg></div>
         </div>
 
@@ -3446,6 +3478,24 @@ body{
         <div class="chat-input-wrap">
           <input class="chat-input" id="chatInput" placeholder="Réagis…" maxlength="120">
           <button class="chat-send-btn" id="chatSendBtn">→</button>
+        </div>
+        <div class="live-bet-strip" id="liveBetStrip">
+          <div class="live-bet-kpi">
+            <div class="live-bet-kpi-label">Pool live</div>
+            <div class="live-bet-kpi-value" id="livePoolKpi">0 pts</div>
+          </div>
+          <div class="live-bet-kpi">
+            <div class="live-bet-kpi-label">Viewers</div>
+            <div class="live-bet-kpi-value" id="liveViewersKpi">0</div>
+          </div>
+          <div class="live-bet-kpi">
+            <div class="live-bet-kpi-label">Cote YES</div>
+            <div class="live-bet-kpi-value yes" id="liveOddYesKpi">--</div>
+          </div>
+          <div class="live-bet-kpi">
+            <div class="live-bet-kpi-label">Cote NO</div>
+            <div class="live-bet-kpi-value no" id="liveOddNoKpi">--</div>
+          </div>
         </div>
       </div>
     </div>
@@ -3795,6 +3845,8 @@ let balance = 0;
 let currentDebate = null;
 let livePool = 0, liveYesPct = 50, liveViewers = 0;
 let liveAnimFrame = null, chatInterval = null, betInterval = null, viewerPulseInterval = null;
+let liveSocket = null;
+let liveSocketDebateId = null;
 let activeFilter = 'all';
 let selectedPresetVal = 100;
 let debateTimers = {};
@@ -4163,6 +4215,10 @@ let debates = [];
 let debatesClockOffset = 0;
 let debateUiTimer = null;
 let debateSyncTimer = null;
+let liveFeedFallbackTimer = null;
+let lastLiveMetricsTs = 0;
+let wasLiveSocketConnected = false;
+let liveProgressDragging = false;
 
 function seedFallbackDebate(seed, index) {
   return {
@@ -4193,6 +4249,12 @@ function fmtV(n){return n>=1000?(n/1000).toFixed(1)+'K':String(n)}
 function calcOdds(pct){if(pct<=0||pct>=100)return'—';return(100/pct).toFixed(2)+'x'}
 function timeStr(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
 function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;if(h>0)return h+'h'+m.toString().padStart(2,'0')+'m';return m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0')}
+function fmtClockHms(ms){
+  const totalSec=Math.max(0,Math.floor((Number(ms)||0)/1000));
+  const h=Math.floor(totalSec/3600),m=Math.floor((totalSec%3600)/60),s=totalSec%60;
+  if(h>0)return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
 function catLabel(c){const m={politics:'Politique',sports:'Sport',crypto:'Crypto',geopolitics:'Géopolitique',economy:'Économie',technology:'Tech',society:'Société'};return m[c]||c}
 function fmtBalance(n){const v=Number(n)||0;return v.toLocaleString('fr-FR',{minimumFractionDigits:Number.isInteger(v)?0:2,maximumFractionDigits:2})+' pts'}
 function makeId(){return ++nextId}
@@ -4895,6 +4957,7 @@ function resetMobileLiveSplit() {}
 
 function openLive(d) {
   if(d.closed)return;
+  disconnectLiveSocket();
   currentDebate=d; livePool=Number(d.pool||0); liveYesPct=Number(d.yesPct||50); liveViewers=Number(d.viewers||0);
   document.getElementById('homepage').style.display='none';
   document.getElementById('live-view').style.display='block';
@@ -4917,10 +4980,14 @@ function openLive(d) {
   setContextVideoMode('active');
   setMutedState(muted);
   updateBettingUI(); updateLiveTimer(d);
-  startCanvas(d.gradColors); startSimulation(); seedChat();
+  startCanvas(d.gradColors);
+  wireLiveProgress();
+  updateLiveProgressFromDebate(d);
+  startSimulation();
 }
 
 function goHome() {
+  disconnectLiveSocket();
   document.getElementById('live-view').style.display='none';
   document.getElementById('homepage').style.display='block';
   stopSimulation(); stopSpeakerAnim();
@@ -4943,6 +5010,10 @@ function updateBettingUI() {
   document.getElementById('poolTotal').textContent=fmt(livePool);
   document.getElementById('topViewers').textContent=fmtV(liveViewers);
   document.getElementById('videoViewers').textContent=fmtV(liveViewers);
+  const poolKpi=document.getElementById('livePoolKpi'); if(poolKpi)poolKpi.textContent=fmt(livePool);
+  const viewersKpi=document.getElementById('liveViewersKpi'); if(viewersKpi)viewersKpi.textContent=fmtV(liveViewers);
+  const oddYesKpi=document.getElementById('liveOddYesKpi'); if(oddYesKpi)oddYesKpi.textContent=calcOdds(liveYesPct);
+  const oddNoKpi=document.getElementById('liveOddNoKpi'); if(oddNoKpi)oddNoKpi.textContent=calcOdds(noPct);
   updateMobileLiveScore();
 }
 
@@ -5087,29 +5158,206 @@ function addChatMsg(user,text,scroll=true){
     while(mm.children.length>5)mm.removeChild(mm.firstChild);
   }
 }
-function startSimulation(){
-  if(chatInterval){clearInterval(chatInterval);chatInterval=null;}
-  chatInterval=setInterval(()=>{
-    if(!document.getElementById('chatMessages'))return;
+
+function replaceChat(messages){
+  const m=document.getElementById('chatMessages');
+  const mm=document.getElementById('mliveChatMessages');
+  if(m)m.innerHTML='';
+  if(mm)mm.innerHTML='';
+  (Array.isArray(messages)?messages:[]).forEach(msg=>addChatMsg(msg.user||'viewer',msg.text||'',false));
+  if(m)m.scrollTop=m.scrollHeight;
+}
+
+function updateLiveProgressVisual(pct,currentMs,totalMs){
+  const slider=document.getElementById('liveProgressSlider');
+  const currentEl=document.getElementById('liveProgressCurrent');
+  const totalEl=document.getElementById('liveProgressTotal');
+  if(!slider||!currentEl||!totalEl)return;
+  const clamped=Math.max(0,Math.min(100,Number(pct)||0));
+  slider.value=String(clamped);
+  slider.style.setProperty('--live-progress',`${clamped}%`);
+  currentEl.textContent=fmtClockHms(currentMs||0);
+  totalEl.textContent=fmtClockHms(totalMs||0);
+}
+
+function updateLiveProgressFromDebate(debate){
+  if(!debate)return;
+  const now=getDebateNowMs();
+  const openedAt=Number(debate.openedAt||now);
+  const durationMs=Math.max(1,Number(debate.durationMs||1));
+  const elapsed=debate.closed?durationMs:Math.max(0,Math.min(durationMs,now-openedAt));
+  const pct=(elapsed/durationMs)*100;
+  if(!liveProgressDragging){
+    updateLiveProgressVisual(pct,elapsed,durationMs);
+  }
+}
+
+function updateLiveProgressFromMetrics(metrics){
+  if(!metrics)return;
+  const durationMs=Math.max(1,Number(metrics.durationMs||1));
+  const openedAt=Number(metrics.openedAt||Date.now());
+  const now=Number(metrics.serverNow||Date.now());
+  const elapsed=Math.max(0,Math.min(durationMs,now-openedAt));
+  if(!liveProgressDragging){
+    updateLiveProgressVisual(metrics.progressPct,elapsed,durationMs);
+  }
+}
+
+function wireLiveProgress(){
+  const slider=document.getElementById('liveProgressSlider');
+  if(!slider||slider.dataset.bound==='1')return;
+  slider.dataset.bound='1';
+  const previewFromSlider=()=>{
+    if(!currentDebate)return;
+    const pct=Number(slider.value)||0;
+    const durationMs=Math.max(1,Number(currentDebate.durationMs||1));
+    const elapsed=(pct/100)*durationMs;
+    slider.style.setProperty('--live-progress',`${pct}%`);
+    const currentEl=document.getElementById('liveProgressCurrent');
+    if(currentEl)currentEl.textContent=fmtClockHms(elapsed);
+    const video=document.getElementById('contextVideo');
+    if(video&&Number.isFinite(video.duration)&&video.duration>0){
+      video.currentTime=(pct/100)*video.duration;
+    }
+  };
+  slider.addEventListener('input',()=>{liveProgressDragging=true;previewFromSlider();});
+  slider.addEventListener('change',()=>{liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);});
+  slider.addEventListener('pointerup',()=>{liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);});
+  slider.addEventListener('pointercancel',()=>{liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);});
+}
+
+function applyLiveMetrics(metrics){
+  if(!currentDebate)return;
+  if(String(metrics?.debateId||'')!==String(currentDebate.id))return;
+  lastLiveMetricsTs=Date.now();
+  if(Number.isFinite(Number(metrics.yesPct)))liveYesPct=Math.max(5,Math.min(95,Math.round(Number(metrics.yesPct))));
+  if(Number.isFinite(Number(metrics.pool)))livePool=Math.max(0,Math.round(Number(metrics.pool)));
+  if(Number.isFinite(Number(metrics.viewers)))liveViewers=Math.max(0,Math.round(Number(metrics.viewers)));
+  updateBettingUI();
+  updateLiveProgressFromMetrics(metrics);
+}
+
+function ensureLiveSocket(){
+  if(liveSocket)return liveSocket;
+  if(typeof io!=='function')return null;
+  liveSocket=io(BACKEND_URL,{transports:['websocket','polling']});
+  liveSocket.on('connect',()=>{
+    wasLiveSocketConnected=true;
+    if(currentDebate){
+      liveSocketDebateId=String(currentDebate.id);
+      liveSocket.emit('subscribe_debate',{debateId:liveSocketDebateId});
+    }
+  });
+  liveSocket.on('debate_state',payload=>{
+    if(!currentDebate||String(payload?.id||'')!==String(currentDebate.id))return;
+    const debateIdx=debates.findIndex(item=>String(item.id)===String(payload.id));
+    if(debateIdx>=0){
+      debates[debateIdx]={...debates[debateIdx],...payload};
+      currentDebate=debates[debateIdx];
+    }else{
+      currentDebate={...currentDebate,...payload};
+    }
+    if(Number.isFinite(Number(payload.yesPct)))liveYesPct=Number(payload.yesPct);
+    if(Number.isFinite(Number(payload.pool)))livePool=Number(payload.pool);
+    if(Number.isFinite(Number(payload.viewers)))liveViewers=Number(payload.viewers);
+    updateBettingUI();
+    updateLiveProgressFromDebate(currentDebate);
+    updateLiveSourceCard(currentDebate);
+  });
+  liveSocket.on('live_metrics',metrics=>{applyLiveMetrics(metrics);});
+  liveSocket.on('debate_chat_history',payload=>{
+    if(!currentDebate||String(payload?.debateId||'')!==String(currentDebate.id))return;
+    replaceChat(payload.messages||[]);
+    lastLiveMetricsTs=Date.now();
+  });
+  liveSocket.on('debate_chat_message',message=>{
+    if(!currentDebate||String(message?.debateId||'')!==String(currentDebate.id))return;
+    addChatMsg(message.user||'viewer',message.text||'');
+    lastLiveMetricsTs=Date.now();
+  });
+  liveSocket.on('connect_error',()=>{});
+  return liveSocket;
+}
+
+function stopLiveFallbackFeed(){
+  if(liveFeedFallbackTimer){clearInterval(liveFeedFallbackTimer);liveFeedFallbackTimer=null;}
+}
+
+function startLiveFallbackFeed(){
+  stopLiveFallbackFeed();
+  liveFeedFallbackTimer=setInterval(()=>{
+    if(!currentDebate||currentDebate.closed)return;
+    const stale=Date.now()-lastLiveMetricsTs>7000;
+    const disconnected=!liveSocket||!liveSocket.connected;
+    if(!stale&&!disconnected)return;
     const u=chatUsers[Math.floor(Math.random()*chatUsers.length)];
     addChatMsg(u,getChatMsgs()[Math.floor(Math.random()*getChatMsgs().length)]);
-  },1800+Math.random()*2200);
+    liveViewers=Math.max(120,liveViewers+Math.round((Math.random()*60)-30));
+    livePool=Math.max(0,livePool+Math.round((Math.random()*260)-90));
+    liveYesPct=Math.max(5,Math.min(95,liveYesPct+Math.round((Math.random()*4)-2)));
+    updateBettingUI();
+    updateLiveProgressFromDebate(currentDebate);
+  },2200);
+}
+
+function connectLiveSocket(){
+  const socket=ensureLiveSocket();
+  if(!socket||!currentDebate)return;
+  liveSocketDebateId=String(currentDebate.id);
+  socket.emit('subscribe_debate',{debateId:liveSocketDebateId});
+}
+
+function disconnectLiveSocket(){
+  stopLiveFallbackFeed();
+  if(liveSocket){
+    if(liveSocketDebateId){
+      try{liveSocket.emit('unsubscribe_debate',{debateId:liveSocketDebateId});}catch(_){/* noop */}
+    }
+    liveSocket.removeAllListeners();
+    liveSocket.disconnect();
+  }
+  liveSocket=null;
+  liveSocketDebateId=null;
+  lastLiveMetricsTs=0;
+  wasLiveSocketConnected=false;
+}
+
+function startSimulation(){
+  if(chatInterval){clearInterval(chatInterval);chatInterval=null;}
+  seedChat();
+  connectLiveSocket();
+  startLiveFallbackFeed();
   if(betInterval){clearInterval(betInterval);betInterval=null;}
   if(viewerPulseInterval){clearInterval(viewerPulseInterval);viewerPulseInterval=null;}
   viewerPulseInterval=setInterval(()=>{
     if(!currentDebate||currentDebate.closed)return;
-    const delta=Math.round((Math.random()*90)-45);
-    liveViewers=Math.max(120,liveViewers+delta);
-    updateBettingUI();
-  },3200);
+    updateLiveProgressFromDebate(currentDebate);
+  },1000);
 }
 function stopSimulation(){
   if(chatInterval){clearInterval(chatInterval);chatInterval=null;}
   if(betInterval){clearInterval(betInterval);betInterval=null;}
   if(viewerPulseInterval){clearInterval(viewerPulseInterval);viewerPulseInterval=null;}
+  stopLiveFallbackFeed();
 }
 
-function sendChat(inputId='chatInput'){const i=document.getElementById(inputId);const t=i?.value.trim();if(!t)return;addChatMsg('Vous',t);i.value='';}
+function currentChatUsername(){
+  const name=window.currentUser&&window.currentUser.username?String(window.currentUser.username).trim():'';
+  return name||'Vous';
+}
+
+function sendChat(inputId='chatInput'){
+  const i=document.getElementById(inputId);
+  const t=i?.value.trim();
+  if(!t||!currentDebate)return;
+  const user=currentChatUsername();
+  if(liveSocket&&liveSocket.connected){
+    liveSocket.emit('debate_chat_send',{debateId:String(currentDebate.id),user,text:t});
+  }else{
+    addChatMsg(user,t);
+  }
+  i.value='';
+}
 document.getElementById('chatSendBtn').addEventListener('click',()=>sendChat('chatInput'));
 document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat('chatInput');});
 const mliveChatSendBtn=document.getElementById('mliveChatSendBtn');
