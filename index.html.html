@@ -3256,7 +3256,7 @@ body{
   </button>
   <nav class="h-nav">
     <button class="hnav-btn active"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-flame"/></svg>&nbsp;Débats</button>
-    <button class="hnav-btn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-chart"/></svg>&nbsp;Mes Paris</button>
+    <button class="hnav-btn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-chart"/></svg>&nbsp;Mes Prédictions</button>
     <button class="hnav-btn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-trophy"/></svg>&nbsp;Classement</button>
     <div class="live-ticker" id="liveDebateCount">8 LIVE</div>
   </nav>
@@ -3299,8 +3299,8 @@ body{
     </div>
     <div class="hero">
       <div class="hero-main">
-        <h1 class="hero-title">Pariez sur<br>le meilleur<br><em>orateur.</em></h1>
-        <p class="hero-sub">Des débats live, un verdict IA. Misez sur le camp qui argumente le mieux. La conviction bat la chance.</p>
+        <h1 class="hero-title">Faites vos<br>meilleures<br><em>prédictions.</em></h1>
+        <p class="hero-sub">Des débats live, un verdict IA. Prédisez le camp qui argumente le mieux. La conviction bat la chance.</p>
         <div class="hero-cta-row">
           <button class="cta-watch" onclick="document.querySelector('.debates-grid').scrollIntoView({behavior:'smooth'})">VOIR LES ARÈNES →</button>
           <span class="cta-sub" id="debateCount">8 débats actifs en ce moment</span>
@@ -3327,9 +3327,9 @@ body{
     </div>
     <div class="hero-points-card">
       <div class="hero-points-copy">
-        <div class="hero-points-kicker">Capital de pari</div>
+        <div class="hero-points-kicker">Capital de prédiction</div>
         <div class="hero-points-value" id="heroPointsBalance">0 pts</div>
-        <div class="hero-points-sub">Rechargez vos points pour entrer dans plus d’arènes en direct et miser sans friction.</div>
+        <div class="hero-points-sub">Rechargez vos points pour entrer dans plus d’arènes en direct et faire vos prédictions sans friction.</div>
       </div>
       <button class="hero-points-cta" onclick="openFunds()">Acheter des points</button>
     </div>
@@ -3351,12 +3351,12 @@ body{
     <div class="debates-grid" id="debatesGrid"></div>
   </div>
 
-  <!-- MES PARIS VIEW -->
-  <div id="mes-paris-view" style="display:none">
+  <!-- MES PREDICTIONS VIEW -->
+  <div id="mes-predictions-view" style="display:none">
     <div class="tab-view-inner">
       <div class="tab-view-header">
-        <div class="tab-view-title">Mes Paris</div>
-        <div class="tab-view-sub" id="mpSubtitle">0 paris placés</div>
+        <div class="tab-view-title">Mes Prédictions</div>
+        <div class="tab-view-sub" id="mpSubtitle">0 prédictions enregistrées</div>
       </div>
       <div class="mp-stats" id="mpStats">
         <div class="mp-stat-card">
@@ -3378,8 +3378,8 @@ body{
       </div>
       <div id="mpBetList"><div class="tab-empty-state">
         <div class="tab-empty-icon">🎯</div>
-        <div class="tab-empty-title">Aucun pari pour l'instant</div>
-        <div class="tab-empty-sub">Entrez dans un débat live et misez sur le camp qui argumente le mieux.</div>
+        <div class="tab-empty-title">Aucune prédiction pour l'instant</div>
+        <div class="tab-empty-sub">Entrez dans un débat live et prédisez le camp qui argumente le mieux.</div>
       </div></div>
     </div>
   </div>
@@ -3389,7 +3389,7 @@ body{
     <div class="tab-view-inner">
       <div class="tab-view-header">
         <div class="tab-view-title">Classement</div>
-        <div class="tab-view-sub">Top parieurs de la semaine</div>
+        <div class="tab-view-sub">Top pronostiqueurs de la semaine</div>
       </div>
       <div class="rank-podium" id="rankPodium"></div>
       <div class="rank-list" id="rankList"></div>
@@ -3447,7 +3447,7 @@ body{
         </div>
 
         <section class="betting-panel">
-          <div class="panel-title">Live betting</div>
+          <div class="panel-title">Prédictions live</div>
           <div class="big-bet-labels">
             <div class="big-label label-yes">
               <div class="big-label-name" id="sideLabelYes">YES</div>
@@ -3468,11 +3468,11 @@ body{
             </div>
           </div>
           <div class="bet-btns">
-            <button class="bet-btn bet-btn-yes" id="betYesBtn">Bet YES</button>
-            <button class="bet-btn bet-btn-no" id="betNoBtn">Bet NO</button>
+            <button class="bet-btn bet-btn-yes" id="betYesBtn">Prédire YES</button>
+            <button class="bet-btn bet-btn-no" id="betNoBtn">Prédire NO</button>
           </div>
           <div class="bets-feed">
-            <div class="bets-feed-title">Recent bets</div>
+            <div class="bets-feed-title">Prédictions récentes</div>
             <div id="betsFeed"></div>
           </div>
         </section>
@@ -3562,9 +3562,9 @@ body{
       <div id="phoneCodeWrap" style="display:none;margin-top:12px"><input class="form-input" type="text" placeholder="Code à 6 chiffres" id="phoneCode" maxlength="6"><button class="btn-primary" onclick="confirmPhone()" style="margin-top:8px">Confirmer</button></div>
     </div>
     <div class="section-divider"><span>Paramètres</span></div>
-    <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Notifications de paris</div><div class="toggle-desc">Alerte quand les cotes bougent</div></div><label class="toggle-switch"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Notifications de prédiction</div><div class="toggle-desc">Alerte quand les cotes bougent</div></div><label class="toggle-switch"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
     <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Rappels de débats</div><div class="toggle-desc">Alerte 5 min avant la fin</div></div><label class="toggle-switch"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Effets sonores</div><div class="toggle-desc">Sons pour les paris et victoires</div></div><label class="toggle-switch"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Effets sonores</div><div class="toggle-desc">Sons pour les prédictions et victoires</div></div><label class="toggle-switch"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
     <button class="btn-primary" onclick="saveProfile()">Enregistrer</button>
     <button class="btn-secondary" id="logoutBtn" type="button" style="margin-top:6px;color:var(--blood);border-color:rgba(255,34,68,0.3)">Déconnexion</button>
   </div>
@@ -3574,12 +3574,9 @@ body{
 <div class="modal-overlay" id="betConfirmModal">
   <div class="modal" style="max-width:400px;text-align:center">
     <div style="margin-bottom:14px;color:var(--spark)"><svg class="ic" width="44" height="44" viewBox="0 0 24 24"><use href="#ic-warn"/></svg></div>
-    <div class="modal-title" style="margin-bottom:10px;font-size:18px">CONFIRMER LE PARI</div>
+    <div class="modal-title" style="margin-bottom:10px;font-size:18px">CONFIRMER LA PRÉDICTION</div>
     <p style="font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:12px">
-      Vous misez <span id="confirmAmt" style="color:var(--txt);font-weight:700"></span> sur <span id="confirmSide" style="font-weight:700"></span>.
-    </p>
-    <p style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);line-height:1.65;margin-bottom:22px;padding:12px;background:rgba(255,34,68,0.06);border:1px solid rgba(255,34,68,0.15);border-radius:6px">
-      🎲 Jouer comporte des risques. Ne pariez jamais plus que vous ne pouvez perdre. Joueurs Info Service : <strong>09 74 75 13 13</strong>
+      Vous placez une prédiction de <span id="confirmAmt" style="color:var(--txt);font-weight:700"></span> sur <span id="confirmSide" style="font-weight:700"></span>.
     </p>
     <div style="display:flex;gap:10px">
       <button class="btn-secondary" style="margin:0;flex:1" onclick="closeModal('betConfirmModal')">Annuler</button>
@@ -3658,7 +3655,7 @@ body{
     <div class="join-debate-info">
       <div class="join-debate-topic" id="joinModalTopic"></div>
       <div class="join-server-info" id="joinServerInfo"></div>
-      <div style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);margin-top:4px">Choisissez votre camp — mise requise pour participer</div>
+      <div style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);margin-top:4px">Choisissez votre camp — prédiction requise pour participer</div>
     </div>
     <div style="font-family:var(--fn-disp);font-size:10px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Votre position</div>
     <div class="join-debate-side-select">
@@ -3674,7 +3671,7 @@ body{
       </div>
     </div>
     <div class="join-required-bet">
-      <div style="font-family:var(--fn-disp);font-size:11px;color:var(--fire);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">⚡ Mise requise — min. 50 pts</div>
+      <div style="font-family:var(--fn-disp);font-size:11px;color:var(--fire);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">⚡ Prédiction requise — min. 50 pts</div>
       <div class="bet-input-wrap" style="max-width:180px">
         <input class="bet-input" id="joinBetAmount" type="number" value="50" min="50" style="height:42px">
       </div>
@@ -4300,8 +4297,47 @@ function generatedPreviewImage(debate){
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
+const CONTEXTUAL_IMAGE_KEYWORDS={
+  politics:['politics','election','parliament'],
+  sports:['sports','stadium','football'],
+  crypto:['crypto','bitcoin','blockchain'],
+  geopolitics:['geopolitics','world','diplomacy'],
+  economy:['economy','finance','market'],
+  technology:['technology','ai','innovation'],
+  society:['society','people','city'],
+  general:['news','analysis','world']
+};
+function hashString(value){
+  return String(value||'').split('').reduce((acc,ch)=>((acc*31)+ch.charCodeAt(0))>>>0,7);
+}
+function normalizeKeyword(value){
+  return String(value||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g,' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0,2)
+    .join('-');
+}
+function buildContextualPreviewImage(debate){
+  const category=String(debate?.category||'general').toLowerCase();
+  const categoryKeywords=CONTEXTUAL_IMAGE_KEYWORDS[category]||CONTEXTUAL_IMAGE_KEYWORDS.general;
+  const titleKeywords=String(debate?.title||'')
+    .split(/\s+/)
+    .map(normalizeKeyword)
+    .filter(Boolean)
+    .slice(0,2);
+  const keywordList=[...new Set([...titleKeywords,...categoryKeywords])].slice(0,3);
+  if(!keywordList.length)return '';
+  const lock=hashString(`${debate?.id||''}|${debate?.title||''}|${category}`)%1000000;
+  return `https://loremflickr.com/1200/624/${keywordList.join(',')}?lock=${lock}`;
+}
 function getDebatePreviewImage(debate){
-  return upgradeMediaImageUrl(debate?.sourceImageUrl||debate?.photo) || generatedPreviewImage(debate);
+  const explicitImage=upgradeMediaImageUrl(debate?.sourceImageUrl||debate?.photo);
+  if(explicitImage)return explicitImage;
+  return buildContextualPreviewImage(debate) || generatedPreviewImage(debate);
 }
 function isDirectPlayableVideoUrl(value){
   const raw=String(value||'').trim();
@@ -4740,7 +4776,7 @@ async function callAIVerdict(debate) {
   const yP=debate.yesPct, nP=100-yP;
   const prompt=`Tu es modérateur expert de débats live sur BEEEF.
 Sujet : "${debate.title}".
-Camp "${yL}" : ${yP}% de soutien des parieurs. Camp "${nL}" : ${nP}%.
+Camp "${yL}" : ${yP}% de soutien des pronostiqueurs. Camp "${nL}" : ${nP}%.
 Analyse ce débat et détermine le vainqueur selon ces 3 critères (note /10) :
 1. CONVICTION : capacité à convaincre, clarté, assurance
 2. LOGIQUE : arguments cohérents, faits, raisonnement structuré
@@ -5024,8 +5060,8 @@ function openLive(d) {
   updateLiveSourceCard(d);
   document.getElementById('sideLabelYes').textContent=d.yesLabel||'OUI';
   document.getElementById('sideLabelNo').textContent=d.noLabel||'NON';
-  document.getElementById('betYesBtn').textContent='Bet YES';
-  document.getElementById('betNoBtn').textContent='Bet NO';
+  document.getElementById('betYesBtn').textContent='Prédire YES';
+  document.getElementById('betNoBtn').textContent='Prédire NO';
   document.getElementById('betYesBtn').disabled=false;
   document.getElementById('betNoBtn').disabled=false;
   setMobileBetActionsDisabled(false);
@@ -5160,7 +5196,7 @@ function confirmBet() {
   livePool+=amt; updateBettingUI();
   flashScreen(side);
   addBetEntry('Vous',amt,side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON'),side);
-  showToast(side==='yes'?'🟢':'🔴','Pari placé !',fmt(amt)+' sur '+(side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON')));
+  showToast(side==='yes'?'🟢':'🔴','Prédiction enregistrée !',fmt(amt)+' sur '+(side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON')));
 }
 document.getElementById('confirmBetBtn').addEventListener('click',confirmBet);
 document.getElementById('betYesBtn').addEventListener('click',()=>placeBet('yes'));
@@ -6407,8 +6443,8 @@ function endParticipantRoom(natural){
         <div style="position:absolute;left:0;top:0;height:100%;width:${yPct}%;background:linear-gradient(90deg,#30d158,#25a244);border-radius:9999px"></div>
       </div>
       <div style="display:flex;justify-content:space-between">
-        <span style="font-family:'Inter',sans-serif;font-size:10px;color:rgba(0,0,0,0.4);font-weight:500">${yPct}% des paris</span>
-        <span style="font-family:'Inter',sans-serif;font-size:10px;color:rgba(0,0,0,0.4);font-weight:500">${nPct}% des paris</span>
+        <span style="font-family:'Inter',sans-serif;font-size:10px;color:rgba(0,0,0,0.4);font-weight:500">${yPct}% des prédictions</span>
+        <span style="font-family:'Inter',sans-serif;font-size:10px;color:rgba(0,0,0,0.4);font-weight:500">${nPct}% des prédictions</span>
       </div>
     </div>`;
   }
@@ -6663,7 +6699,7 @@ function renderMyBets() {
   const roi = staked > 0 ? ((netGain / staked) * 100).toFixed(1) : null;
   const winRate = settled.length > 0 ? Math.round((won / settled.length) * 100) : null;
 
-  sub.textContent = myBets.length + ' paris placé' + (myBets.length > 1 ? 's' : '');
+  sub.textContent = myBets.length + ' prédiction' + (myBets.length > 1 ? 's' : '') + ' enregistrée' + (myBets.length > 1 ? 's' : '');
   document.getElementById('mpTotalStaked').textContent = fmt(staked);
   document.getElementById('mpNetGain').textContent = (netGain >= 0 ? '+' : '') + fmtBalance(netGain);
   document.getElementById('mpNetGain').style.color = netGain >= 0 ? 'var(--elec)' : 'var(--blood)';
@@ -6674,8 +6710,8 @@ function renderMyBets() {
   if (myBets.length === 0) {
     list.innerHTML = `<div class="tab-empty-state">
       <div class="tab-empty-icon">🎯</div>
-      <div class="tab-empty-title">Aucun pari pour l'instant</div>
-      <div class="tab-empty-sub">Entrez dans un débat live et misez sur le camp qui argumente le mieux.</div>
+      <div class="tab-empty-title">Aucune prédiction pour l'instant</div>
+      <div class="tab-empty-sub">Entrez dans un débat live et prédisez le camp qui argumente le mieux.</div>
     </div>`;
     return;
   }
@@ -6761,7 +6797,7 @@ function renderClassement() {
         <div class="rank-avatar" style="background:${p.avatar}">${p.name[0]}</div>
         <div>
           <div class="rank-username">${p.name}${p.isMe ? ' <span style="font-size:10px;color:var(--fire)">(vous)</span>' : ''}</div>
-          <div class="rank-winrate">${p.bets} paris · ${p.rate}% réussite</div>
+          <div class="rank-winrate">${p.bets} prédictions · ${p.rate}% réussite</div>
         </div>
       </div>
       <div></div>
@@ -6775,7 +6811,7 @@ function renderClassement() {
 const navBtns = document.querySelectorAll('.hnav-btn');
 const views = {
   0: 'homepage',
-  1: 'mes-paris-view',
+  1: 'mes-predictions-view',
   2: 'classement-view'
 };
 
