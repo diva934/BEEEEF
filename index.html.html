@@ -577,7 +577,7 @@ body::before{
 
 /* Video */
 .video-container{
-  position:relative;width:100%;background:#000;aspect-ratio:16/9;flex-shrink:0;overflow:hidden
+  position:relative;width:100%;background:#111;aspect-ratio:16/9;flex-shrink:0;overflow:hidden
 }
 .context-video-shell{
   position:absolute;inset:0;z-index:1;overflow:hidden;background:#050506;
@@ -599,12 +599,6 @@ body::before{
   background:radial-gradient(circle at 32% 24%,rgba(255,255,255,.2),transparent 18%),linear-gradient(120deg,rgba(10,132,255,.24),rgba(255,107,53,.18),rgba(0,0,0,.42));
   mix-blend-mode:screen
 }
-.context-video-label{
-  position:absolute;left:14px;bottom:12px;z-index:2;
-  font-family:var(--fn-mono);font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-  color:rgba(255,255,255,.78);background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.12);
-  border-radius:999px;padding:4px 9px;backdrop-filter:blur(10px)
-}
 .video-container.context-active .context-video-shell{
   inset:0;width:auto;height:auto;top:0;left:0;right:0;bottom:0;border-radius:0;
   box-shadow:none
@@ -621,25 +615,16 @@ body::before{
   font-family:var(--fn-disp);font-size:10.5px;font-weight:900;color:#fff;letter-spacing:2px
 }
 .video-viewers{
-  position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:3;
+  position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);z-index:3;
   padding:4px 10px;border-radius:3px;font-family:var(--fn-mono);font-size:10.5px;
   color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:4px
 }
-.video-mute{
-  position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);z-index:3;
-  border:1px solid rgba(255,255,255,0.09);width:36px;height:36px;border-radius:var(--rs);
-  display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:background 0.18s
-}
-.video-mute:hover{background:rgba(255,255,255,0.1)}
-.video-timer-overlay{
-  position:absolute;bottom:12px;left:12px;font-family:var(--fn-mono);font-size:11.5px;font-weight:600;z-index:3;
-  color:rgba(255,255,255,0.8);background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);
-  padding:4px 10px;border-radius:var(--rs)
-}
 .live-progress-wrap{
-  position:absolute;left:12px;right:12px;bottom:58px;z-index:4;
-  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;
-  background:rgba(0,0,0,0.52);border:1px solid rgba(255,255,255,0.14);backdrop-filter:blur(12px)
+  position:absolute;left:0;right:0;bottom:0;z-index:4;
+  display:flex;align-items:center;gap:10px;padding:14px 12px 10px;
+  background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.36),transparent);
+  opacity:0;pointer-events:none;transform:translateY(6px);
+  transition:opacity .22s ease,transform .22s ease
 }
 .live-progress-time{font-family:var(--fn-mono);font-size:10px;color:rgba(255,255,255,0.82);min-width:42px;text-align:center}
 .live-progress-slider{
@@ -651,6 +636,9 @@ body::before{
 }
 .live-progress-slider::-moz-range-thumb{
   width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #30d158;cursor:pointer
+}
+.video-container.controls-visible .live-progress-wrap{
+  opacity:1;pointer-events:auto;transform:translateY(0)
 }
 @media(max-width:640px){
   .video-container.context-active .context-video-shell{inset:0;width:auto;height:auto;top:0;left:0;border-radius:0}
@@ -919,10 +907,10 @@ body::before{
 .live-main-column{display:flex;flex-direction:column;gap:14px;min-width:0}
 .live-video-card,.live-info-card,.betting-panel,.live-right{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:none}
 .live-video-card{overflow:hidden}
-.video-container{background:#0f1115}
+.video-container{background:#111}
 #liveCanvas{display:none}
 .context-video-shell{inset:0;position:absolute}
-.context-video-label{background:rgba(0,0,0,.6);color:#fff}
+.context-video-label{display:none}
 .video-fallback-card{
   position:absolute;left:16px;right:16px;bottom:16px;z-index:6;background:rgba(255,255,255,.95);
   border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:none
@@ -937,18 +925,24 @@ body::before{
 .live-info-description{margin-top:8px;color:#4b5563;font-size:14px;line-height:1.5}
 .live-info-link{display:inline-block;margin-top:10px;font-weight:700;font-size:13px;color:#f97316;text-decoration:none}
 .live-info-link:hover{text-decoration:underline}
-.live-source-card{margin-top:12px}
+.live-source-card{display:none!important}
 .betting-panel{padding:16px}
 .live-right{display:flex;flex-direction:column;position:sticky;top:74px;height:calc(100vh - 90px);overflow:hidden}
 .chat-messages{background:#fff}
 .chat-input-wrap{margin-top:auto;background:#fff;position:sticky;bottom:0}
+.live-progress-wrap{
+  position:absolute;left:0;right:0;bottom:0;z-index:4;
+  display:flex;align-items:center;gap:10px;padding:14px 12px 10px;
+  background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.36),transparent);
+  opacity:0;pointer-events:none;transform:translateY(6px);
+  transition:opacity .22s ease,transform .22s ease
+}
+.video-container.controls-visible .live-progress-wrap{opacity:1;pointer-events:auto;transform:translateY(0)}
 
 @media(max-width:980px){
   .live-layout{grid-template-columns:1fr;padding:10px;gap:10px}
   .live-right{position:static;height:420px;width:100%}
   .live-page-header{padding:10px}
-  #live-view.show-chat .live-left{display:block}
-  #live-view:not(.show-chat) .live-right{display:flex}
 }
 
 /* ══════════════════════════════════════════════════
@@ -3340,13 +3334,11 @@ body{
             <canvas id="liveCanvas"></canvas>
             <div class="video-live-badge"><div class="live-dot"></div>LIVE</div>
             <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
-            <div class="video-timer-overlay" id="videoTimerOverlay"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-clock"/></svg> --:--</div>
             <div class="live-progress-wrap" id="liveProgressWrap">
               <span class="live-progress-time" id="liveProgressCurrent">00:00</span>
               <input type="range" id="liveProgressSlider" class="live-progress-slider" min="0" max="100" value="0" step="0.1" aria-label="Live progress">
               <span class="live-progress-time" id="liveProgressTotal">00:00</span>
             </div>
-            <button class="video-mute" id="muteBtn" type="button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24"><use href="#ic-vol"/></svg></button>
           </div>
         </div>
 
@@ -3354,7 +3346,6 @@ body{
           <div class="live-info-title" id="liveTitle"></div>
           <div class="live-info-description" id="liveInfoDescription">Live debate analysis and source context update in real time.</div>
           <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Open source</a>
-          <div class="live-source-card" id="liveSourceCard"></div>
           <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()" style="display:none">PARTICIPATE</button>
         </article>
 
@@ -4319,7 +4310,6 @@ function updateLiveSourceCard(debate) {
   const infoSourceLink = document.getElementById('liveInfoSourceLink');
   const fallbackSource = document.getElementById('videoFallbackSource');
   const fallbackLink = document.getElementById('videoFallbackLink');
-  if (!card) return;
 
   const excerpt = debate?.sourceExcerpt || debate?.sourceDescription || '';
   const sourceUrl = debate?.sourceUrl || '';
@@ -4327,9 +4317,10 @@ function updateLiveSourceCard(debate) {
   const imageUrl = debate?.sourceImageUrl || debate?.photo || '';
 
   if (!sourceUrl && !excerpt && !imageUrl) {
-    card.classList.remove('is-visible');
-    card.innerHTML = '';
-    return;
+    if (card) {
+      card.classList.remove('is-visible');
+      card.innerHTML = '';
+    }
   }
 
   const host = sourceHost(sourceUrl) || debate?.sourceDomain || 'BBC News';
@@ -4363,15 +4354,17 @@ function updateLiveSourceCard(debate) {
     }
   }
 
-  card.innerHTML = `
-    ${imageUrl ? `<div class="live-source-image"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(sourceTitle || debate?.title || 'Image source')}" loading="lazy"></div>` : '<div class="live-source-image"></div>'}
-    <div class="live-source-body">
-      <div class="live-source-kicker"><span>${escapeHtml(label)}</span><span>${escapeHtml(host)}</span>${date ? `<span>${escapeHtml(date)}</span>` : ''}</div>
-      ${excerpt ? `<div class="live-source-excerpt">${escapeHtml(excerpt)}</div>` : ''}
-      ${sourceUrl ? `<a class="live-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Source: ${escapeHtml(linkText)}</a>` : ''}
-    </div>
-  `;
-  card.classList.add('is-visible');
+  if (card) {
+    card.innerHTML = `
+      ${imageUrl ? `<div class="live-source-image"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(sourceTitle || debate?.title || 'Image source')}" loading="lazy"></div>` : '<div class="live-source-image"></div>'}
+      <div class="live-source-body">
+        <div class="live-source-kicker"><span>${escapeHtml(label)}</span><span>${escapeHtml(host)}</span>${date ? `<span>${escapeHtml(date)}</span>` : ''}</div>
+        ${excerpt ? `<div class="live-source-excerpt">${escapeHtml(excerpt)}</div>` : ''}
+        ${sourceUrl ? `<a class="live-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Source: ${escapeHtml(linkText)}</a>` : ''}
+      </div>
+    `;
+    card.classList.add('is-visible');
+  }
 }
 
 function playMutedVideo(video) {
@@ -5181,9 +5174,34 @@ function updateLiveProgressFromMetrics(metrics){
 }
 
 function wireLiveProgress(){
+  const container=document.querySelector('.video-container');
   const slider=document.getElementById('liveProgressSlider');
   if(!slider||slider.dataset.bound==='1')return;
   slider.dataset.bound='1';
+  let hideControlsTimer=null;
+
+  const showControls=()=>{
+    if(!container)return;
+    container.classList.add('controls-visible');
+    if(hideControlsTimer){clearTimeout(hideControlsTimer);hideControlsTimer=null;}
+  };
+  const hideControls=()=>{
+    if(!container)return;
+    container.classList.remove('controls-visible');
+  };
+  const scheduleHideControls=()=>{
+    if(hideControlsTimer)clearTimeout(hideControlsTimer);
+    hideControlsTimer=setTimeout(hideControls,2600);
+  };
+
+  if(container&&container.dataset.controlsBound!=='1'){
+    container.dataset.controlsBound='1';
+    container.addEventListener('mouseenter',showControls);
+    container.addEventListener('mouseleave',hideControls);
+    container.addEventListener('touchstart',()=>{showControls();scheduleHideControls();},{passive:true});
+    container.addEventListener('click',()=>{showControls();scheduleHideControls();});
+  }
+
   const previewFromSlider=()=>{
     if(!currentDebate)return;
     const pct=Number(slider.value)||0;
@@ -5197,10 +5215,10 @@ function wireLiveProgress(){
       video.currentTime=(pct/100)*video.duration;
     }
   };
-  slider.addEventListener('input',()=>{liveProgressDragging=true;previewFromSlider();});
-  slider.addEventListener('change',()=>{liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);});
-  slider.addEventListener('pointerup',()=>{liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);});
-  slider.addEventListener('pointercancel',()=>{liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);});
+  slider.addEventListener('input',()=>{showControls();liveProgressDragging=true;previewFromSlider();scheduleHideControls();});
+  slider.addEventListener('change',()=>{showControls();liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);scheduleHideControls();});
+  slider.addEventListener('pointerup',()=>{showControls();liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);scheduleHideControls();});
+  slider.addEventListener('pointercancel',()=>{liveProgressDragging=false;updateLiveProgressFromDebate(currentDebate);scheduleHideControls();});
 }
 
 function applyLiveMetrics(metrics){
