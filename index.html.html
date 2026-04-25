@@ -2751,7 +2751,7 @@ body{
 #header .top-up-btn{display:inline-flex!important}
 .header-reminder-btn{
   align-items:center;gap:6px;
-  min-height:36px;padding:0 12px!important;
+  min-height:34px;height:34px;padding:0 10px!important;
   border-radius:16px!important;
   background:rgba(255,255,255,0.82)!important;
   border:1px solid rgba(229,231,235,0.96)!important;
@@ -2944,7 +2944,8 @@ body{
     box-shadow:0 10px 24px rgba(17,24,39,0.04)!important;
   }
   .header-reminder-btn{
-    min-height:36px!important;
+    min-height:34px!important;
+    height:34px!important;
     padding:0 10px!important;
     border-radius:14px!important;
     font-size:10.5px!important;
@@ -3103,6 +3104,49 @@ body{
     min-height:0!important;
   }
 }
+
+/* Top trending predictions strip */
+.trend-strip{
+  margin:12px 40px 0;
+  background:#fff;
+  border:1px solid rgba(229,231,235,0.95);
+  border-radius:14px;
+  box-shadow:0 8px 24px rgba(17,24,39,0.04);
+  overflow:hidden;
+}
+.trend-strip-inner{display:flex;align-items:center;gap:12px;padding:10px 12px;min-width:0}
+.trend-strip-title{
+  flex:0 0 auto;
+  font-family:var(--fn-mono);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--txt3);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.trend-strip-title .ic{color:var(--fire)}
+.trend-marquee{position:relative;overflow:hidden;flex:1;min-width:0}
+.trend-track{display:flex;gap:10px;width:max-content}
+.trend-track.is-animated{animation:trendScroll 28s linear infinite}
+.trend-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  white-space:nowrap;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(229,231,235,0.95);
+  background:#fff;
+  color:var(--txt2);
+  font-size:11px;
+  font-weight:600;
+}
+.trend-rank{font-family:var(--fn-mono);font-size:10px;color:var(--fire);font-weight:700}
+.trend-pool{font-family:var(--fn-mono);font-size:10px;color:var(--txt3)}
+@keyframes trendScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ===== Live page final light theme overrides ===== */
 #live-view{
@@ -3263,7 +3307,7 @@ body{
   <div class="h-right">
     <button class="top-up-btn header-reminder-btn" onclick="openFunds()" aria-label="Acheter des points">
       <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
-      <span class="top-up-label-full">Points</span><span class="top-up-label-compact">Pts</span>
+      <span class="top-up-label-full">Token</span><span class="top-up-label-compact">Token</span>
     </button>
     <button class="account-btn" onclick="openProfile()" id="accountBtn" type="button" aria-label="Ouvrir le profil et les paramètres">
       <span class="av" id="headerAvatar">P</span>
@@ -3281,6 +3325,15 @@ body{
 
   <!-- HOMEPAGE -->
   <div id="homepage">
+    <div class="trend-strip" id="trendStrip" aria-label="Top tendances des prédictions">
+      <div class="trend-strip-inner">
+        <div class="trend-strip-title"><svg class="ic" width="12" height="12" viewBox="0 0 24 24"><use href="#ic-trend"/></svg>TOP 5 TENDANCES</div>
+        <div class="trend-marquee">
+          <div class="trend-track" id="trendTrack"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ANIMATED INTRO SLIDESHOW -->
     <div class="debate-intro" id="debateIntro">
       <div class="di-gutter-l"></div>
@@ -5013,6 +5066,44 @@ function renderGrid(cat='all') {
   document.getElementById('debateCount').textContent=live+' débats actifs';
   document.getElementById('liveDebateCount').textContent=debates.filter(d=>!d.closed).length+' LIVE';
   filtered.forEach(d=>grid.appendChild(buildCard(d)));
+  renderTrendingPredictionsStrip();
+}
+
+function topDebatesByPool(limit=5){
+  return (debates||[])
+    .filter(d=>!d.closed)
+    .slice()
+    .sort((a,b)=>Number(b?.pool||0)-Number(a?.pool||0))
+    .slice(0,limit);
+}
+
+function buildTrendPill(debate,index){
+  const el=document.createElement('div');
+  el.className='trend-pill';
+  const title=String(debate?.title||'Débat').trim();
+  const shortTitle=title.length>70?`${title.slice(0,67)}...`:title;
+  el.innerHTML=`<span class="trend-rank">#${index+1}</span><span>${escapeHtml(shortTitle)}</span><span class="trend-pool">${escapeHtml(fmt(Number(debate?.pool||0)))}</span>`;
+  el.title=title;
+  el.addEventListener('click',()=>{if(!debate.closed)openLive(debate);});
+  return el;
+}
+
+function renderTrendingPredictionsStrip(){
+  const strip=document.getElementById('trendStrip');
+  const track=document.getElementById('trendTrack');
+  if(!strip||!track)return;
+  const top=topDebatesByPool(5);
+  if(!top.length){
+    strip.style.display='none';
+    track.innerHTML='';
+    track.classList.remove('is-animated');
+    return;
+  }
+  strip.style.display='block';
+  track.innerHTML='';
+  top.forEach((debate,index)=>track.appendChild(buildTrendPill(debate,index)));
+  top.forEach((debate,index)=>track.appendChild(buildTrendPill(debate,index)));
+  track.classList.toggle('is-animated',top.length>1);
 }
 
 document.getElementById('catBar').addEventListener('click',e=>{
