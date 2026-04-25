@@ -774,7 +774,7 @@ body::before{
 
 /* ── BETTING PANEL ── */
 .betting-panel{
-  padding:18px 20px;background:var(--ink2);border-top:1px solid var(--line);flex-shrink:0
+  padding:18px 20px;background:#fff;border:1px solid #e5e5e5;flex-shrink:0;border-radius:14px
 }
 .panel-title{
   font-family:var(--fn-mono);font-size:9.5px;font-weight:600;text-transform:uppercase;
@@ -792,7 +792,7 @@ body::before{
 .label-no .big-label-odd{color:rgba(255,34,68,0.45)}
 .big-bet-bar{height:4px;background:rgba(255,34,68,0.18);overflow:hidden;margin-bottom:10px;position:relative}
 .big-bet-fill{
-  height:100%;background:linear-gradient(90deg,var(--elec),var(--elec2));
+  height:100%;background:var(--elec);
   transition:width 0.9s cubic-bezier(0.34,1.2,0.64,1)
 }
 .pool-total{
@@ -814,21 +814,19 @@ body::before{
 .bet-input:focus{border-color:var(--line2)}
 .bet-btns{display:flex;gap:8px}
 .bet-btn{
-  flex:1;padding:11px 16px;border:none;border-radius:var(--rs);font-family:var(--fn-disp);
+  flex:1;padding:11px 16px;border:1px solid #e5e5e5;background:#fff;border-radius:12px;font-family:var(--fn-disp);
   font-size:13.5px;font-weight:900;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;
-  transition:transform 0.15s,box-shadow 0.15s,filter 0.15s
+  transition:background .18s ease,border-color .18s ease,color .18s ease
 }
-.bet-btn:active{transform:scale(0.97)}
+.bet-btn:active{transform:none}
 .bet-btn-yes{
-  background:linear-gradient(135deg,var(--elec),var(--elec2));color:#001a0a;
-  box-shadow:0 3px 18px rgba(0,240,118,0.22)
+  color:#16a34a;border-color:rgba(22,163,74,.35)
 }
-.bet-btn-yes:hover{box-shadow:0 4px 28px rgba(0,240,118,0.45);filter:brightness(1.06)}
+.bet-btn-yes:hover{background:rgba(22,163,74,.06);border-color:rgba(22,163,74,.45)}
 .bet-btn-no{
-  background:linear-gradient(135deg,var(--blood),var(--blood2));color:#fff;
-  box-shadow:0 3px 18px rgba(255,34,68,0.22)
+  color:#dc2626;border-color:rgba(220,38,38,.35)
 }
-.bet-btn-no:hover{box-shadow:0 4px 28px rgba(255,34,68,0.45);filter:brightness(1.06)}
+.bet-btn-no:hover{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.45)}
 .bet-btn:disabled{opacity:0.3;cursor:not-allowed;filter:none;transform:none}
 
 .bets-feed{margin-top:12px}
@@ -851,7 +849,7 @@ body::before{
 /* ── LIVE CHAT ── */
 .live-right{
   width:360px;flex-shrink:0;display:flex;flex-direction:column;
-  border-left:1px solid var(--line);background:rgba(245,245,247,0.72);backdrop-filter:blur(12px)
+  border:1px solid #e5e5e5;background:#fff;backdrop-filter:none
 }
 .chat-header{
   padding:13px 16px 11px;font-family:var(--fn-mono);font-size:9.5px;font-weight:600;
@@ -884,7 +882,7 @@ body::before{
 }
 .chat-send-btn:hover{border-color:var(--line2);color:var(--txt)}
 .live-bet-strip{
-  border-top:1px solid var(--line);padding:10px;background:rgba(255,255,255,0.62);
+  border-top:1px solid #e5e5e5;padding:10px;background:#fff;
   display:grid;grid-template-columns:1fr 1fr;gap:8px
 }
 .live-bet-kpi{
@@ -903,9 +901,9 @@ body::before{
 }
 .live-page-title{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .live-page-meta{display:flex;align-items:center;gap:8px}
-.live-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;padding:16px;max-width:1440px;margin:0 auto;height:auto;overflow:visible}
-.live-main-column{display:flex;flex-direction:column;gap:14px;min-width:0}
-.live-video-card,.live-info-card,.betting-panel,.live-right{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:none}
+.live-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;padding:18px;max-width:1440px;margin:0 auto;height:auto;overflow:visible}
+.live-main-column{display:flex;flex-direction:column;gap:18px;min-width:0}
+.live-video-card,.live-info-card,.betting-panel,.live-right{background:#fff;border:1px solid #e5e5e5;border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .live-video-card{overflow:hidden}
 .video-container{background:#111}
 #liveCanvas{display:none}
@@ -3310,11 +3308,6 @@ body{
     <div class="live-page-header">
       <button class="back-btn" id="backBtn" type="button"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-back"/></svg> BACK</button>
       <div class="live-page-title" id="liveTopTitle"></div>
-      <div class="live-page-meta">
-        <span class="live-badge-big"><div class="live-dot"></div>LIVE</span>
-        <span class="live-countdown" id="liveCountdown">--:--</span>
-        <span class="viewers-count"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></span>
-      </div>
     </div>
 
     <div class="live-layout">
@@ -4938,8 +4931,8 @@ function openLive(d) {
   updateLiveSourceCard(d);
   document.getElementById('sideLabelYes').textContent=d.yesLabel||'OUI';
   document.getElementById('sideLabelNo').textContent=d.noLabel||'NON';
-  document.getElementById('betYesBtn').textContent='MISER '+(d.yesLabel||'OUI');
-  document.getElementById('betNoBtn').textContent='MISER '+(d.noLabel||'NON');
+  document.getElementById('betYesBtn').textContent='Bet YES';
+  document.getElementById('betNoBtn').textContent='Bet NO';
   document.getElementById('betYesBtn').disabled=false;
   document.getElementById('betNoBtn').disabled=false;
   setMobileBetActionsDisabled(false);
@@ -4980,8 +4973,8 @@ function updateBettingUI() {
   document.getElementById('oddNo').textContent=calcOdds(noPct);
   document.getElementById('bigBarFill').style.width=liveYesPct+'%';
   document.getElementById('poolTotal').textContent=fmt(livePool);
-  document.getElementById('topViewers').textContent=fmtV(liveViewers);
-  document.getElementById('videoViewers').textContent=fmtV(liveViewers);
+  const topViewers=document.getElementById('topViewers'); if(topViewers)topViewers.textContent=fmtV(liveViewers);
+  const videoViewers=document.getElementById('videoViewers'); if(videoViewers)videoViewers.textContent=fmtV(liveViewers);
   const poolKpi=document.getElementById('livePoolKpi'); if(poolKpi)poolKpi.textContent=fmt(livePool);
   const viewersKpi=document.getElementById('liveViewersKpi'); if(viewersKpi)viewersKpi.textContent=fmtV(liveViewers);
   const oddYesKpi=document.getElementById('liveOddYesKpi'); if(oddYesKpi)oddYesKpi.textContent=calcOdds(liveYesPct);
