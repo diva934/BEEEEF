@@ -3104,6 +3104,99 @@ body{
   }
 }
 
+/* ===== Live page final light theme overrides ===== */
+#live-view{
+  background:#F5F5F7 !important;
+  color:#111111 !important;
+}
+#live-view .live-layout,
+#live-view .live-main-column{
+  background:transparent !important;
+}
+#live-view .live-video-card,
+#live-view .live-info-card,
+#live-view .betting-panel,
+#live-view .live-right,
+#live-view .live-bet-kpi,
+#live-view .ended-banner{
+  background:#FFFFFF !important;
+  border:1px solid #E5E7EB !important;
+  box-shadow:0 1px 2px rgba(17,24,39,.05) !important;
+  color:#111111 !important;
+}
+#live-view .panel-title,
+#live-view .pool-total,
+#live-view .chat-header,
+#live-view .chat-msg-time,
+#live-view .live-bet-kpi-label,
+#live-view .live-info-description,
+#live-view .big-label-odd{
+  color:#6B7280 !important;
+}
+#live-view .pool-total span,
+#live-view .chat-msg-text,
+#live-view .live-bet-kpi-value,
+#live-view .live-info-title,
+#live-view .live-page-title{
+  color:#111111 !important;
+}
+#live-view .live-info-link,
+#live-view .video-fallback-link{
+  color:#F97316 !important;
+}
+
+#live-view .betting-panel{
+  background:#FFFFFF !important;
+  border:1px solid #E5E7EB !important;
+}
+#live-view .big-label-pct,
+#live-view .label-yes .big-label-name,
+#live-view .label-yes .big-label-pct{color:#16A34A !important;}
+#live-view .label-no .big-label-name,
+#live-view .label-no .big-label-pct{color:#DC2626 !important;}
+#live-view .big-bet-bar{
+  background:#FEE2E2 !important;
+  border-radius:999px !important;
+}
+#live-view .big-bet-fill{
+  background:#16A34A !important;
+  border-radius:999px !important;
+}
+
+#live-view .bet-btn{
+  background:#FFFFFF !important;
+  border-radius:12px !important;
+  box-shadow:none !important;
+  filter:none !important;
+  text-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  transform:none !important;
+}
+#live-view .bet-btn-yes{
+  color:#16A34A !important;
+  border:1px solid rgba(22,163,74,.35) !important;
+  background:#FFFFFF !important;
+}
+#live-view .bet-btn-yes:hover{
+  background:rgba(22,163,74,.05) !important;
+  border-color:rgba(22,163,74,.45) !important;
+  box-shadow:none !important;
+}
+#live-view .bet-btn-no{
+  color:#DC2626 !important;
+  border:1px solid rgba(220,38,38,.35) !important;
+  background:#FFFFFF !important;
+}
+#live-view .bet-btn-no:hover{
+  background:rgba(220,38,38,.05) !important;
+  border-color:rgba(220,38,38,.45) !important;
+  box-shadow:none !important;
+}
+
+@media(max-width:768px){
+  #live-view{background:#F5F5F7 !important;}
+}
 </style>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/liquid-web/liquid-core.min.js"></script>
