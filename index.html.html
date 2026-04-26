@@ -263,9 +263,7 @@ body::before{
   overflow-x:auto;scrollbar-width:none;
   scroll-snap-type:x mandatory;
   padding-bottom:8px;
-  /* fade edges */
-  mask-image:linear-gradient(90deg,transparent 0,#000 0px,#000 calc(100% - 32px),transparent 100%);
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 0px,#000 calc(100% - 32px),transparent 100%)
+  padding-right:40px  /* breathing room for last card without fade distortion */
 }
 .tc-scroll::-webkit-scrollbar{display:none}
 /* Force carousel cards to fixed width, snap */
@@ -427,9 +425,9 @@ body::before{
   position:absolute;inset:0;
   animation:none
 }
-.thumb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;transition:transform 0.55s ease,filter 0.55s ease;opacity:1;mix-blend-mode:normal;background:#050506}
+.thumb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;transition:transform 0.55s ease,filter 0.55s ease;opacity:1;mix-blend-mode:normal;background:#050506}
 .thumb-preview-video{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;opacity:0;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;opacity:0;
   transition:opacity .28s ease,transform .7s ease;transform:scale(1.02);z-index:1;pointer-events:none
 }
 .debate-card:hover .thumb-preview-video,.debate-card.previewing .thumb-preview-video{opacity:1;transform:scale(1)}
@@ -3082,6 +3080,7 @@ body{
   }
   .card-thumb{
     margin:10px 10px 0!important;
+    width:calc(100% - 20px)!important;
     border-radius:18px!important;
     overflow:hidden!important;
     padding-top:43.5%!important;
