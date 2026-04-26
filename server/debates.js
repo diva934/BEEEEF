@@ -539,11 +539,13 @@ function loadDebates() {
 
   try {
     const parsed = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    if (!Array.isArray(parsed) || !parsed.length) {
+    if (!Array.isArray(parsed)) {
       const seeded = resetSeedDebates();
       persistDebates(seeded);
       return seeded;
     }
+    // Empty array is valid in live-only mode -- pipeline will populate via live streams
+    if (!parsed.length) return [];
 
     const result = ensureActiveDebates(parsed);
     if (result.refreshed) {
