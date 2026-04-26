@@ -68,7 +68,7 @@
   --r:12px;--rs:8px;--rl:20px;--rxl:28px;--rfull:9999px;
 
   /* ── Layout ── */
-  --hh:72px;
+  --hh:56px;
 
   /* ── Typography ── */
   --fn-disp:'Inter Tight','Inter',system-ui,sans-serif;
@@ -133,9 +133,8 @@ body::before{
 ══════════════════════════════════════════════════ */
 #header{
   position:fixed;top:0;left:0;right:0;height:var(--hh);z-index:1000;
-  display:grid;grid-template-columns:auto 1fr auto;align-items:center;
-  padding:0 20px 0 20px;gap:16px;
-  background:rgba(251,251,253,0.92);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+  background:rgba(251,251,253,0.88);
   backdrop-filter:blur(32px) saturate(1.8);
   -webkit-backdrop-filter:blur(32px) saturate(1.8);
   border-bottom:1px solid var(--line)
@@ -164,89 +163,8 @@ body::before{
   filter:drop-shadow(0 0 18px rgba(255,107,53,0.3))
 }
 
-/* ── HEADER DEBATES STRIP ── */
-.h-debates-wrap{
-  position:relative;overflow:hidden;min-width:0;
-  mask-image:linear-gradient(90deg,transparent 0%,#000 48px,#000 calc(100% - 48px),transparent 100%);
-  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 48px,#000 calc(100% - 48px),transparent 100%)
-}
-.h-debates-track{
-  display:flex;gap:10px;width:max-content;
-  animation:hdrScroll 38s linear infinite
-}
-.h-debates-track:hover{animation-play-state:paused}
-@keyframes hdrScroll{
-  from{transform:translateX(0)}
-  to{transform:translateX(-50%)}
-}
-
-/* Mini debate card — mirrors the main .debate-card format */
-.hdr-card{
-  display:flex;flex-direction:row;align-items:stretch;
-  width:230px;height:calc(var(--hh) - 14px);
-  background:var(--ink2);border:1px solid var(--line);border-radius:10px;
-  overflow:hidden;cursor:pointer;flex-shrink:0;
-  transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s
-}
-.hdr-card:hover{
-  border-color:rgba(255,107,53,0.35);
-  box-shadow:0 4px 20px rgba(255,107,53,0.14);
-  transform:translateY(-1px)
-}
-.hdr-card-thumb{
-  position:relative;width:72px;flex-shrink:0;overflow:hidden;background:#e8e8ea
-}
-.hdr-card-thumb img{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transition:transform 0.45s ease
-}
-.hdr-card:hover .hdr-card-thumb img{transform:scale(1.08)}
-.hdr-card-thumb-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent 60%,rgba(251,251,253,0.18) 100%)
-}
-.hdr-live-dot{
-  position:absolute;top:6px;left:6px;
-  width:5px;height:5px;border-radius:50%;background:#ff453a;
-  box-shadow:0 0 0 2px rgba(255,69,58,0.25);
-  animation:beat 1.2s ease-in-out infinite
-}
-.hdr-card-body{
-  flex:1;min-width:0;display:flex;flex-direction:column;
-  justify-content:space-between;padding:8px 10px 7px
-}
-.hdr-card-top{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px}
-.hdr-card-cat{
-  font-family:var(--fn-mono);font-size:8.5px;font-weight:700;
-  color:var(--txt3);text-transform:uppercase;letter-spacing:0.1em;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
-}
-.hdr-card-pool{
-  font-family:var(--fn-mono);font-size:8.5px;font-weight:700;
-  color:var(--fire);white-space:nowrap;flex-shrink:0
-}
-.hdr-card-title{
-  font-family:var(--fn-disp);font-size:12px;font-weight:800;
-  color:var(--txt);line-height:1.2;letter-spacing:-0.02em;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
-}
-.hdr-card-bar-wrap{margin-top:auto;padding-top:5px}
-.hdr-card-bar-labels{
-  display:flex;justify-content:space-between;margin-bottom:4px;
-  font-family:var(--fn-body);font-size:9.5px;font-weight:700
-}
-.hdr-card-bar-labels .yes{color:var(--elec)}
-.hdr-card-bar-labels .no{color:var(--blood)}
-.hdr-card-bar{
-  height:3px;background:rgba(255,34,68,0.15);border-radius:9999px;overflow:hidden
-}
-.hdr-card-bar-fill{
-  height:100%;border-radius:9999px;
-  background:linear-gradient(90deg,var(--elec),#25d485)
-}
-
-/* ── NAV (hidden — replaced by debate strip) ── */
-.h-nav{display:none}
+/* ── NAV ── */
+.h-nav{display:flex;align-items:center;gap:2px}
 .live-ticker{
   display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:4px;
   font-family:var(--fn-mono);font-size:10.5px;font-weight:500;color:var(--blood);
@@ -315,6 +233,64 @@ body::before{
    MAIN / HOMEPAGE
 ══════════════════════════════════════════════════ */
 #main{padding-top:var(--hh);position:relative;z-index:1}
+
+/* ── TOP DEBATES CAROUSEL ── */
+#top-carousel{
+  padding:28px 40px 0;
+  position:relative;z-index:1
+}
+.tc-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px
+}
+.tc-title{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--fn-mono);font-size:10.5px;font-weight:700;
+  color:var(--txt3);text-transform:uppercase;letter-spacing:0.12em
+}
+.tc-title .ic{color:var(--fire)}
+.tc-live-badge{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
+  border-radius:9999px;font-family:var(--fn-mono);font-size:9.5px;font-weight:600;
+  color:var(--blood);background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.18)
+}
+.tc-live-badge::before{
+  content:'';width:5px;height:5px;border-radius:50%;background:var(--blood);flex-shrink:0;
+  animation:beat 1.2s ease-in-out infinite
+}
+.tc-scroll{
+  display:flex;gap:16px;
+  overflow-x:auto;scrollbar-width:none;
+  scroll-snap-type:x mandatory;
+  padding-bottom:8px;
+  /* fade edges */
+  mask-image:linear-gradient(90deg,transparent 0,#000 0px,#000 calc(100% - 32px),transparent 100%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 0px,#000 calc(100% - 32px),transparent 100%)
+}
+.tc-scroll::-webkit-scrollbar{display:none}
+/* Force carousel cards to fixed width, snap */
+.tc-scroll>.debate-card{
+  min-width:270px;width:270px;flex-shrink:0;
+  scroll-snap-align:start;
+  border-radius:14px;
+  border:1px solid var(--line)
+}
+/* Rank badge on carousel cards */
+.tc-rank{
+  position:absolute;top:10px;left:10px;z-index:3;
+  width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(7,7,9,0.65);backdrop-filter:blur(8px);
+  font-family:var(--fn-mono);font-size:9px;font-weight:800;
+  color:#fff;letter-spacing:0;border:1px solid rgba(255,255,255,0.18)
+}
+@media(max-width:768px){
+  #top-carousel{padding:20px 16px 0}
+  .tc-scroll>.debate-card{min-width:240px;width:240px}
+}
+@media(max-width:480px){
+  .tc-scroll>.debate-card{min-width:82vw;width:82vw}
+}
 #homepage{display:block}
 #live-view{display:none}
 
@@ -1359,13 +1335,9 @@ body::before{
 /* ═══ RESPONSIVE ═══ */
 @media(max-width:1100px){.hero{grid-template-columns:1fr}.hero-stats{display:none}}
 @media(max-width:768px){
-  :root{--hh:62px}
-  #header{padding:0 10px;grid-template-columns:auto 1fr auto;gap:10px}
-  .logo-mark{width:100px;height:32px}
-  .hdr-card{width:180px}
-  .hdr-card-thumb{width:56px}
-  .hdr-card-title{font-size:11px}
-  .hdr-card-pool{display:none}
+  :root{--hh:52px}
+  #header{padding:0 12px}
+  .logo-mark{width:118px;height:36px}
   .top-up-btn{font-size:11px;padding:6px 10px}
   .wallet-badge{font-size:11px;padding:6px 10px}
   .hero{padding:24px 18px 0}
@@ -1968,21 +1940,17 @@ body::after{display:none!important}/* remove scanlines */
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.08)!important;
 }
 
-/* ── HEADER DEBATE MINI CARDS (glass override) ── */
-.hdr-card{
+/* ── TOP CAROUSEL glass overrides ── */
+.tc-scroll>.debate-card{
   background:var(--glass-bg)!important;
   border:1px solid var(--glass-border)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.7),0 2px 8px rgba(0,0,0,0.05)!important;
-  border-radius:10px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.7),0 2px 10px rgba(0,0,0,0.05)!important;
 }
-.hdr-card:hover{
+.tc-scroll>.debate-card:hover{
   background:var(--glass-bg-strong)!important;
-  border-color:rgba(255,107,53,0.3)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 6px 22px rgba(255,107,53,0.14)!important;
+  border-color:rgba(255,107,53,0.28)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 28px rgba(255,107,53,0.12)!important;
 }
-.hdr-card-title{color:var(--txt)!important}
-.hdr-card-cat{color:var(--txt3)!important}
-.hdr-card-bar{background:rgba(255,34,68,0.12)!important}
 
 /* ══ HERO ══ */
 .hero{
@@ -2577,11 +2545,9 @@ button:active{transform:scale(0.97)!important}
 }
 
 @media(max-width:768px){
-  :root{--hh:62px}
+  :root{--hh:52px}
   #header{
-    padding:0 10px!important;
-    grid-template-columns:auto 1fr auto!important;
-    gap:8px!important;
+    padding:0 12px!important;
   }
   .logo-mark{
     width:106px!important;
@@ -3391,10 +3357,6 @@ body{
   <button class="logo" type="button" data-no-liquid onclick="goHome()" aria-label="Retour à l'accueil">
     <span class="logo-mark" aria-hidden="true"></span>
   </button>
-  <!-- Header: scrolling top-5 debates strip -->
-  <div class="h-debates-wrap" id="hdrDebatesWrap">
-    <div class="h-debates-track" id="hdrDebatesTrack"><!-- populated by JS --></div>
-  </div>
   <div class="h-right">
     <button class="top-up-btn header-reminder-btn" onclick="openFunds()" aria-label="Acheter des points">
       <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
@@ -3416,31 +3378,18 @@ body{
 
   <!-- HOMEPAGE -->
   <div id="homepage">
-    <div class="trend-strip" id="trendStrip" aria-label="Top tendances des prédictions">
-      <div class="trend-strip-inner">
-        <div class="trend-strip-title"><svg class="ic" width="12" height="12" viewBox="0 0 24 24"><use href="#ic-trend"/></svg>TOP 5 TENDANCES</div>
-        <div class="trend-marquee">
-          <div class="trend-track" id="trendTrack"></div>
+    <!-- TOP DEBATES CAROUSEL -->
+    <section id="top-carousel" aria-label="Top 5 arènes tendances">
+      <div class="tc-header">
+        <div class="tc-title">
+          <svg class="ic" width="13" height="13" viewBox="0 0 24 24"><use href="#ic-flame"/></svg>
+          TOP 5 TENDANCES
         </div>
+        <div class="tc-live-badge" id="tcLiveBadge">5 LIVE</div>
       </div>
-    </div>
+      <div class="tc-scroll" id="tcScroll"><!-- injected by JS --></div>
+    </section>
 
-    <!-- ANIMATED INTRO SLIDESHOW -->
-    <div class="debate-intro" id="debateIntro">
-      <div class="di-gutter-l"></div>
-      <div class="di-inner">
-        <div class="di-track" id="diTrack"><!-- slides injected by JS --></div>
-        <div class="di-bottom">
-          <div class="di-progress-bar"><div class="di-progress-fill" id="diProgress"></div></div>
-          <div class="di-nav-row">
-            <div class="di-dots" id="diDots"></div>
-            <button class="di-skip" onclick="skipToArenas()">PASSER →</button>
-          </div>
-          <div class="di-scroll-hint"><span class="di-arrow-down">↓</span>&nbsp;DÉFILER POUR PARIER</div>
-        </div>
-      </div>
-      <div class="di-gutter-r"></div>
-    </div>
     <div class="hero">
       <div class="hero-main">
         <h1 class="hero-title">Faites vos<br>meilleures<br><em>prédictions.</em></h1>
@@ -4794,7 +4743,7 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
 
   if (rerender) {
     renderGrid(activeFilter);
-    if (typeof initDebateIntro === 'function') initDebateIntro();
+    // debate-intro removed — carousel handled by renderGrid()
   }
 
   closedTransition.forEach(debate => {
@@ -5158,7 +5107,7 @@ function renderGrid(cat='all') {
   const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' LIVE';
   filtered.forEach(d=>grid.appendChild(buildCard(d)));
   renderTrendingPredictionsStrip();
-  populateHeaderDebates();
+  renderTopCarousel();
 }
 
 function topDebatesByPool(limit=5){
@@ -5199,46 +5148,32 @@ function renderTrendingPredictionsStrip(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  HEADER DEBATES SCROLL STRIP
+//  TOP DEBATES CAROUSEL (between header and hero)
 // ═══════════════════════════════════════════════════════════
-function buildHdrCard(d){
-  const noPct=100-d.yesPct;
-  const img=getDebatePreviewImage(d);
-  const el=document.createElement('div');
-  el.className='hdr-card';
-  el.innerHTML=`
-    <div class="hdr-card-thumb">
-      <img src="${escapeHtml(img)}" alt="${escapeHtml(d.title)}" loading="lazy" decoding="async">
-      <div class="hdr-card-thumb-overlay"></div>
-      ${!d.closed?'<div class="hdr-live-dot"></div>':''}
-    </div>
-    <div class="hdr-card-body">
-      <div class="hdr-card-top">
-        <span class="hdr-card-cat">${escapeHtml(catLabel(d.category))}</span>
-        <span class="hdr-card-pool">${escapeHtml(fmt(d.pool))}</span>
-      </div>
-      <div class="hdr-card-title">${escapeHtml(d.title)}</div>
-      <div class="hdr-card-bar-wrap">
-        <div class="hdr-card-bar-labels">
-          <span class="yes">${escapeHtml(d.yesLabel||'OUI')}&nbsp;${d.yesPct}%</span>
-          <span class="no">${noPct}%&nbsp;${escapeHtml(d.noLabel||'NON')}</span>
-        </div>
-        <div class="hdr-card-bar"><div class="hdr-card-bar-fill" style="width:${d.yesPct}%"></div></div>
-      </div>
-    </div>
-  `;
-  if(!d.closed) el.addEventListener('click',()=>openLive(d));
-  return el;
-}
-
-function populateHeaderDebates(){
-  const track=document.getElementById('hdrDebatesTrack');
-  if(!track)return;
+function renderTopCarousel(){
+  const scroll=document.getElementById('tcScroll');
+  const badge=document.getElementById('tcLiveBadge');
+  if(!scroll)return;
   const top=topDebatesByPool(5);
-  if(!top.length){track.innerHTML='';return;}
-  track.innerHTML='';
-  // duplicate for seamless infinite scroll
-  [...top,...top].forEach(d=>track.appendChild(buildHdrCard(d)));
+  if(!top.length){
+    const section=document.getElementById('top-carousel');
+    if(section)section.style.display='none';
+    return;
+  }
+  const section=document.getElementById('top-carousel');
+  if(section)section.style.display='';
+  if(badge)badge.textContent=top.filter(d=>!d.closed).length+' LIVE';
+  scroll.innerHTML='';
+  top.forEach((d,i)=>{
+    const card=buildCard(d);
+    // inject rank badge into the thumb
+    const rank=document.createElement('div');
+    rank.className='tc-rank';
+    rank.textContent='#'+(i+1);
+    const thumb=card.querySelector('.card-thumb');
+    if(thumb)thumb.appendChild(rank);
+    scroll.appendChild(card);
+  });
 }
 
 document.getElementById('catBar').addEventListener('click',e=>{
@@ -5252,7 +5187,7 @@ debates = createFallbackDebates();
 renderGrid();
 startDebateSync();
 refreshDebatesFromServer();
-setTimeout(()=>{if(typeof initDebateIntro==='function') initDebateIntro();},0);
+// debate-intro removed — carousel replaces it
 if(userLangs.length>0) applyUserPrefs();
 else setTimeout(openSetupModal, 1500);
 
