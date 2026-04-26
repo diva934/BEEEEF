@@ -63,22 +63,12 @@ function buildDebateVideoQuery(item) {
   return [...terms, editorialHint, channelHint].join(' ').trim();
 }
 
-/**
- * Build a YouTube embed search URL for a debate topic.
- * Uses YouTube's listType=search embed parameter to surface credible
- * TV/news panel footage without requiring an API key.
- */
 function buildYouTubeSearchUrl(item) {
   const query = buildDebateVideoQuery(item);
   if (!query) return '';
-
   return `https://www.youtube.com/embed?autoplay=1&mute=1&playsinline=1&controls=0&modestbranding=1&rel=0&listType=search&list=${encodeURIComponent(query)}&index=1`;
 }
 
-/**
- * Return the best available image URL for a news item.
- * Falls back to a curated category image when the RSS feed provides none.
- */
 function resolvePreviewImage(item) {
   if (hasUsablePreviewImage(item.imageUrl)) return item.imageUrl;
   const fallback = CATEGORY_FALLBACK_IMAGES[item.category] || CATEGORY_FALLBACK_IMAGES.general;
@@ -228,9 +218,10 @@ function isUsableQuestion(question) {
 
 function buildDebateFromNews(item, options = {}) {
   const durationMs = Math.max(900_000, Number(options.durationMs) || DEFAULT_DURATION_MS);
+  const liveEmbed = options.liveEmbed || null; // { videoId, embedUrl, thumbnailUrl, channelTitle }
   const title = buildQuestion(item);
 
-  // Controversy is still required — an irrelevant headline shouldn't become a debate
+  // Controversy is still required
   if (!isControversialNewsItem(item)) {
     return null;
   }
@@ -247,20 +238,23 @@ function buildDebateFromNews(item, options = {}) {
   const pool = seededRange(`${seed}:pool`, 25, 95) * 1000;
   const openedAt = Date.now();
 
-  // Resolve image — use RSS thumbnail when available, else category fallback
   const imageUrl = resolvePreviewImage(item);
-
-  // Build a YouTube search embed URL for contextual video
-  const youtubeUrl = buildYouTubeSearchUrl(item);
+  const liveEmbedUrl = liveEmbed ? liveEmbed.embedUrl : null;
+  const liveThumb    = liveEmbed ? liveEmbed.thumbnailUrl : null;
 
   return {
     title,
     description: buildDescription(item),
     sourceExcerpt: buildSourceExcerpt(item),
     sourceDescription: normalizeWhitespace(item.sourceDescription),
-    sourceImageUrl: imageUrl,
-    previewVideoUrl: youtubeUrl,
-    contextVideoUrl: youtubeUrl,
+    sourceImageUrl: liveThumb || imageUrl,
+    photo: liveThumb || imageUrl,
+    previewVideoUrl: liveEmbedUrl,
+    contextVideoUrl: liveEmbedUrl,
+    liveVideoId: liveEmbed ? liveEmbed.videoId : null,
+    liveEmbedUrl: liveEmbedUrl,
+    liveChannel: liveEmbed ? (liveEmbed.channelTitle || '') : null,
+    createdFromLive: Boolean(liveEmbed),
     sourceFeedLabel: item.sourceFeedLabel || '',
     sourceDomain: item.domain || '',
     yesLabel: 'YES',
@@ -278,7 +272,6 @@ function buildDebateFromNews(item, options = {}) {
     viewers,
     gradColors,
     lang: 'en',
-    photo: imageUrl,
     durationMs,
     openedAt,
     endsAt: openedAt + durationMs,
@@ -286,7 +279,152 @@ function buildDebateFromNews(item, options = {}) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Build a debate from a live YouTube stream
+// ─────────────────────────────────────────────────────────────
+
+// Strip common live-stream title prefixes/suffixes so we can build a question.
+// e.g. "LIVE | Ukraine War Update | Al Jazeera" -> "Ukraine War Update"
+function cleanLiveTitle(rawTitle) {
+  return rawTitle
+    // Remove emoji (Unicode ranges for misc symbols/pictographs)
+    .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    // Remove common live prefixes
+    .replace(/^(LIVE\s*[:|-]?|BREAKING\s*[:|-]?|EN\s+DIRECT\s*[:|-]?|DIRECT\s*[:|-]?\s*)/gi, '')
+    // Remove trailing channel name after last pipe
+    .replace(/\s*[|]\s*[^|]{1,40}$/, '')
+    // Remove hashtags
+    .replace(/\s*#\S+/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function buildQuestionFromLiveTitle(rawTitle) {
+  const title = cleanHeadline(cleanLiveTitle(rawTitle));
+  if (!title || title.length < 5) return null;
+
+  if (/^(How|Why|What|When|Where|Who)\b/i.test(title)) return null;
+
+  const directQ = title.match(/^(Will|Could|Can|Should|Would)\s+(.+)$/i);
+  if (directQ) {
+    const rem = cleanSegment(directQ[2], 8);
+    if (rem) return `Will ${rem}?`;
+  }
+
+  const launchM = title.match(/^(.+?)\s+(launches|unveils|announces|releases|debuts)\s+(.+)$/i);
+  if (launchM) {
+    const owner = possessive(launchM[1]);
+    const obj   = cleanSegment(launchM[3], 6);
+    if (owner && obj) return `Will ${owner} ${obj} be a success?`;
+  }
+
+  const approvalM = title.match(/^(.+?)\s+(approves|passes|backs|blocks|bans|regulates|cuts|raises)\s+(.+)$/i);
+  if (approvalM) {
+    const obj = cleanSegment(approvalM[3], 7);
+    if (obj) return `Will ${obj} have a lasting impact?`;
+  }
+
+  const moveM = title.match(/^(.+?)\s+(rises|jumps|surges|falls|slumps|drops|soars|plunges)\b/i);
+  if (moveM) {
+    const subj = cleanSegment(moveM[1], 5);
+    if (subj) return `Will ${subj} keep moving this way?`;
+  }
+
+  if (/\b(bitcoin|ethereum|crypto|etf)\b/i.test(title)) {
+    const subj = cleanSegment(title.match(/\b(Bitcoin|Ethereum|crypto ETF|crypto)\b/i)?.[1] || 'crypto', 4);
+    if (subj) return `Will ${subj} keep the momentum?`;
+  }
+
+  if (/\b(election|poll|campaign|vote)\b/i.test(title)) {
+    const subj = extractLeadingEntity(title);
+    if (subj) return `Will ${subj} come out on top?`;
+  }
+
+  if (/\b(war|conflict|attack|crisis|ceasefire|invasion)\b/i.test(title)) {
+    const subj = extractLeadingEntity(title);
+    if (subj) return `Will ${subj} resolve this conflict?`;
+    return 'Will this conflict reach a resolution?';
+  }
+
+  if (/\b(tariff|inflation|interest rates?|recession|market|earnings|layoffs?)\b/i.test(title)) {
+    const subj = extractLeadingEntity(title) || 'markets';
+    return `Will ${subj} move the market?`;
+  }
+
+  if (/\b(deal|agreement|summit|talks|negotiat)\b/i.test(title)) {
+    const subj = extractLeadingEntity(title);
+    if (subj) return `Will ${subj} reach a deal?`;
+  }
+
+  if (/\b(ai|artificial intelligence|chatgpt|openai|gemini)\b/i.test(title)) {
+    const subj = extractLeadingEntity(title) || 'AI';
+    if (subj) return `Will ${subj} reshape the industry?`;
+  }
+
+  const entity = extractLeadingEntity(title);
+  if (entity && entity.length > 3) return `Will ${entity} change the course of events?`;
+
+  return null;
+}
+
+function buildDebateFromLiveStream(streamItem, options = {}) {
+  const durationMs = Math.max(900_000, Number(options.durationMs) || DEFAULT_DURATION_MS);
+  const title      = buildQuestionFromLiveTitle(streamItem.title);
+
+  if (!isUsableQuestion(title)) return null;
+
+  const seed       = streamItem.videoId;
+  const category   = streamItem.category || 'general';
+  const gradColors = CATEGORY_STYLES[category] || CATEGORY_STYLES.general;
+  const yesPct     = seededRange(seed, 42, 58);
+  const viewers    = seededRange(`${seed}:viewers`, 650, 2600);
+  const pool       = seededRange(`${seed}:pool`, 25, 95) * 1000;
+  const openedAt   = Date.now();
+
+  const channelLabel = streamItem.channelTitle || streamItem.channelHandle;
+  const thumbnail    = streamItem.thumbnailUrl
+    || `https://i.ytimg.com/vi/${streamItem.videoId}/maxresdefault.jpg`;
+
+  return {
+    title,
+    description     : `Debate from live stream: ${channelLabel} - "${streamItem.title}"`,
+    sourceExcerpt   : streamItem.title,
+    sourceDescription: streamItem.title,
+    sourceImageUrl  : thumbnail,
+    previewVideoUrl : streamItem.embedUrl,
+    contextVideoUrl : streamItem.embedUrl,
+    sourceFeedLabel : channelLabel,
+    sourceDomain    : 'youtube.com',
+    yesLabel        : 'YES',
+    noLabel         : 'NO',
+    sourceUrl       : streamItem.sourceUrl,
+    sourceTitle     : streamItem.title,
+    sourceKey       : `yt-live-${streamItem.videoId}`,
+    newsPublishedAt : new Date().toISOString(),
+    createdFromNews : true,
+    createdFromLive : true,
+    category,
+    trending        : false,
+    ai              : /\b(ai|artificial intelligence|chatgpt|openai|gemini)\b/i.test(streamItem.title),
+    yesPct,
+    pool,
+    viewers,
+    gradColors,
+    lang            : streamItem.lang || 'en',
+    photo           : thumbnail,
+    durationMs,
+    openedAt,
+    endsAt          : openedAt + durationMs,
+    listed          : true,
+    liveVideoId     : streamItem.videoId,
+    liveEmbedUrl    : streamItem.embedUrl,
+    liveChannel     : streamItem.channelHandle,
+  };
+}
+
 module.exports = {
   DEFAULT_DURATION_MS,
   buildDebateFromNews,
+  buildDebateFromLiveStream,
 };

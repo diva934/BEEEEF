@@ -2,9 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 const { countActiveDebates, createDebate, hideSourceBackfillDebates, hideSurplusActiveDebates, listDebates, reconcileDebates } = require('./debates');
-const { buildDebateFromNews, DEFAULT_DURATION_MS } = require('./news-debate-generator');
+const { buildDebateFromNews, buildDebateFromLiveStream, DEFAULT_DURATION_MS } = require('./news-debate-generator');
 const { filterNewsItems, fingerprintTitle } = require('./news-filter');
 const { fetchLatestNews, RSS_TOPICS, TRUSTED_NEWS_DOMAINS } = require('./news-sources');
+const { fetchAllLiveStreams, getLiveEmbedForCategory } = require('./youtube-live');
 
 const STATE_FILE = process.env.NEWS_STATE_FILE || path.join(__dirname, 'data', 'news-state.json');
 // Total visible debates (seed + news combined).
@@ -191,63 +192,118 @@ async function runNewsMaintenance(options = {}) {
       };
     }
 
-    const fetched = await fetchLatestNews();
-    const debateContext = buildExistingDebateContext();
-    const filtered = filterNewsItems(fetched.items, {
-      existingSourceKeys: debateContext.existingSourceKeys,
-      existingTitleFingerprints: debateContext.existingTitleFingerprints,
-      usedSourceKeys: pipelineState.usedArticles.map(item => item.sourceKey),
-      usedTitleFingerprints: pipelineState.usedArticles.map(item => item.titleFingerprint),
-    });
-
     const created = [];
     const createBudget = Math.min(missingSlots, MAX_CREATED_PER_RUN);
+    const debateContext = buildExistingDebateContext();
 
-    for (const item of filtered) {
-      if (created.length >= createBudget) {
-        break;
-      }
+    // ── Phase 1: Live-stream debates (primary source) ─────────────────────
+    // Fetch all currently-live YouTube news channels and generate debates
+    // directly from their live streams. These debates always have a matching video.
+    let liveStreams = [];
+    try {
+      liveStreams = await fetchAllLiveStreams();
+    } catch (e) {
+      console.warn('[news] fetchAllLiveStreams failed:', e.message);
+    }
 
-      const draft = buildDebateFromNews(item, { durationMs: DEFAULT_DURATION_MS });
+    // Deduplicate against already-existing debates
+    const usedSourceKeys = new Set([
+      ...debateContext.existingSourceKeys,
+      ...pipelineState.usedArticles.map(a => a.sourceKey),
+    ]);
+    const usedFingerprints = new Set([
+      ...debateContext.existingTitleFingerprints,
+      ...pipelineState.usedArticles.map(a => a.titleFingerprint),
+    ]);
+
+    for (const stream of liveStreams) {
+      if (created.length >= createBudget) break;
+
+      const sourceKey = `yt-live-${stream.videoId}`;
+      if (usedSourceKeys.has(sourceKey)) continue;
+
+      const fp = fingerprintTitle(stream.title);
+      if (fp && usedFingerprints.has(fp)) continue;
+
+      const draft = buildDebateFromLiveStream(stream, { durationMs: DEFAULT_DURATION_MS });
       if (!draft) {
+        console.log(`[news] live stream skipped (no question): ${stream.channelHandle} — "${stream.title}"`);
         continue;
       }
 
       const debate = createDebate(draft);
-      if (!debate) {
-        continue;
-      }
+      if (!debate) continue;
+
+      console.log(`[news] live debate created: "${debate.title}" from @${stream.channelHandle}`);
 
       created.push({
-        id: debate.id,
-        title: debate.title,
-        category: debate.category,
-        sourceUrl: debate.sourceUrl,
-        sourceTitle: debate.sourceTitle,
-        sourceImageUrl: debate.sourceImageUrl,
-        sourceExcerpt: debate.sourceExcerpt,
-        endsAt: debate.endsAt,
+        id: debate.id, title: debate.title, category: debate.category,
+        sourceUrl: debate.sourceUrl, sourceTitle: debate.sourceTitle,
+        sourceImageUrl: debate.sourceImageUrl, sourceExcerpt: debate.sourceExcerpt,
+        endsAt: debate.endsAt, liveVideoId: stream.videoId,
       });
+
+      usedSourceKeys.add(sourceKey);
+      if (fp) usedFingerprints.add(fp);
 
       pipelineState.usedArticles.unshift({
-        sourceKey: item.sourceKey,
-        titleFingerprint: item.titleFingerprint,
-        sourceTitle: item.sourceTitle,
-        sourceUrl: item.sourceUrl,
-        debateId: debate.id,
-        createdAt: startedAt,
+        sourceKey, titleFingerprint: fp || '',
+        sourceTitle: stream.title, sourceUrl: stream.sourceUrl,
+        debateId: debate.id, createdAt: startedAt,
       });
     }
 
-    pipelineState.lastSuccessAt = startedAt;
-    pipelineState.lastFetchCount = fetched.items.length;
-    pipelineState.lastCandidateCount = filtered.length;
-    pipelineState.lastFetchSample = sanitizeSample(fetched.items, summarizeItem);
-    pipelineState.lastCandidateSample = sanitizeSample(filtered, summarizeItem);
-    pipelineState.lastCreated = created;
-    if (fetched.errors.length) {
-      pipelineState.lastError = fetched.errors.map(error => `${error.topicId}: ${error.message}`).join(' | ');
+    // ── Phase 2: RSS fallback (only if live streams didn't fill the budget) ──
+    // Kept as safety net so debates always exist even if YouTube is unreachable.
+    if (created.length < createBudget) {
+      const fetched  = await fetchLatestNews();
+      const filtered = filterNewsItems(fetched.items, {
+        existingSourceKeys       : [...usedSourceKeys],
+        existingTitleFingerprints: [...usedFingerprints],
+        usedSourceKeys           : pipelineState.usedArticles.map(a => a.sourceKey),
+        usedTitleFingerprints    : pipelineState.usedArticles.map(a => a.titleFingerprint),
+      });
+
+      if (fetched.errors.length) {
+        pipelineState.lastError = fetched.errors.map(e => `${e.topicId}: ${e.message}`).join(' | ');
+      }
+
+      for (const item of filtered) {
+        if (created.length >= createBudget) break;
+
+        // Attach a verified live embed (by category) to every RSS debate
+        const liveEmbed = getLiveEmbedForCategory(item.category);
+        const draft = buildDebateFromNews(item, { durationMs: DEFAULT_DURATION_MS, liveEmbed });
+        if (!draft) continue;
+
+        // Note: RSS debates have no guaranteed live stream — they're a fallback only
+        const debate = createDebate(draft);
+        if (!debate) continue;
+
+        created.push({
+          id: debate.id, title: debate.title, category: debate.category,
+          sourceUrl: debate.sourceUrl, sourceTitle: debate.sourceTitle,
+          sourceImageUrl: debate.sourceImageUrl, sourceExcerpt: debate.sourceExcerpt,
+          endsAt: debate.endsAt,
+        });
+
+        pipelineState.usedArticles.unshift({
+          sourceKey: item.sourceKey, titleFingerprint: item.titleFingerprint,
+          sourceTitle: item.sourceTitle, sourceUrl: item.sourceUrl,
+          debateId: debate.id, createdAt: startedAt,
+        });
+      }
     }
+
+    pipelineState.lastSuccessAt      = startedAt;
+    pipelineState.lastFetchCount      = liveStreams.length;
+    pipelineState.lastCandidateCount  = created.length;
+    pipelineState.lastFetchSample     = liveStreams.slice(0, 10).map(s => ({
+      category: s.category, domain: 'youtube.com', sourceTitle: s.title,
+      sourceUrl: s.sourceUrl, score: 10,
+    }));
+    pipelineState.lastCandidateSample = pipelineState.lastFetchSample;
+    pipelineState.lastCreated         = created;
 
     pruneState();
     persistState();
@@ -258,10 +314,10 @@ async function runNewsMaintenance(options = {}) {
       hiddenIds: [...hiddenIds, ...backfillHiddenIds],
       activeDebatesBefore,
       sourceDebatesBefore,
-      fetchedCount: fetched.items.length,
-      candidateCount: filtered.length,
+      fetchedCount   : liveStreams.length,
+      candidateCount : created.length,
       created,
-      errors: fetched.errors,
+      errors         : [],
     };
   })()
     .catch(error => {

@@ -21,12 +21,15 @@ const autoSettleDebates = typeof supabaseApi.autoSettleDebates === 'function'
 const {
   applyBetToDebate,
   buildClientVerdict,
+  closeDebateLive,
   countActiveDebates,
   getDebateById,
   listDebates,
   removeBetFromDebate,
   reconcileDebates,
 } = require('./debates');
+const { startBotsForDebate, stopBotsForDebate } = require('./debate-bots');
+const { startLiveMonitor } = require('./live-monitor');
 const {
   getNewsPipelineStatus,
   runNewsMaintenance,
@@ -34,6 +37,7 @@ const {
 } = require('./news-pipeline');
 const stripeLib = require('./stripe');
 const { listTokenTransactions } = supabaseApi;
+const { resolveNewsLiveStream } = require('./youtube-live');
 
 const PORT = process.env.PORT || 3001;
 const DEBATE_CHAT_HISTORY_LIMIT = 120;
@@ -547,6 +551,47 @@ app.get('/api/tokens/packs', (_req, res) => {
   });
 });
 
+// ── YouTube Live Stream Search ─────────────────────────────
+function buildLiveStreamQuery(debate) {
+  const title  = String(debate?.title || debate?.sourceTitle || '').trim();
+  const cat    = String(debate?.category || '').trim();
+  const source = String(debate?.sourceDomain || debate?.sourceFeedLabel || '').trim();
+  const parts  = [title, cat !== 'general' ? cat : '', source].filter(Boolean);
+  return parts.join(' ').slice(0, 120);
+}
+
+app.get('/api/debates/:id/livestream', async (req, res) => {
+  const debate = buildDebatePayload(req.params.id);
+  if (!debate) return res.status(404).json({ error: 'Debate not found' });
+
+  const query = buildLiveStreamQuery(debate);
+
+  // 1. Debate already has a verified live embed attached at creation time
+  if (debate.liveVideoId && debate.liveEmbedUrl) {
+    return res.json({
+      isLive  : true,
+      liveUrl : debate.liveEmbedUrl,
+      videoId : debate.liveVideoId,
+      channel : debate.liveChannel || '',
+      query,
+    });
+  }
+
+  // 2. Resolve from oEmbed-verified pool (no scraping, no API key needed)
+  const liveStream = await resolveNewsLiveStream(debate.category);
+  if (liveStream) {
+    return res.json({
+      isLive  : true,
+      liveUrl : liveStream.embedUrl,
+      videoId : liveStream.videoId,
+      channel : liveStream.handle,
+      query,
+    });
+  }
+
+  return res.json({ isLive: false, liveUrl: null, query });
+});
+
 app.post('/payment/checkout', requireAuth, withApi(async req => {
   const packId = String(req.body?.packId || '');
   const successUrl = String(req.body?.successUrl || '') || undefined;
@@ -683,6 +728,52 @@ setInterval(() => {
 // ─────────────────────────────────────────────────────────────
 reconcileDebates();
 startNewsScheduler();
+
+// ─────────────────────────────────────────────────────────────
+//  Bot spawner — detects new live debates and starts bots
+// ─────────────────────────────────────────────────────────────
+const _debatesWithBots = new Set();
+
+function spawnBotsForNewLiveDebates() {
+  try {
+    const liveDebates = listDebates({ includeUnlisted: true })
+      .filter(d => d.liveVideoId && !d.closed && !_debatesWithBots.has(String(d.id)));
+
+    liveDebates.forEach(debate => {
+      _debatesWithBots.add(String(debate.id));
+      startBotsForDebate(debate.id, debate, io, pushDebateChatMessage);
+    });
+  } catch (e) {
+    console.warn('[bots] spawnBotsForNewLiveDebates error:', e.message);
+  }
+}
+
+// Check for new live debates every 30s
+setInterval(spawnBotsForNewLiveDebates, 30000);
+// Also run once immediately after startup delay
+setTimeout(spawnBotsForNewLiveDebates, 5000);
+
+// ─────────────────────────────────────────────────────────────
+//  Live-stream monitor — closes debates when stream ends
+// ─────────────────────────────────────────────────────────────
+startLiveMonitor(io, {
+  listDebates: (opts) => listDebates(opts),
+  closeDebate: (debateId, verdict) => {
+    const closed = closeDebateLive(debateId, verdict);
+    if (closed) broadcastDebate(debateId);
+  },
+  getChat: (debateId) => debateChatByRoom.get(String(debateId)) || [],
+  stopBots: (debateId) => {
+    stopBotsForDebate(debateId);
+    _debatesWithBots.delete(String(debateId));
+  },
+  onDebateEnded: (debateId) => {
+    broadcastDebate(debateId);
+    runNewsMaintenance({ reason: 'live_ended' }).catch(e => {
+      console.warn('[news] live_ended run failed:', e.message);
+    });
+  },
+});
 
 setInterval(() => {
   const summary = reconcileDebates();

@@ -292,9 +292,13 @@ function sanitizeDebate(raw, index = 0) {
     sourceExcerpt: normalizeText(raw.sourceExcerpt || raw.sourceDescription),
     sourceDescription: normalizeText(raw.sourceDescription),
     sourceImageUrl: previewImageUrl,
-    previewVideoUrl: normalizeText(raw.previewVideoUrl || raw.sourceVideoUrl || raw.contextVideoUrl),
+    previewVideoUrl: normalizeText(raw.previewVideoUrl || raw.liveEmbedUrl || raw.sourceVideoUrl || raw.contextVideoUrl),
     sourceVideoUrl: normalizeText(raw.sourceVideoUrl),
     contextVideoUrl: normalizeText(raw.contextVideoUrl),
+    liveVideoId: raw.liveVideoId ? String(raw.liveVideoId) : null,
+    liveEmbedUrl: raw.liveEmbedUrl ? String(raw.liveEmbedUrl) : null,
+    liveChannel: raw.liveChannel ? String(raw.liveChannel) : null,
+    createdFromLive: Boolean(raw.createdFromLive),
     sourceFeedLabel: normalizeText(raw.sourceFeedLabel),
     sourceDomain: normalizeText(raw.sourceDomain),
     sourceKey: normalizeText(raw.sourceKey).toLowerCase(),
@@ -633,6 +637,10 @@ function toPublicDebate(debate) {
     sourceKey: debate.sourceKey,
     newsPublishedAt: debate.newsPublishedAt,
     createdFromNews: debate.createdFromNews,
+    createdFromLive: debate.createdFromLive,
+    liveVideoId: debate.liveVideoId,
+    liveEmbedUrl: debate.liveEmbedUrl,
+    liveChannel: debate.liveChannel,
     listed: debate.listed,
     durationMs: debate.durationMs,
     openedAt: debate.openedAt,
@@ -726,6 +734,36 @@ function createDebate(rawDebate) {
   debates.push(nextDebate);
   persistDebates(debates);
   return toPublicDebate(nextDebate);
+}
+
+function closeDebateLive(debateId, verdict) {
+  var id = String(debateId);
+  var index = debates.findIndex(function (d) { return String(d.id) === id; });
+  if (index === -1) return null;
+
+  var debate = debates[index];
+  if (debate.closed) return toPublicDebate(debate);
+
+  var now = nowMs();
+  debates[index] = {
+    ...debate,
+    closed: true,
+    closedAt: now,
+    endsAt: Math.min(Number(debate.endsAt) || now, now),
+    winnerSide: verdict.winnerSide || 'yes',
+    winnerLabel: verdict.winnerLabel || verdict.winner || '',
+    verdictReasoning: verdict.reasoning || '',
+    verdictScores: {
+      conviction:  verdict.conviction  || { yes: 7, no: 5 },
+      logic:       verdict.logic       || { yes: 7, no: 5 },
+      originality: verdict.originality || { yes: 6, no: 5 },
+    },
+    updatedAt: nowIso(now),
+  };
+
+  persistDebates(debates);
+  console.log('[debates] live debate closed:', id, '— winner:', debates[index].winnerSide);
+  return toPublicDebate(debates[index]);
 }
 
 function hideSurplusActiveDebates(maxVisibleActive) {
@@ -884,6 +922,7 @@ module.exports = {
   TARGET_ACTIVE_DEBATES,
   applyBetToDebate,
   buildClientVerdict,
+  closeDebateLive,
   countActiveDebates,
   createDebate,
   getDebateById,
