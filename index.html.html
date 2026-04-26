@@ -245,8 +245,8 @@ body::before{
 }
 .tc-title{
   display:flex;align-items:center;gap:8px;
-  font-family:var(--fn-mono);font-size:10.5px;font-weight:700;
-  color:var(--txt3);text-transform:uppercase;letter-spacing:0.12em
+  font-family:var(--fn-body);font-size:11px;font-weight:600;
+  color:var(--txt2);text-transform:uppercase;letter-spacing:0.05em
 }
 .tc-title .ic{color:var(--fire)}
 .tc-live-badge{
@@ -427,9 +427,9 @@ body::before{
   position:absolute;inset:0;
   animation:none
 }
-.thumb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 0.55s ease,filter 0.55s ease;opacity:1;mix-blend-mode:normal;background:#050506}
+.thumb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;transition:transform 0.55s ease,filter 0.55s ease;opacity:1;mix-blend-mode:normal;background:#050506}
 .thumb-preview-video{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;opacity:0;
   transition:opacity .28s ease,transform .7s ease;transform:scale(1.02);z-index:1;pointer-events:none
 }
 .debate-card:hover .thumb-preview-video,.debate-card.previewing .thumb-preview-video{opacity:1;transform:scale(1)}
@@ -783,7 +783,7 @@ body::before{
   min-height:74px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,rgba(10,132,255,0.16),rgba(255,107,53,0.16));
   border:1px solid rgba(0,0,0,0.08)
 }
-.live-source-image img{width:100%;height:100%;object-fit:cover;display:block}
+.live-source-image img{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block}
 .live-source-body{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px}
 .live-source-kicker{
   display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-family:var(--fn-mono);font-size:9px;font-weight:700;
@@ -2887,7 +2887,7 @@ body{
   display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px
 }
 .card-category-text{
-  font-family:var(--fn-mono);font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--txt3)
+  font-family:var(--fn-body);font-size:10px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--txt3)
 }
 .card-time{
   display:inline-flex;align-items:center;gap:5px;font-family:var(--fn-mono);font-size:10px;font-weight:600;color:var(--txt2)
@@ -2907,8 +2907,8 @@ body{
 }
 .card-category{
   background:none!important;border:none!important;padding:0!important;border-radius:0!important;
-  font-family:var(--fn-mono)!important;font-size:10px!important;font-weight:700!important;
-  letter-spacing:0.14em!important;text-transform:uppercase!important;color:var(--txt3)!important;
+  font-family:var(--fn-body)!important;font-size:10px!important;font-weight:600!important;
+  letter-spacing:0.04em!important;text-transform:uppercase!important;color:var(--txt3)!important;
   box-shadow:none!important
 }
 .bet-labels{
@@ -3097,8 +3097,8 @@ body{
     margin-bottom:8px!important;
   }
   .card-category-text{
-    font-size:9px!important;
-    color:var(--txt3)!important;
+    font-size:9px!important;font-weight:600!important;
+    letter-spacing:0.03em!important;color:var(--txt3)!important;
   }
   .card-time{
     font-size:9px!important;
