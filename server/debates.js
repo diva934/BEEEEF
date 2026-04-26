@@ -863,6 +863,26 @@ function hideSourceBackfillDebates(slotCount) {
   return hiddenIds;
 }
 
+// Hide all active debates that have no live stream attached.
+// Called by news-pipeline on every run to remove old seed/RSS debates.
+// Returns count of debates hidden.
+function hideNonLiveDebates() {
+  reconcileDebates();
+  const updatedAt = nowIso();
+  let hiddenCount = 0;
+  debates = debates.map(function (debate) {
+    if (debate.closed || debate.listed === false) return debate;
+    if (debate.liveVideoId || debate.createdFromLive) return debate;
+    hiddenCount++;
+    return Object.assign({}, debate, { listed: false, updatedAt });
+  });
+  if (hiddenCount > 0) {
+    persistDebates(debates);
+    console.log('[debates] hid ' + hiddenCount + ' non-live debates');
+  }
+  return hiddenCount;
+}
+
 function updateDebatePool(debateId, side, amountDelta, { viewerDelta = 0 } = {}) {
   const normalizedAmount = roundNumber(amountDelta, 2);
   if (!Number.isFinite(normalizedAmount) || normalizedAmount === 0) return null;
@@ -926,6 +946,7 @@ module.exports = {
   countActiveDebates,
   createDebate,
   getDebateById,
+  hideNonLiveDebates,
   hideSourceBackfillDebates,
   hideSurplusActiveDebates,
   listDebates,

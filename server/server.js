@@ -566,7 +566,7 @@ app.get('/api/debates/:id/livestream', async (req, res) => {
 
   const query = buildLiveStreamQuery(debate);
 
-  // 1. Debate already has a verified live embed attached at creation time
+  // 1. Debate already has a live embed attached at creation time
   if (debate.liveVideoId && debate.liveEmbedUrl) {
     return res.json({
       isLive  : true,
@@ -577,18 +577,23 @@ app.get('/api/debates/:id/livestream', async (req, res) => {
     });
   }
 
-  // 2. Resolve from oEmbed-verified pool (no scraping, no API key needed)
-  const liveStream = await resolveNewsLiveStream(debate.category);
-  if (liveStream) {
-    return res.json({
-      isLive  : true,
-      liveUrl : liveStream.embedUrl,
-      videoId : liveStream.videoId,
-      channel : liveStream.handle,
-      query,
-    });
+  // 2. Resolve from verified live stream pool
+  try {
+    const liveStream = await resolveNewsLiveStream(debate.category);
+    if (liveStream && liveStream.embedUrl) {
+      return res.json({
+        isLive  : true,
+        liveUrl : liveStream.embedUrl,
+        videoId : liveStream.videoId,
+        channel : liveStream.handle,
+        query,
+      });
+    }
+  } catch (e) {
+    console.warn('[livestream] resolveNewsLiveStream error:', e.message);
   }
 
+  // No verified live stream for this debate
   return res.json({ isLive: false, liveUrl: null, query });
 });
 

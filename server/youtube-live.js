@@ -1,13 +1,16 @@
 // server/youtube-live.js
-// Live stream resolver -- oEmbed only, no scraping.
-// Uses a curated list of stable 24/7 news channel video IDs.
-// oEmbed is a public YouTube API that works from cloud servers.
+// Live stream verifier for BEEEF debate platform.
+// Uses YouTube oEmbed to verify that hardcoded 24/7 stream IDs are still live.
+// No scraping, no YouTube API key needed.
+// Debates are ONLY created from verified streams -- no hard fallback for pipeline.
 
 'use strict';
 
-// Known stable 24/7 live stream video IDs.
-// These IDs rarely change for major 24/7 broadcast channels.
-var CHANNEL_STREAMS = [
+var https = require('https');
+
+// Hardcoded 24/7 live stream video IDs.
+// These channels broadcast continuously. oEmbed 200 = stream is active.
+var CHANNEL_SOURCES = [
   { videoId: 'F-PODziGFpI', channel: 'Al Jazeera English',  category: 'monde',     lang: 'en' },
   { videoId: 'mGHOslU6pM4', channel: 'DW News',             category: 'general',   lang: 'en' },
   { videoId: 'w_Ma8oQLmSM', channel: 'BBC News',            category: 'general',   lang: 'en' },
@@ -19,7 +22,7 @@ var CHANNEL_STREAMS = [
   { videoId: 'YardpC0tMdA', channel: 'Euronews',            category: 'monde',     lang: 'en' },
 ];
 
-// Map category to preferred video ID
+// Category-to-videoId preference map
 var CATEGORY_VIDEO_ID = {
   monde:       'F-PODziGFpI',
   world:       'F-PODziGFpI',
@@ -37,103 +40,144 @@ var CATEGORY_VIDEO_ID = {
   society:     'mGHOslU6pM4',
   culture:     'w_Ma8oQLmSM',
 };
-var DEFAULT_VIDEO_ID = 'mGHOslU6pM4';
 
-// Cache: Map<videoId, streamInfo>
-var _cache = new Map();
-var _cacheAt = 0;
-var CACHE_TTL = 10 * 60 * 1000; // 10 min
+// Cache of verified live streams: Map<videoId, streamInfo>
+var _liveStreams = new Map();
+// Timestamp of last refresh attempt (set even when all fail, to avoid hammering)
+var _lastRefreshAt = 0;
+var CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+// Whether a refresh is currently in progress (avoid concurrent refreshes)
+var _refreshing = false;
 
 function makeEmbedUrl(videoId) {
-  return 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1';
+  return 'https://www.youtube.com/embed/' + videoId
+    + '?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&controls=1';
 }
 
-function makeThumbnailUrl(videoId, oembed) {
-  if (oembed && oembed.thumbnail_url) return oembed.thumbnail_url;
+function makeThumbnailUrl(videoId, oembedThumb) {
+  if (oembedThumb) return oembedThumb;
   return 'https://i.ytimg.com/vi/' + videoId + '/maxresdefault.jpg';
 }
 
-async function fetchOembed(videoId) {
-  try {
-    var res = await fetch(
-      'https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' + videoId + '&format=json',
-      { signal: AbortSignal.timeout(6000) }
-    );
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    return null;
-  }
+// Fetch YouTube oEmbed data for a video ID using native https module.
+// Returns parsed JSON or null on any error.
+function fetchOembed(videoId) {
+  return new Promise(function (resolve) {
+    var url = 'https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D'
+      + encodeURIComponent(videoId) + '&format=json';
+
+    var timeout = setTimeout(function () { resolve(null); }, 5000);
+
+    try {
+      https.get(url, { headers: { 'User-Agent': 'BEEEF-LiveBot/1.0' } }, function (res) {
+        if (res.statusCode !== 200) {
+          clearTimeout(timeout);
+          res.resume();
+          resolve(null);
+          return;
+        }
+        var body = '';
+        res.setEncoding('utf8');
+        res.on('data', function (chunk) { body += chunk; });
+        res.on('end', function () {
+          clearTimeout(timeout);
+          try { resolve(JSON.parse(body)); }
+          catch (e) { resolve(null); }
+        });
+        res.on('error', function () { clearTimeout(timeout); resolve(null); });
+      }).on('error', function () { clearTimeout(timeout); resolve(null); });
+    } catch (e) {
+      clearTimeout(timeout);
+      resolve(null);
+    }
+  });
 }
 
-async function verifyStream(stream) {
-  var oembed = await fetchOembed(stream.videoId);
+// Verify a single source stream via oEmbed.
+// Returns a full stream info object or null if stream is invalid/unreachable.
+async function verifySource(source) {
+  var oembed = await fetchOembed(source.videoId);
   if (!oembed || !oembed.title) {
-    console.warn('[youtube-live] oEmbed failed for', stream.videoId, '(' + stream.channel + ')');
+    console.log('[youtube-live] FAIL ' + source.channel + ' (' + source.videoId + ')');
     return null;
   }
+  console.log('[youtube-live] OK   ' + source.channel + ' (' + source.videoId + ') -- "' + oembed.title + '"');
   return {
-    videoId:      stream.videoId,
-    title:        oembed.title || stream.channel,
-    thumbnailUrl: makeThumbnailUrl(stream.videoId, oembed),
-    channelTitle: oembed.author_name || stream.channel,
-    channelHandle:stream.channel,
-    category:     stream.category,
-    lang:         stream.lang,
-    embedUrl:     makeEmbedUrl(stream.videoId),
-    sourceUrl:    'https://www.youtube.com/watch?v=' + stream.videoId,
-    fetchedAt:    Date.now(),
+    videoId:       source.videoId,
+    title:         oembed.title || (source.channel + ' Live'),
+    thumbnailUrl:  makeThumbnailUrl(source.videoId, oembed.thumbnail_url),
+    channelTitle:  oembed.author_name || source.channel,
+    channelHandle: source.channel,
+    category:      source.category,
+    lang:          source.lang,
+    embedUrl:      makeEmbedUrl(source.videoId),
+    sourceUrl:     'https://www.youtube.com/watch?v=' + source.videoId,
+    verifiedAt:    Date.now(),
   };
 }
 
-async function refreshCache() {
-  console.log('[youtube-live] refreshing oEmbed cache for', CHANNEL_STREAMS.length, 'streams...');
-  var results = await Promise.allSettled(CHANNEL_STREAMS.map(verifyStream));
-  _cache.clear();
-  results.forEach(function (r) {
-    if (r.status === 'fulfilled' && r.value) {
-      _cache.set(r.value.videoId, r.value);
-    }
-  });
-  _cacheAt = Date.now();
-  console.log('[youtube-live]', _cache.size, '/' + CHANNEL_STREAMS.length, 'streams verified');
-}
+// Refresh the live stream cache by verifying all source IDs via oEmbed.
+// Runs all verifications in parallel. Sets _lastRefreshAt regardless of results.
+async function refreshLiveStreams() {
+  if (_refreshing) return;
+  _refreshing = true;
 
-async function ensureCache() {
-  if (!_cache.size || Date.now() - _cacheAt > CACHE_TTL) {
-    await refreshCache();
+  console.log('[youtube-live] refreshing -- verifying ' + CHANNEL_SOURCES.length + ' sources via oEmbed...');
+
+  try {
+    var results = await Promise.allSettled(CHANNEL_SOURCES.map(verifySource));
+    var verified = results
+      .filter(function (r) { return r.status === 'fulfilled' && r.value; })
+      .map(function (r) { return r.value; });
+
+    _liveStreams.clear();
+    verified.forEach(function (s) { _liveStreams.set(s.videoId, s); });
+    _lastRefreshAt = Date.now();
+
+    console.log('[youtube-live] verified ' + verified.length + '/' + CHANNEL_SOURCES.length + ' streams live');
+  } catch (e) {
+    console.warn('[youtube-live] refresh error:', e.message);
+    _lastRefreshAt = Date.now(); // still set so we don't hammer on error
+  } finally {
+    _refreshing = false;
   }
 }
 
-// Return all verified live streams (used by news-pipeline Phase 1)
+// Ensure cache is fresh. If stale or empty-and-never-refreshed, trigger refresh.
+async function ensureCache() {
+  var now = Date.now();
+  var isStale = now - _lastRefreshAt > CACHE_TTL_MS;
+  if (isStale && !_refreshing) {
+    await refreshLiveStreams();
+  }
+}
+
+// Return all currently verified live streams.
+// Returns empty array if no streams are verified.
+// Used by news-pipeline Phase 1 to create live debates.
 async function fetchAllLiveStreams() {
   await ensureCache();
-  return Array.from(_cache.values());
+  return Array.from(_liveStreams.values());
 }
 
-// Return best verified stream for a category (synchronous after cache warmed)
+// Return the best verified stream for a given category (synchronous).
+// Returns null if no verified streams are available -- callers must handle this.
 function getLiveStreamForCategory(category) {
+  if (!_liveStreams.size) return null;
   var cat = String(category || '').toLowerCase();
-  var preferredId = CATEGORY_VIDEO_ID[cat] || DEFAULT_VIDEO_ID;
-  if (_cache.has(preferredId)) return _cache.get(preferredId);
-  // fallback: any verified stream
-  var fallback = Array.from(_cache.values())[0] || null;
-  return fallback;
+  var preferredId = CATEGORY_VIDEO_ID[cat];
+  if (preferredId && _liveStreams.has(preferredId)) {
+    return _liveStreams.get(preferredId);
+  }
+  // Any verified stream as fallback
+  return Array.from(_liveStreams.values())[0] || null;
 }
 
-// Return embed info for a category (convenience wrapper)
+// Return embed info for a category.
+// Returns null if no streams verified (no debate should be created).
 function getLiveEmbedForCategory(category) {
   var stream = getLiveStreamForCategory(category);
-  if (!stream) {
-    // Hard fallback if cache not yet warmed: use default ID
-    var videoId = CATEGORY_VIDEO_ID[String(category || '').toLowerCase()] || DEFAULT_VIDEO_ID;
-    return {
-      videoId:      videoId,
-      embedUrl:     makeEmbedUrl(videoId),
-      thumbnailUrl: 'https://i.ytimg.com/vi/' + videoId + '/maxresdefault.jpg',
-      channelTitle: 'Live News',
-    };
-  }
+  if (!stream) return null;
   return {
     videoId:      stream.videoId,
     embedUrl:     stream.embedUrl,
@@ -143,28 +187,41 @@ function getLiveEmbedForCategory(category) {
   };
 }
 
-// API endpoint resolver (category string -> embed info)
+// Resolve a live stream for a debate's category.
+// Returns null if no verified stream -- server.js will return isLive: false.
+// Debates without a verified stream should NOT be shown.
 async function resolveNewsLiveStream(category) {
   await ensureCache();
-  var embed = getLiveEmbedForCategory(category);
-  if (!embed) return null;
+  var stream = getLiveStreamForCategory(category);
+  if (!stream) return null;
   return {
-    videoId:  embed.videoId,
-    handle:   embed.channelTitle || 'Live News',
-    embedUrl: embed.embedUrl,
+    videoId:  stream.videoId,
+    handle:   stream.channelTitle || 'Live News',
+    embedUrl: stream.embedUrl,
   };
 }
 
+// Backward compat alias
+var refreshCache = refreshLiveStreams;
+
 // Warm cache on startup
-refreshCache().catch(function (e) {
-  console.warn('[youtube-live] startup cache refresh error:', e.message);
+refreshLiveStreams().catch(function (e) {
+  console.warn('[youtube-live] startup refresh error:', e.message);
 });
 
+// Re-verify every 5 minutes
+setInterval(function () {
+  refreshLiveStreams().catch(function (e) {
+    console.warn('[youtube-live] scheduled refresh error:', e.message);
+  });
+}, CACHE_TTL_MS);
+
 module.exports = {
-  CHANNEL_STREAMS:          CHANNEL_STREAMS,
+  CHANNEL_STREAMS:          CHANNEL_SOURCES,
   fetchAllLiveStreams:       fetchAllLiveStreams,
   getLiveStreamForCategory: getLiveStreamForCategory,
   getLiveEmbedForCategory:  getLiveEmbedForCategory,
   resolveNewsLiveStream:    resolveNewsLiveStream,
   refreshCache:             refreshCache,
+  refreshLiveStreams:        refreshLiveStreams,
 };
