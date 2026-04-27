@@ -186,12 +186,12 @@ body::before{
 .admin-btn:hover{background:rgba(191,90,242,0.2);border-color:rgba(191,90,242,0.5)}
 .gains-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;font-weight:700;letter-spacing:0.08em;background:rgba(255,74,14,0.1);border:1px solid rgba(255,74,14,0.3);color:var(--fire);cursor:pointer;transition:all 0.18s}
 .gains-btn:hover{background:rgba(255,74,14,0.2);border-color:rgba(255,74,14,0.55)}
-.gains-card{padding:14px 12px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
+.gains-card{padding:22px 16px 18px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
 .gains-card:hover{border-color:var(--fire);background:rgba(255,74,14,0.05);transform:translateY(-2px)}
-.gains-card-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:22px}
-.gains-card-brand{font-family:var(--fn-disp);font-size:12px;font-weight:700;color:var(--txt);margin-bottom:4px}
-.gains-card-value{font-family:var(--fn-disp);font-size:20px;font-weight:900;color:var(--txt);margin-bottom:2px}
-.gains-card-pts{font-family:var(--fn-mono);font-size:10px;color:var(--fire)}
+.gains-card-logo{width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:32px}
+.gains-card-brand{font-family:var(--fn-disp);font-size:14px;font-weight:700;color:var(--txt);margin-bottom:6px}
+.gains-card-value{font-family:var(--fn-disp);font-size:26px;font-weight:900;color:var(--txt);margin-bottom:4px}
+.gains-card-pts{font-family:var(--fn-mono);font-size:11px;color:var(--fire)}
 /* Admin modal */
 .admin-modal-overlay{
   position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.45);
@@ -3442,37 +3442,37 @@ body{
     <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Cartes cadeaux disponibles</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="gains-card" onclick="redeemGift('apple','10')">
-        <div class="gains-card-logo" style="background:#000;color:#fff">&#63743;</div>
+        <div class="gains-card-logo" style="background:#000"><img src="https://cdn.simpleicons.org/apple/ffffff" width="36" height="36" alt="Apple"></div>
         <div class="gains-card-brand">Apple</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('amazon','10')">
-        <div class="gains-card-logo" style="background:#FF9900;color:#fff;font-weight:900;font-size:15px">a</div>
+        <div class="gains-card-logo" style="background:#FF9900"><img src="https://cdn.simpleicons.org/amazon/ffffff" width="36" height="36" alt="Amazon"></div>
         <div class="gains-card-brand">Amazon</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('spotify','10')">
-        <div class="gains-card-logo" style="background:#1DB954;color:#fff;font-size:18px">♪</div>
+        <div class="gains-card-logo" style="background:#1DB954"><img src="https://cdn.simpleicons.org/spotify/ffffff" width="36" height="36" alt="Spotify"></div>
         <div class="gains-card-brand">Spotify</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('epic','10')">
-        <div class="gains-card-logo" style="background:#2a2a2a;color:#fff;font-family:var(--fn-disp);font-size:11px;font-weight:900">EPIC</div>
+        <div class="gains-card-logo" style="background:#2a2a2a"><img src="https://cdn.simpleicons.org/epicgames/ffffff" width="36" height="36" alt="Epic Games"></div>
         <div class="gains-card-brand">Epic Games</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('netflix','15')">
-        <div class="gains-card-logo" style="background:#E50914;color:#fff;font-family:var(--fn-disp);font-size:13px;font-weight:900">N</div>
+        <div class="gains-card-logo" style="background:#E50914"><img src="https://cdn.simpleicons.org/netflix/ffffff" width="36" height="36" alt="Netflix"></div>
         <div class="gains-card-brand">Netflix</div>
         <div class="gains-card-value">15 €</div>
         <div class="gains-card-pts">12 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('playstation','20')">
-        <div class="gains-card-logo" style="background:#003087;color:#fff;font-size:14px;font-weight:900">PS</div>
+        <div class="gains-card-logo" style="background:#003087"><img src="https://cdn.simpleicons.org/playstation/ffffff" width="36" height="36" alt="PlayStation"></div>
         <div class="gains-card-brand">PlayStation</div>
         <div class="gains-card-value">20 €</div>
         <div class="gains-card-pts">16 000 pts</div>
@@ -3550,7 +3550,6 @@ body{
       ADMIN
     </button>
     <button class="gains-btn" onclick="openGains()" aria-label="Mes gains">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       Gains
     </button>
     <button class="top-up-btn header-reminder-btn" onclick="openFunds()" aria-label="Acheter des points">
