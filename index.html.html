@@ -184,6 +184,14 @@ body::before{
   cursor:pointer;transition:all 0.18s
 }
 .admin-btn:hover{background:rgba(191,90,242,0.2);border-color:rgba(191,90,242,0.5)}
+.gains-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;font-weight:700;letter-spacing:0.08em;background:rgba(255,74,14,0.1);border:1px solid rgba(255,74,14,0.3);color:var(--fire);cursor:pointer;transition:all 0.18s}
+.gains-btn:hover{background:rgba(255,74,14,0.2);border-color:rgba(255,74,14,0.55)}
+.gains-card{padding:14px 12px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
+.gains-card:hover{border-color:var(--fire);background:rgba(255,74,14,0.05);transform:translateY(-2px)}
+.gains-card-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:22px}
+.gains-card-brand{font-family:var(--fn-disp);font-size:12px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.gains-card-value{font-family:var(--fn-disp);font-size:20px;font-weight:900;color:var(--txt);margin-bottom:2px}
+.gains-card-pts{font-family:var(--fn-mono);font-size:10px;color:var(--fire)}
 /* Admin modal */
 .admin-modal-overlay{
   position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.45);
@@ -3416,6 +3424,65 @@ body{
 <div class="bet-flash" id="betFlash"></div>
 
 <!-- TOAST -->
+<!-- GAINS PAGE -->
+<div class="admin-modal-overlay" id="gainsOverlay" onclick="if(event.target===this)closeGains()">
+  <div class="admin-modal" style="max-width:480px">
+    <div class="admin-modal-header">
+      <div class="admin-modal-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Mes Gains
+      </div>
+      <button class="admin-close" onclick="closeGains()">✕</button>
+    </div>
+    <div style="padding:0 0 12px;border-bottom:1px solid var(--line);margin-bottom:16px">
+      <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Solde disponible</div>
+      <div style="font-family:var(--fn-disp);font-size:28px;font-weight:900;color:var(--fire)" id="gainsBalance">0 pts</div>
+      <div style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);margin-top:2px">Convertissez vos points en vraies récompenses</div>
+    </div>
+    <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Cartes cadeaux disponibles</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="gains-card" onclick="redeemGift('apple','10')">
+        <div class="gains-card-logo" style="background:#000;color:#fff">&#63743;</div>
+        <div class="gains-card-brand">Apple</div>
+        <div class="gains-card-value">10 €</div>
+        <div class="gains-card-pts">8 000 pts</div>
+      </div>
+      <div class="gains-card" onclick="redeemGift('amazon','10')">
+        <div class="gains-card-logo" style="background:#FF9900;color:#fff;font-weight:900;font-size:15px">a</div>
+        <div class="gains-card-brand">Amazon</div>
+        <div class="gains-card-value">10 €</div>
+        <div class="gains-card-pts">8 000 pts</div>
+      </div>
+      <div class="gains-card" onclick="redeemGift('spotify','10')">
+        <div class="gains-card-logo" style="background:#1DB954;color:#fff;font-size:18px">♪</div>
+        <div class="gains-card-brand">Spotify</div>
+        <div class="gains-card-value">10 €</div>
+        <div class="gains-card-pts">8 000 pts</div>
+      </div>
+      <div class="gains-card" onclick="redeemGift('epic','10')">
+        <div class="gains-card-logo" style="background:#2a2a2a;color:#fff;font-family:var(--fn-disp);font-size:11px;font-weight:900">EPIC</div>
+        <div class="gains-card-brand">Epic Games</div>
+        <div class="gains-card-value">10 €</div>
+        <div class="gains-card-pts">8 000 pts</div>
+      </div>
+      <div class="gains-card" onclick="redeemGift('netflix','15')">
+        <div class="gains-card-logo" style="background:#E50914;color:#fff;font-family:var(--fn-disp);font-size:13px;font-weight:900">N</div>
+        <div class="gains-card-brand">Netflix</div>
+        <div class="gains-card-value">15 €</div>
+        <div class="gains-card-pts">12 000 pts</div>
+      </div>
+      <div class="gains-card" onclick="redeemGift('playstation','20')">
+        <div class="gains-card-logo" style="background:#003087;color:#fff;font-size:14px;font-weight:900">PS</div>
+        <div class="gains-card-brand">PlayStation</div>
+        <div class="gains-card-value">20 €</div>
+        <div class="gains-card-pts">16 000 pts</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:12px;background:rgba(255,74,14,0.06);border:1px solid rgba(255,74,14,0.15);border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;color:var(--txt3);text-align:center;line-height:1.6">
+      Les récompenses arrivent bientôt — inscrivez-vous à la liste d'attente pour être notifié en premier.
+    </div>
+  </div>
+</div>
 <!-- ADMIN PANEL -->
 <div class="admin-modal-overlay" id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
   <div class="admin-modal">
@@ -3481,6 +3548,10 @@ body{
     <button class="admin-btn" id="adminHeaderBtn" onclick="openAdmin()" style="display:none" aria-label="Panneau admin">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
       ADMIN
+    </button>
+    <button class="gains-btn" onclick="openGains()" aria-label="Mes gains">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Gains
     </button>
     <button class="top-up-btn header-reminder-btn" onclick="openFunds()" aria-label="Acheter des points">
       <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
@@ -5929,6 +6000,21 @@ function updateSettingsPanel(){
 // ═══════════════════════════════════════════════════════════
 function openProfile(){closeSettings();updateSettingsPanel();document.getElementById('profileModal').classList.add('open');}
 function openFunds(){document.getElementById('fundsModal').classList.add('open');}
+
+// ═══════════════════════════════════════════════════════════
+//  GAINS PAGE
+// ═══════════════════════════════════════════════════════════
+function openGains(){
+  document.getElementById('gainsOverlay').classList.add('open');
+  const el=document.getElementById('gainsBalance');
+  if(el&&typeof balance!=='undefined')el.textContent=(balance||0).toLocaleString('fr-FR')+' pts';
+}
+function redeemGift(brand,value){
+  showToast('info','Bientôt disponible','Les récompenses arrivent prochainement !');
+}
+function closeGains(){
+  document.getElementById('gainsOverlay').classList.remove('open');
+}
 
 // ═══════════════════════════════════════════════════════════
 //  ADMIN PANEL
