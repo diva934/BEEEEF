@@ -3441,38 +3441,38 @@ body{
     </div>
     <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Cartes cadeaux disponibles</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="gains-card" onclick="redeemGift('apple','10')">
-        <div class="gains-card-logo" style="background:#000"><img src="https://cdn.simpleicons.org/apple/ffffff" width="36" height="36" alt="Apple"></div>
+      <div class="gains-card" onclick="redeemGift('pack_apple_10')">
+        <div class="gains-card-logo" style="background:#000"><img src="https://logo.clearbit.com/apple.com" width="40" height="40" alt="Apple" style="border-radius:8px"></div>
         <div class="gains-card-brand">Apple</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
-      <div class="gains-card" onclick="redeemGift('amazon','10')">
-        <div class="gains-card-logo" style="background:#FF9900"><img src="https://cdn.simpleicons.org/amazon/ffffff" width="36" height="36" alt="Amazon"></div>
+      <div class="gains-card" onclick="redeemGift('pack_amazon_10')">
+        <div class="gains-card-logo" style="background:#fff;border:1px solid #eee"><img src="https://logo.clearbit.com/amazon.com" width="40" height="40" alt="Amazon" style="border-radius:8px"></div>
         <div class="gains-card-brand">Amazon</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
-      <div class="gains-card" onclick="redeemGift('spotify','10')">
-        <div class="gains-card-logo" style="background:#1DB954"><img src="https://cdn.simpleicons.org/spotify/ffffff" width="36" height="36" alt="Spotify"></div>
+      <div class="gains-card" onclick="redeemGift('pack_spotify_10')">
+        <div class="gains-card-logo" style="background:#1DB954"><img src="https://logo.clearbit.com/spotify.com" width="40" height="40" alt="Spotify" style="border-radius:8px"></div>
         <div class="gains-card-brand">Spotify</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
-      <div class="gains-card" onclick="redeemGift('epic','10')">
-        <div class="gains-card-logo" style="background:#2a2a2a"><img src="https://cdn.simpleicons.org/epicgames/ffffff" width="36" height="36" alt="Epic Games"></div>
+      <div class="gains-card" onclick="redeemGift('pack_epic_10')">
+        <div class="gains-card-logo" style="background:#2a2a2a"><img src="https://logo.clearbit.com/epicgames.com" width="40" height="40" alt="Epic Games" style="border-radius:8px"></div>
         <div class="gains-card-brand">Epic Games</div>
         <div class="gains-card-value">10 €</div>
         <div class="gains-card-pts">8 000 pts</div>
       </div>
-      <div class="gains-card" onclick="redeemGift('netflix','15')">
-        <div class="gains-card-logo" style="background:#E50914"><img src="https://cdn.simpleicons.org/netflix/ffffff" width="36" height="36" alt="Netflix"></div>
+      <div class="gains-card" onclick="redeemGift('pack_netflix_15')">
+        <div class="gains-card-logo" style="background:#E50914"><img src="https://logo.clearbit.com/netflix.com" width="40" height="40" alt="Netflix" style="border-radius:8px"></div>
         <div class="gains-card-brand">Netflix</div>
         <div class="gains-card-value">15 €</div>
         <div class="gains-card-pts">12 000 pts</div>
       </div>
-      <div class="gains-card" onclick="redeemGift('playstation','20')">
-        <div class="gains-card-logo" style="background:#003087"><img src="https://cdn.simpleicons.org/playstation/ffffff" width="36" height="36" alt="PlayStation"></div>
+      <div class="gains-card" onclick="redeemGift('pack_playstation_20')">
+        <div class="gains-card-logo" style="background:#003087"><img src="https://logo.clearbit.com/playstation.com" width="40" height="40" alt="PlayStation" style="border-radius:8px"></div>
         <div class="gains-card-brand">PlayStation</div>
         <div class="gains-card-value">20 €</div>
         <div class="gains-card-pts">16 000 pts</div>
@@ -6008,8 +6008,33 @@ function openGains(){
   const el=document.getElementById('gainsBalance');
   if(el&&typeof balance!=='undefined')el.textContent=(balance||0).toLocaleString('fr-FR')+' pts';
 }
-function redeemGift(brand,value){
-  showToast('info','Bientôt disponible','Les récompenses arrivent prochainement !');
+async function redeemGift(packId){
+  if(!window.currentUser){showToast('warn','Connexion requise','Connectez-vous pour échanger vos points');return;}
+  const token=typeof window.getAuthToken==='function'?window.getAuthToken():'';
+  if(!token){showToast('warn','Connexion requise','');return;}
+  const labels={pack_apple_10:'Apple 10€',pack_amazon_10:'Amazon 10€',pack_spotify_10:'Spotify 10€',pack_epic_10:'Epic Games 10€',pack_netflix_15:'Netflix 15€',pack_playstation_20:'PlayStation 20€'};
+  const costs={pack_apple_10:8000,pack_amazon_10:8000,pack_spotify_10:8000,pack_epic_10:8000,pack_netflix_15:12000,pack_playstation_20:16000};
+  const label=labels[packId]||packId;
+  const cost=(costs[packId]||0).toLocaleString('fr-FR');
+  if(!confirm(`Échanger ${cost} pts contre une carte ${label} ?\n\nLe code sera envoyé sur votre email.`))return;
+  try{
+    showToast('info','Traitement…','Échange en cours');
+    const r=await fetch(BACKEND_URL+'/api/gifts/redeem',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({packId}),
+    });
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Erreur serveur');
+    if(typeof balance!=='undefined')balance=data.newBalance;
+    if(typeof syncProfileDom==='function')syncProfileDom();
+    const gainsEl=document.getElementById('gainsBalance');
+    if(gainsEl)gainsEl.textContent=(data.newBalance||0).toLocaleString('fr-FR')+' pts';
+    showToast('coins','Échange confirmé !','Code en route sur votre email 📧');
+    closeGains();
+  }catch(e){
+    showToast('err','Échec de l\'échange',e.message);
+  }
 }
 function closeGains(){
   document.getElementById('gainsOverlay').classList.remove('open');
