@@ -415,19 +415,27 @@ window.currentUser = currentUser;
     history.replaceState({}, '', cleanUrl);
 
     if (paid === 'ok') {
-      // Refresh balance from server to get the credited tokens
-      setTimeout(async () => {
+      // Poll until balance increases (webhook may take a few seconds to land)
+      showToast('info', 'Paiement reçu…', 'Crédit des tokens en cours');
+      (async () => {
         if (!currentSession) return;
-        try {
-          const payload = await api('/me/bootstrap', { method: 'GET' });
-          hydrateSessionState(payload);
-          showToast('coins', 'Tokens credites !', 'Votre solde a ete mis a jour');
-
-          // Show success view inside fundsModal (already closed, just toast is fine)
-        } catch (_) {
-          showToast('coins', 'Paiement recu', 'Rafraichissez pour voir votre solde');
+        const balanceBefore = balance || 0;
+        const MAX_ATTEMPTS = 8;
+        const INTERVAL_MS  = 1500;
+        for (let i = 0; i < MAX_ATTEMPTS; i++) {
+          await new Promise(r => setTimeout(r, INTERVAL_MS));
+          try {
+            const payload = await api('/me/bootstrap', { method: 'GET' });
+            hydrateSessionState(payload);
+            if ((balance || 0) > balanceBefore) {
+              showToast('coins', 'Tokens crédités !', `Solde mis à jour : ${balance} pts`);
+              return;
+            }
+          } catch (_) { /* retry */ }
         }
-      }, 1200); // small delay so webhook has time to credit
+        // After all retries, just show generic success
+        showToast('coins', 'Paiement confirmé', 'Rafraîchissez si le solde ne s\'affiche pas');
+      })();
     } else if (paid === 'cancel') {
       showToast('warn', 'Achat annule', 'Aucun debit effectue');
     }
@@ -664,6 +672,9 @@ window.currentUser = currentUser;
     }
   }
 
+  // Expose auth token for admin panel (admin only — never used client-side otherwise)
+  window.getAuthToken = () => currentSession?.access_token || '';
+
   function hydrateSessionState(payload) {
     currentUser = payload.user;
     window.currentUser = currentUser;
@@ -774,6 +785,10 @@ window.currentUser = currentUser;
     if (email) email.value = currentUser?.email || localStorage.getItem(LAST_EMAIL_KEY) || '';
     if (phone) phone.value = currentUser?.phone || '';
     if (twoFa) twoFa.checked = Boolean(currentUser?.twoFactorEnabled);
+
+    // Show admin button if user has admin rights
+    const adminBtn = document.getElementById('adminHeaderBtn');
+    if (adminBtn) adminBtn.style.display = currentUser?.isAdmin ? 'inline-flex' : 'none';
   }
 
   function getLogoutButton() {

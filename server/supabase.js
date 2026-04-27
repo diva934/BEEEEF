@@ -1,5 +1,14 @@
 const DEFAULT_BALANCE = 0;
 
+// ── Admin user IDs (UUID Supabase) ────────────────────────
+const ADMIN_USER_IDS = new Set([
+  '929ce9c7-0d37-4f70-9c59-7ca5c3044d2f', // pierrick — divaaa.agency@gmail.com
+]);
+
+function isAdminUser(userId) {
+  return ADMIN_USER_IDS.has(String(userId || ''));
+}
+
 function createError(message, status = 400, details = null) {
   const error = new Error(message);
   error.status = status;
@@ -129,6 +138,7 @@ function normalizeProfile(profile, authUser) {
     langs: Array.isArray(profile.langs) ? uniqueStrings(profile.langs) : [],
     phone: profile.phone || '',
     twoFactorEnabled: Boolean(profile.two_factor_enabled),
+    isAdmin: isAdminUser(profile.id),
     createdAt: profile.created_at || authUser?.created_at || new Date().toISOString(),
     updatedAt: profile.updated_at || authUser?.updated_at || new Date().toISOString(),
   };
@@ -530,6 +540,7 @@ module.exports = {
   depositBalance,
   forfeitParticipantBet,
   getPublicConfig,
+  isAdminUser,
   listTokenTransactions,
   placeBet,
   settleDebateBets,

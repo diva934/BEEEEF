@@ -7,9 +7,11 @@ const {
   bootstrapState,
   cancelParticipantBet,
   createError,
+  creditBalanceAsAdmin,
   depositBalance,
   forfeitParticipantBet,
   getPublicConfig,
+  isAdminUser,
   placeBet,
   settleDebateBets,
   updateProfile,
@@ -310,6 +312,21 @@ async function requireAuth(req, res, next) {
   }
 }
 
+async function requireAdmin(req, res, next) {
+  try {
+    const accessToken = getAccessToken(req);
+    const authUser = await verifyAccessToken(accessToken);
+    if (!isAdminUser(authUser.id)) {
+      return apiError(res, createError('Accès refusé — droits admin requis', 403));
+    }
+    req.accessToken = accessToken;
+    req.authUser = authUser;
+    next();
+  } catch (error) {
+    apiError(res, error);
+  }
+}
+
 function calcDebateOdds(yesPct, winnerSide) {
   const pct = winnerSide === 'no' ? 100 - Number(yesPct || 0) : Number(yesPct || 0);
   if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return 2;
@@ -534,6 +551,53 @@ app.get('/me/transactions', requireAuth, withApi(async req => {
 // ─────────────────────────────────────────────────────────────
 //  Stripe — packs + checkout
 // ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+//  ADMIN ROUTES — requireAdmin middleware protects all of these
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/admin/stats — global platform stats
+app.get('/api/admin/stats', requireAdmin, withApi(async () => {
+  const all = listDebates({ includeUnlisted: true });
+  const live = all.filter(d => !d.closed);
+  const totalPool = all.reduce((s, d) => s + Number(d.pool || 0), 0);
+  return {
+    totalDebates: all.length,
+    liveDebates: live.length,
+    closedDebates: all.length - live.length,
+    totalPool,
+    serverNow: Date.now(),
+  };
+}));
+
+// GET /api/admin/debates — full debate list with internal fields
+app.get('/api/admin/debates', requireAdmin, withApi(async () => {
+  const all = listDebates({ includeUnlisted: true });
+  return { debates: all, serverNow: Date.now() };
+}));
+
+// POST /api/admin/debates/:id/close — force-close any debate
+app.post('/api/admin/debates/:id/close', requireAdmin, withApi(async req => {
+  const { id } = req.params;
+  const winnerSide = req.body?.winnerSide === 'no' ? 'no' : 'yes';
+  const verdict = req.body?.verdict || 'Clôturé par l\'administrateur.';
+  const closed = closeDebateLive(id, { winnerSide, verdict });
+  if (!closed) throw createError('Débat introuvable ou déjà clôturé', 404);
+  broadcastDebate(id);
+  return { ok: true, debateId: id, winnerSide };
+}));
+
+// POST /api/admin/credit — credit tokens to any user
+app.post('/api/admin/credit', requireAdmin, withApi(async req => {
+  const { userId, points, note } = req.body || {};
+  if (!userId || !points) throw createError('userId + points requis', 400);
+  const result = await creditBalanceAsAdmin(userId, Number(points), {
+    sessionId: `admin_manual_${Date.now()}`,
+    packId: 'admin_credit',
+    email: note || 'admin credit',
+  });
+  return { ok: true, ...result };
+}));
 
 // Canonical route
 app.get('/payment/packs', (_req, res) => {
