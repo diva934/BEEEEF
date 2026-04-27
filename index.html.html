@@ -186,12 +186,28 @@ body::before{
 .admin-btn:hover{background:rgba(191,90,242,0.2);border-color:rgba(191,90,242,0.5)}
 .gains-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;font-weight:700;letter-spacing:0.08em;background:rgba(255,74,14,0.1);border:1px solid rgba(255,74,14,0.3);color:var(--fire);cursor:pointer;transition:all 0.18s}
 .gains-btn:hover{background:rgba(255,74,14,0.2);border-color:rgba(255,74,14,0.55)}
-.gains-card{padding:22px 16px 18px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
-.gains-card:hover{border-color:var(--fire);background:rgba(255,74,14,0.05);transform:translateY(-2px)}
-.gains-card-logo{width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:32px}
-.gains-card-brand{font-family:var(--fn-disp);font-size:14px;font-weight:700;color:var(--txt);margin-bottom:6px}
-.gains-card-value{font-family:var(--fn-disp);font-size:26px;font-weight:900;color:var(--txt);margin-bottom:4px}
-.gains-card-pts{font-family:var(--fn-mono);font-size:11px;color:var(--fire)}
+/* ── GAINS MODAL ── */
+.gains-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:none;align-items:flex-end;justify-content:center}
+.gains-overlay.open{display:flex}
+.gains-modal{position:relative;width:100%;max-width:520px;background:var(--bg);border-radius:24px 24px 0 0;padding:32px 24px 40px;max-height:92vh;overflow-y:auto;border-top:1px solid var(--line)}
+.gains-close-btn{position:absolute;top:16px;right:16px;background:var(--s2);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--txt2);font-size:14px;display:flex;align-items:center;justify-content:center}
+.gains-close-btn:hover{background:var(--line);color:var(--txt)}
+.gains-hero{text-align:center;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--line)}
+.gains-hero-label{font-family:var(--fn-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px}
+.gains-hero-amount{font-family:var(--fn-disp);font-size:42px;font-weight:900;background:linear-gradient(135deg,var(--fire),#ff8c42);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.gains-hero-sub{font-family:var(--fn-body);font-size:13px;color:var(--txt3);margin-top:8px}
+.gains-section-title{font-family:var(--fn-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:14px}
+.gains-grid{display:flex;flex-direction:column;gap:10px}
+.gains-card{display:flex;align-items:center;gap:16px;padding:16px 18px;background:var(--ink);border:1.5px solid var(--line);border-radius:16px;cursor:pointer;transition:all 0.18s}
+.gains-card:hover{border-color:var(--fire);background:rgba(255,74,14,0.04);transform:translateX(3px)}
+.gains-card:active{transform:scale(0.99)}
+.gains-card-logo{width:52px;height:52px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.gains-card-logo img{width:100%;height:100%;object-fit:cover}
+.gains-card-info{flex:1}
+.gains-card-brand{font-family:var(--fn-disp);font-size:15px;font-weight:700;color:var(--txt);margin-bottom:3px}
+.gains-card-pts{font-family:var(--fn-mono);font-size:11px;color:var(--txt3)}
+.gains-card-value{font-family:var(--fn-disp);font-size:22px;font-weight:900;color:var(--fire);flex-shrink:0}
+.gains-footer{margin-top:20px;text-align:center;font-family:var(--fn-mono);font-size:10px;color:var(--txt3);line-height:1.6;padding:14px;background:rgba(255,74,14,0.04);border:1px solid rgba(255,74,14,0.12);border-radius:12px}
 /* Admin modal */
 .admin-modal-overlay{
   position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.45);
@@ -3425,61 +3441,82 @@ body{
 
 <!-- TOAST -->
 <!-- GAINS PAGE -->
-<div class="admin-modal-overlay" id="gainsOverlay" onclick="if(event.target===this)closeGains()">
-  <div class="admin-modal" style="max-width:480px">
-    <div class="admin-modal-header">
-      <div class="admin-modal-title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        Mes Gains
-      </div>
-      <button class="admin-close" onclick="closeGains()">✕</button>
+<div class="gains-overlay" id="gainsOverlay" onclick="if(event.target===this)closeGains()">
+  <div class="gains-modal">
+    <button class="gains-close-btn" onclick="closeGains()">✕</button>
+    <!-- Hero balance -->
+    <div class="gains-hero">
+      <div class="gains-hero-label">Solde disponible</div>
+      <div class="gains-hero-amount" id="gainsBalance">0 pts</div>
+      <div class="gains-hero-sub">Convertis tes points en vraies récompenses</div>
     </div>
-    <div style="padding:0 0 12px;border-bottom:1px solid var(--line);margin-bottom:16px">
-      <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Solde disponible</div>
-      <div style="font-family:var(--fn-disp);font-size:28px;font-weight:900;color:var(--fire)" id="gainsBalance">0 pts</div>
-      <div style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);margin-top:2px">Convertissez vos points en vraies récompenses</div>
-    </div>
-    <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Cartes cadeaux disponibles</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <!-- Section title -->
+    <div class="gains-section-title">Cartes cadeaux</div>
+    <!-- Grid -->
+    <div class="gains-grid">
       <div class="gains-card" onclick="redeemGift('pack_apple_10')">
-        <div class="gains-card-logo" style="background:#000"><img src="https://logo.clearbit.com/apple.com" width="40" height="40" alt="Apple" style="border-radius:8px"></div>
-        <div class="gains-card-brand">Apple</div>
+        <div class="gains-card-logo" style="background:#000">
+          <img src="https://logo.clearbit.com/apple.com" width="44" height="44" alt="Apple">
+        </div>
+        <div class="gains-card-info">
+          <div class="gains-card-brand">Apple</div>
+          <div class="gains-card-pts">8 000 pts</div>
+        </div>
         <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('pack_amazon_10')">
-        <div class="gains-card-logo" style="background:#fff;border:1px solid #eee"><img src="https://logo.clearbit.com/amazon.com" width="40" height="40" alt="Amazon" style="border-radius:8px"></div>
-        <div class="gains-card-brand">Amazon</div>
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #f0f0f0">
+          <img src="https://logo.clearbit.com/amazon.com" width="44" height="44" alt="Amazon">
+        </div>
+        <div class="gains-card-info">
+          <div class="gains-card-brand">Amazon</div>
+          <div class="gains-card-pts">8 000 pts</div>
+        </div>
         <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('pack_spotify_10')">
-        <div class="gains-card-logo" style="background:#1DB954"><img src="https://logo.clearbit.com/spotify.com" width="40" height="40" alt="Spotify" style="border-radius:8px"></div>
-        <div class="gains-card-brand">Spotify</div>
+        <div class="gains-card-logo" style="background:#1DB954">
+          <img src="https://logo.clearbit.com/spotify.com" width="44" height="44" alt="Spotify">
+        </div>
+        <div class="gains-card-info">
+          <div class="gains-card-brand">Spotify</div>
+          <div class="gains-card-pts">8 000 pts</div>
+        </div>
         <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('pack_epic_10')">
-        <div class="gains-card-logo" style="background:#2a2a2a"><img src="https://logo.clearbit.com/epicgames.com" width="40" height="40" alt="Epic Games" style="border-radius:8px"></div>
-        <div class="gains-card-brand">Epic Games</div>
+        <div class="gains-card-logo" style="background:#1a1a1a">
+          <img src="https://logo.clearbit.com/epicgames.com" width="44" height="44" alt="Epic Games">
+        </div>
+        <div class="gains-card-info">
+          <div class="gains-card-brand">Epic Games</div>
+          <div class="gains-card-pts">8 000 pts</div>
+        </div>
         <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('pack_netflix_15')">
-        <div class="gains-card-logo" style="background:#E50914"><img src="https://logo.clearbit.com/netflix.com" width="40" height="40" alt="Netflix" style="border-radius:8px"></div>
-        <div class="gains-card-brand">Netflix</div>
+        <div class="gains-card-logo" style="background:#E50914">
+          <img src="https://logo.clearbit.com/netflix.com" width="44" height="44" alt="Netflix">
+        </div>
+        <div class="gains-card-info">
+          <div class="gains-card-brand">Netflix</div>
+          <div class="gains-card-pts">12 000 pts</div>
+        </div>
         <div class="gains-card-value">15 €</div>
-        <div class="gains-card-pts">12 000 pts</div>
       </div>
       <div class="gains-card" onclick="redeemGift('pack_playstation_20')">
-        <div class="gains-card-logo" style="background:#003087"><img src="https://logo.clearbit.com/playstation.com" width="40" height="40" alt="PlayStation" style="border-radius:8px"></div>
-        <div class="gains-card-brand">PlayStation</div>
+        <div class="gains-card-logo" style="background:#003087">
+          <img src="https://logo.clearbit.com/playstation.com" width="44" height="44" alt="PlayStation">
+        </div>
+        <div class="gains-card-info">
+          <div class="gains-card-brand">PlayStation</div>
+          <div class="gains-card-pts">16 000 pts</div>
+        </div>
         <div class="gains-card-value">20 €</div>
-        <div class="gains-card-pts">16 000 pts</div>
       </div>
     </div>
-    <div style="margin-top:16px;padding:12px;background:rgba(255,74,14,0.06);border:1px solid rgba(255,74,14,0.15);border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;color:var(--txt3);text-align:center;line-height:1.6">
-      Les récompenses arrivent bientôt — inscrivez-vous à la liste d'attente pour être notifié en premier.
+    <div class="gains-footer">
+      Le code te sera envoyé par email sous 24h après confirmation
     </div>
   </div>
 </div>
