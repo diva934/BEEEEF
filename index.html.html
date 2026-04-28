@@ -186,6 +186,7 @@ body::before{
 .admin-btn:hover{background:rgba(191,90,242,0.2);border-color:rgba(191,90,242,0.5)}
 .gains-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;font-weight:700;letter-spacing:0.08em;background:rgba(255,74,14,0.1);border:1px solid rgba(255,74,14,0.3);color:var(--fire);cursor:pointer;transition:all 0.18s}
 .gains-btn:hover{background:rgba(255,74,14,0.2);border-color:rgba(255,74,14,0.55)}
+.gains-btn.header-reminder-btn{justify-content:center;min-width:82px}
 .gains-card{padding:18px 14px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
 .gains-card:hover{border-color:var(--fire);background:rgba(255,74,14,0.05);transform:translateY(-2px)}
 .gains-card-logo{width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;overflow:hidden}
@@ -3548,6 +3549,16 @@ body{
       <div id="adminCreditMsg" style="display:none"></div>
     </div>
 
+    <div class="admin-section">
+      <div class="admin-section-title">Cartes cadeaux â€” traitement manuel</div>
+      <div style="overflow-x:auto">
+        <table class="admin-debates-table">
+          <thead><tr><th>Utilisateur</th><th>Carte</th><th>Statut</th><th>Code / note</th><th>Actions</th></tr></thead>
+          <tbody id="adminGiftOrdersBody"><tr><td colspan="5" style="color:var(--txt3);text-align:center;padding:20px">Chargementâ€¦</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -3569,8 +3580,9 @@ body{
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
       ADMIN
     </button>
-    <button class="gains-btn" onclick="openGains()" aria-label="Mes gains">
-      Gains
+    <button class="gains-btn top-up-btn header-reminder-btn" onclick="openGains()" aria-label="Mes gains">
+      <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
+      <span>Gains</span>
     </button>
     <button class="top-up-btn header-reminder-btn" onclick="openFunds()" aria-label="Acheter des points">
       <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
@@ -6084,6 +6096,7 @@ function openAdmin(){
   document.getElementById('adminOverlay').classList.add('open');
   adminLoadStats();
   adminLoadDebates();
+  adminLoadGiftOrders();
 }
 function closeAdmin(){document.getElementById('adminOverlay').classList.remove('open');}
 
@@ -6159,6 +6172,119 @@ async function adminCredit(){
     document.getElementById('adminCreditPoints').value='';
     document.getElementById('adminCreditNote').value='';
   }catch(e){msgEl.className='admin-msg err';msgEl.textContent='Erreur: '+e.message;msgEl.style.display='block';}
+}
+
+const _GIFT_STATUS_LABELS={
+  pending_review:'En revue',
+  points_reserved:'Points réservés',
+  gift_ready:'Code prêt',
+  gift_sent:'Envoyé',
+  failed:'Échec',
+  points_refunded:'Remboursé'
+};
+
+function giftStatusLabel(status){
+  return _GIFT_STATUS_LABELS[status]||status||'—';
+}
+
+function getAdminGiftInputs(orderId){
+  return {
+    code:(document.getElementById('giftCode_'+orderId)?.value||'').trim(),
+    note:(document.getElementById('giftNote_'+orderId)?.value||'').trim(),
+  };
+}
+
+async function adminLoadGiftOrders(){
+  const tbody=document.getElementById('adminGiftOrdersBody');
+  if(!tbody)return;
+  try{
+    const d=await adminFetch('/api/admin/gift-orders');
+    const orders=(d.orders||[]);
+    if(!orders.length){tbody.innerHTML='<tr><td colspan="5" style="color:var(--txt3);text-align:center;padding:16px">Aucune commande cadeau</td></tr>';return;}
+    tbody.innerHTML=orders.map(order=>{
+      const brand=escapeHtml(_BRAND_NAMES[order.gift_card_brand]||order.gift_card_brand||'—');
+      const status=String(order.status||'pending_review');
+      const code=escapeHtml(order.gift_code||'');
+      const note=escapeHtml(order.admin_note||'');
+      const created=order.created_at?new Date(order.created_at).toLocaleString('fr-FR'):'—';
+      const disabled=status==='gift_sent'||status==='points_refunded';
+      return `
+      <tr>
+        <td style="min-width:180px">
+          <div style="font-weight:700;color:var(--txt)">${escapeHtml(order.email||'—')}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:4px">${created}</div>
+        </td>
+        <td style="min-width:120px">
+          <div style="font-weight:700;color:var(--txt)">${brand} ${Number(order.gift_card_value||0)}€</div>
+          <div style="font-size:11px;color:var(--fire);margin-top:4px">${Number(order.points_cost||0).toLocaleString('fr-FR')} pts</div>
+        </td>
+        <td style="min-width:120px">
+          <div style="font-weight:700;color:var(--txt)">${escapeHtml(giftStatusLabel(status))}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:4px">${escapeHtml(status)}</div>
+        </td>
+        <td style="min-width:220px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <input class="admin-input" id="giftCode_${order.id}" placeholder="Code cadeau" value="${code}" ${disabled?'disabled':''} style="min-width:0">
+            <input class="admin-input" id="giftNote_${order.id}" placeholder="Note admin (optionnel)" value="${note}" ${disabled?'disabled':''} style="min-width:0">
+          </div>
+        </td>
+        <td style="min-width:220px">
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <button class="admin-submit-btn" onclick="adminGiftReady('${order.id}',this)" ${disabled?'disabled':''} style="padding:8px 10px">Prêt</button>
+            <button class="admin-submit-btn" onclick="adminGiftSend('${order.id}',this)" ${disabled?'disabled':''} style="padding:8px 10px">Envoyer</button>
+            <button class="admin-close-btn" onclick="adminGiftRefund('${order.id}',this)" ${status==='points_refunded'?'disabled':''} style="padding:8px 10px">Rembourser</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="5" style="color:var(--blood)">${escapeHtml(e.message||'Erreur')}</td></tr>`;
+  }
+}
+
+async function adminGiftReady(orderId,btn){
+  const {code,note}=getAdminGiftInputs(orderId);
+  if(!code){showToast('warn','Code requis','Saisissez le code cadeau avant validation');return;}
+  btn.disabled=true;
+  try{
+    await adminFetch('/api/admin/gift-orders/'+orderId+'/ready',{method:'POST',body:{giftCode:code,adminNote:note}});
+    showToast('coins','Code enregistré','La carte est marquée comme prête');
+    adminLoadGiftOrders();
+  }catch(e){
+    showToast('err','Validation impossible',e.message||'Erreur');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+async function adminGiftSend(orderId,btn){
+  const {code,note}=getAdminGiftInputs(orderId);
+  if(!code){showToast('warn','Code requis','Saisissez le code cadeau avant envoi');return;}
+  btn.disabled=true;
+  try{
+    await adminFetch('/api/admin/gift-orders/'+orderId+'/send',{method:'POST',body:{giftCode:code,adminNote:note}});
+    showToast('coins','Code envoyé','L’utilisateur a reçu son code par email');
+    adminLoadGiftOrders();
+  }catch(e){
+    showToast('err','Envoi impossible',e.message||'Erreur');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+async function adminGiftRefund(orderId,btn){
+  if(!confirm('Rembourser les points de cette commande ?'))return;
+  const {note}=getAdminGiftInputs(orderId);
+  btn.disabled=true;
+  try{
+    await adminFetch('/api/admin/gift-orders/'+orderId+'/refund',{method:'POST',body:{adminNote:note}});
+    showToast('coins','Points remboursés','La commande a été remboursée');
+    adminLoadGiftOrders();
+  }catch(e){
+    showToast('err','Remboursement impossible',e.message||'Erreur');
+  }finally{
+    btn.disabled=false;
+  }
 }
 
 function closeModal(id){
