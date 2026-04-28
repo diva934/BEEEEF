@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BEEEF — Live Debate Arenas</title>
+<title>BEEEF — Débats & prédictions média</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Inter+Tight:ital,wght@0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -3586,9 +3586,9 @@ body{
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
       ADMIN
     </button>
-    <button class="gains-btn top-up-btn header-reminder-btn" onclick="openGains()" aria-label="Mes gains">
+    <button class="top-up-btn header-reminder-btn" onclick="openGains()" aria-label="Mes gains">
       <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
-      <span>Gains</span>
+      <span class="top-up-label-full">Gains</span><span class="top-up-label-compact">Gains</span>
     </button>
     <button class="top-up-btn header-reminder-btn" onclick="openFunds()" aria-label="Acheter des points">
       <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
@@ -3703,7 +3703,7 @@ body{
       <div id="mpBetList"><div class="tab-empty-state">
         <div class="tab-empty-icon">🎯</div>
         <div class="tab-empty-title">Aucune prédiction pour l'instant</div>
-        <div class="tab-empty-sub">Entrez dans un débat live et prédisez le camp qui argumente le mieux.</div>
+        <div class="tab-empty-sub">Entrez dans un débat média et prédisez le camp qui argumente le mieux.</div>
       </div></div>
     </div>
   </div>
@@ -3733,16 +3733,16 @@ body{
           <div class="video-container">
             <div class="context-video-shell no-video" id="contextVideoShell">
               <video id="contextVideo" class="context-video" muted playsinline preload="metadata"></video>
-              <iframe id="contextVideoFrame" class="context-video-frame" title="Live debate stream" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+              <iframe id="contextVideoFrame" class="context-video-frame" title="Context video" referrerpolicy="strict-origin-when-cross-origin"></iframe>
               <div class="context-video-fallback" id="contextVideoFallback"></div>
               <div class="video-fallback-card" id="videoFallbackCard">
-                <div class="video-fallback-label" id="videoFallbackSource">LIVE SOURCE</div>
-                <div class="video-fallback-title">Video unavailable</div>
-                <a id="videoFallbackLink" class="video-fallback-link" href="#" target="_blank" rel="noopener noreferrer">Open source</a>
+                <div class="video-fallback-label" id="videoFallbackSource">SOURCE MÉDIA</div>
+                <div class="video-fallback-title">Vidéo de contexte indisponible</div>
+                <a id="videoFallbackLink" class="video-fallback-link" href="#" target="_blank" rel="noopener noreferrer">Voir la source</a>
               </div>
             </div>
             <canvas id="liveCanvas"></canvas>
-            <div class="video-live-badge"><div class="live-dot"></div>LIVE</div>
+            <div class="video-live-badge"><div class="live-dot"></div>CONTEXTE</div>
             <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
             <div class="live-progress-wrap" id="liveProgressWrap">
               <span class="live-progress-time" id="liveProgressCurrent">00:00</span>
@@ -3754,8 +3754,8 @@ body{
 
         <article class="live-info-card">
           <div class="live-info-title" id="liveTitle"></div>
-          <div class="live-info-description" id="liveInfoDescription">Live debate analysis and source context update in real time.</div>
-          <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Open source</a>
+          <div class="live-info-description" id="liveInfoDescription">Vidéo de contexte et source média liées au sujet du débat.</div>
+          <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Voir la source</a>
           <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()" style="display:none">PARTICIPATE</button>
         </article>
 
@@ -3771,7 +3771,7 @@ body{
         </div>
 
         <section class="betting-panel">
-          <div class="panel-title">Prédictions live</div>
+          <div class="panel-title">Prédictions</div>
           <div class="big-bet-labels">
             <div class="big-label label-yes">
               <div class="big-label-name" id="sideLabelYes">YES</div>
@@ -3804,8 +3804,8 @@ body{
 
       <aside class="live-chat-column live-right">
         <div class="chat-header">
-          LIVE CHAT
-          <div class="chat-live-indicator">LIVE</div>
+          CHAT
+          <div class="chat-live-indicator">MEDIA</div>
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-wrap">
@@ -4050,7 +4050,7 @@ body{
     <button style="background:none;border:1px solid var(--line);border-radius:4px;padding:6px 14px;font-family:var(--fn-disp);font-size:11px;font-weight:800;color:var(--txt2);cursor:pointer;letter-spacing:0.5px;text-transform:uppercase" onclick="leaveParticipantRoom()">← QUITTER</button>
     <div class="proom-title" id="proomTitle">Débat en cours</div>
     <div class="proom-status">
-      <div class="live-badge-big"><div class="live-dot"></div>LIVE</div>
+      <div class="live-badge-big"><div class="live-dot"></div>EN COURS</div>
       <div class="live-countdown" id="proomMainTimer" style="font-size:13px">00:00</div>
     </div>
   </div>
@@ -4602,7 +4602,7 @@ function upgradeMediaImageUrl(value){
 }
 function generatedPreviewImage(debate){
   const colors=debate?.gradColors||catGradients[debate?.category]||['#ff6432','#0a84ff','#050506'];
-  const title=escapeHtml(String(debate?.title||'Live debate').slice(0,78));
+  const title=escapeHtml(String(debate?.title||'Media debate').slice(0,78));
   const category=escapeHtml(catLabel(debate?.category||'general'));
   const yes=escapeHtml(debate?.yesLabel||'YES');
   const no=escapeHtml(debate?.noLabel||'NO');
@@ -4673,11 +4673,11 @@ function isYouTubeEmbedUrl(value){
 function safeDecode(value){
   try{return decodeURIComponent(String(value||''));}catch(_){return String(value||'');}
 }
-function buildBroadcastStreamQuery(debate){
+function buildContextMediaQuery(debate){
   const topic=String(debate?.sourceTitle||debate?.title||'').trim();
   const category=String(catLabel(debate?.category||'general')||'news').trim();
   const source=String(debate?.sourceFeedLabel||debate?.sourceDomain||'BBC News').trim();
-  return [topic, category, 'debate panel live discussion', source].filter(Boolean).join(' ');
+  return [topic, category, 'news analysis context report discussion', source].filter(Boolean).join(' ');
 }
 function buildYouTubeSearchEmbedUrl(query,{muted:forceMuted=true}={}){
   const q=String(query||'').trim();
@@ -4701,10 +4701,10 @@ function getDebateStreamUrl(debate,{muted:forceMuted=muted}={}){
 
   for(const candidate of candidates){
     if(isDirectPlayableVideoUrl(candidate))return candidate;
-    if(isYouTubeEmbedUrl(candidate))return buildYouTubeSearchEmbedUrl(candidate.includes('list=') ? safeDecode((candidate.match(/[?&]list=([^&]+)/)||[])[1]||'') : buildBroadcastStreamQuery(debate),{muted:forceMuted});
+    if(isYouTubeEmbedUrl(candidate))return buildYouTubeSearchEmbedUrl(candidate.includes('list=') ? safeDecode((candidate.match(/[?&]list=([^&]+)/)||[])[1]||'') : buildContextMediaQuery(debate),{muted:forceMuted});
   }
 
-  return buildYouTubeSearchEmbedUrl(buildBroadcastStreamQuery(debate),{muted:forceMuted});
+  return buildYouTubeSearchEmbedUrl(buildContextMediaQuery(debate),{muted:forceMuted});
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4775,12 +4775,12 @@ function updateLiveSourceCard(debate) {
   const linkText = sourceTitle || sourceUrl;
 
   if (infoDescription) {
-    infoDescription.textContent = excerpt || debate?.description || 'Live debate data is updating in real time.';
+    infoDescription.textContent = excerpt || debate?.description || 'Contexte média et source liée au débat.';
   }
   if (infoSourceLink) {
     if (sourceUrl) {
       infoSourceLink.href = sourceUrl;
-      infoSourceLink.textContent = `Source: ${linkText}`;
+      infoSourceLink.textContent = `Voir la source : ${linkText}`;
       infoSourceLink.style.display = 'inline-block';
     } else {
       infoSourceLink.removeAttribute('href');
@@ -4806,7 +4806,7 @@ function updateLiveSourceCard(debate) {
       <div class="live-source-body">
         <div class="live-source-kicker"><span>${escapeHtml(label)}</span><span>${escapeHtml(host)}</span>${date ? `<span>${escapeHtml(date)}</span>` : ''}</div>
         ${excerpt ? `<div class="live-source-excerpt">${escapeHtml(excerpt)}</div>` : ''}
-        ${sourceUrl ? `<a class="live-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Source: ${escapeHtml(linkText)}</a>` : ''}
+        ${sourceUrl ? `<a class="live-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Voir la source : ${escapeHtml(linkText)}</a>` : ''}
       </div>
     `;
     card.classList.add('is-visible');
@@ -4869,15 +4869,17 @@ function prepareContextVideo(debate) {
     const pending = video.play();
     if (pending && typeof pending.catch === 'function') pending.catch(() => {});
   } else if (streamUrl) {
-    showFallbackCard();
+    hideFallbackCard();
     video.pause();
     video.removeAttribute('src');
     video.dataset.src = '';
-    frame.src = 'about:blank';
-    frame.dataset.src = '';
-    frame.dataset.mode = '';
+    if (frame.dataset.src !== streamUrl) {
+      frame.dataset.src = streamUrl;
+      frame.src = streamUrl;
+    }
+    frame.dataset.mode = 'embed';
     shell.classList.remove('has-video');
-    shell.classList.remove('has-frame');
+    shell.classList.add('has-frame');
     shell.classList.remove('no-video');
   } else {
     showFallbackCard();
@@ -5237,7 +5239,7 @@ function launchAIDebate(cat) {
   renderGrid(activeFilter);
   startTimer(nd);
   showToast('ai','Nouveau débat',nd.title.slice(0,48)+'…');
-  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' LIVE';
+  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' DÉBATS';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5335,7 +5337,7 @@ function renderGrid(cat='all') {
   let filtered = cat==='all'?debates:debates.filter(d=>d.category===cat);
   const live = filtered.filter(d=>!d.closed).length;
   document.getElementById('debateCount').textContent=live+' débats actifs';
-  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' LIVE';
+  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' DÉBATS';
   filtered.forEach(d=>grid.appendChild(buildCard(d)));
   renderTrendingPredictionsStrip();
   renderTopCarousel();
@@ -5393,7 +5395,7 @@ function renderTopCarousel(){
   }
   const section=document.getElementById('top-carousel');
   if(section)section.style.display='';
-  if(badge)badge.textContent=top.filter(d=>!d.closed).length+' LIVE';
+  if(badge)badge.textContent=top.filter(d=>!d.closed).length+' MÉDIAS';
   scroll.innerHTML='';
   top.forEach((d,i)=>{
     const card=buildCard(d);
@@ -5920,7 +5922,7 @@ const mobileCamBtn=document.getElementById('mliveCamBtn');
 if(mobileCamBtn)mobileCamBtn.addEventListener('click',()=>setMobileCameraState(!mobileCameraOn));
 const mobileShareBtn=document.getElementById('mliveShareBtn');
 if(mobileShareBtn)mobileShareBtn.addEventListener('click',async()=>{
-  const shareTitle=currentDebate?.title||'BEEEF live debate';
+  const shareTitle=currentDebate?.title||'BEEEF débat média';
   const shareUrl=window.location.href;
   try{
     if(navigator.share){
@@ -5928,7 +5930,7 @@ if(mobileShareBtn)mobileShareBtn.addEventListener('click',async()=>{
       return;
     }
     if(navigator.clipboard)await navigator.clipboard.writeText(shareUrl);
-    showToast('ok','Lien copié','Le lien du live est prêt à partager.');
+    showToast('ok','Lien copié','Le lien du débat est prêt à partager.');
   }catch(_){
     showToast('err','Partage indisponible','Tu peux copier l’URL depuis la barre du navigateur.');
   }
@@ -6531,7 +6533,7 @@ async function rtcStart(localStream) {
     if (st === 'connected') {
       _rtcConnected = true;
       addModerationEntry('✅ Flux P2P actif — connexion directe entre les deux orateurs', 'ok');
-      showToast('🔴', 'LIVE réel', 'Flux WebRTC établi');
+      showToast('ok', 'Débat connecté', 'Le flux de contexte est prêt.');
       // Show green border on remote video slot
       const s2 = document.getElementById('proomSide2');
       if (s2) s2.style.boxShadow = 'inset 0 0 0 2px var(--elec)';
@@ -7359,7 +7361,7 @@ function renderMyBets() {
     list.innerHTML = `<div class="tab-empty-state">
       <div class="tab-empty-icon">🎯</div>
       <div class="tab-empty-title">Aucune prédiction pour l'instant</div>
-      <div class="tab-empty-sub">Entrez dans un débat live et prédisez le camp qui argumente le mieux.</div>
+      <div class="tab-empty-sub">Entrez dans un débat média et prédisez le camp qui argumente le mieux.</div>
     </div>`;
     return;
   }
