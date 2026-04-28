@@ -189,7 +189,7 @@ body::before{
 .gains-card{padding:18px 14px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
 .gains-card:hover{border-color:var(--fire);background:rgba(255,74,14,0.05);transform:translateY(-2px)}
 .gains-card-logo{width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;overflow:hidden}
-.gains-card-logo img{width:100%;height:100%;object-fit:cover}
+.gains-card-logo img{width:100%;height:100%;object-fit:contain;padding:10px;display:block}
 .gains-card-brand{font-family:var(--fn-disp);font-size:14px;font-weight:700;color:var(--txt);margin-bottom:6px}
 .gains-card-value{font-family:var(--fn-disp);font-size:26px;font-weight:900;color:var(--txt);margin-bottom:4px}
 .gains-card-pts{font-family:var(--fn-mono);font-size:11px;color:var(--fire)}
@@ -3444,57 +3444,57 @@ body{
     <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">Cartes cadeaux</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="gains-card">
-        <div class="gains-card-logo" style="background:#000"><img src="https://logo.clearbit.com/apple.com" width="44" height="44" alt="Apple"></div>
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/apple.svg" width="44" height="44" alt="Apple"></div>
         <div class="gains-card-brand">Apple</div>
         <div class="gains-price-row">
-          <button class="gains-price-btn" onclick="redeemGift('pack_apple_10')">10€<span>8k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_apple_10')">10€<span>7k pts</span></button>
           <button class="gains-price-btn" onclick="redeemGift('pack_apple_20')">20€<span>16k pts</span></button>
-          <button class="gains-price-btn" onclick="redeemGift('pack_apple_50')">50€<span>40k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_apple_50')">50€<span>45k pts</span></button>
         </div>
       </div>
       <div class="gains-card">
-        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="https://logo.clearbit.com/amazon.com" width="44" height="44" alt="Amazon"></div>
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/amazon.png" width="44" height="44" alt="Amazon"></div>
         <div class="gains-card-brand">Amazon</div>
         <div class="gains-price-row">
-          <button class="gains-price-btn" onclick="redeemGift('pack_amazon_10')">10€<span>8k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_amazon_10')">10€<span>7k pts</span></button>
           <button class="gains-price-btn" onclick="redeemGift('pack_amazon_20')">20€<span>16k pts</span></button>
-          <button class="gains-price-btn" onclick="redeemGift('pack_amazon_50')">50€<span>40k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_amazon_50')">50€<span>45k pts</span></button>
         </div>
       </div>
       <div class="gains-card">
-        <div class="gains-card-logo" style="background:#1DB954"><img src="https://logo.clearbit.com/spotify.com" width="44" height="44" alt="Spotify"></div>
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/spotify.png" width="44" height="44" alt="Spotify"></div>
         <div class="gains-card-brand">Spotify</div>
         <div class="gains-price-row">
-          <button class="gains-price-btn" onclick="redeemGift('pack_spotify_10')">10€<span>8k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_spotify_10')">10€<span>7k pts</span></button>
           <button class="gains-price-btn" onclick="redeemGift('pack_spotify_20')">20€<span>16k pts</span></button>
-          <button class="gains-price-btn" onclick="redeemGift('pack_spotify_50')">50€<span>40k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_spotify_50')">50€<span>45k pts</span></button>
         </div>
       </div>
       <div class="gains-card">
-        <div class="gains-card-logo" style="background:#1a1a1a"><img src="https://logo.clearbit.com/epicgames.com" width="44" height="44" alt="Epic Games"></div>
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/epic-games.png" width="44" height="44" alt="Epic Games"></div>
         <div class="gains-card-brand">Epic Games</div>
         <div class="gains-price-row">
-          <button class="gains-price-btn" onclick="redeemGift('pack_epic_10')">10€<span>8k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_epic_10')">10€<span>7k pts</span></button>
           <button class="gains-price-btn" onclick="redeemGift('pack_epic_20')">20€<span>16k pts</span></button>
-          <button class="gains-price-btn" onclick="redeemGift('pack_epic_50')">50€<span>40k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_epic_50')">50€<span>45k pts</span></button>
         </div>
       </div>
       <div class="gains-card">
-        <div class="gains-card-logo" style="background:#E50914"><img src="https://logo.clearbit.com/netflix.com" width="44" height="44" alt="Netflix"></div>
+        <div class="gains-card-logo" style="background:#000"><img src="assets/brand-logos/netflix.png" width="44" height="44" alt="Netflix"></div>
         <div class="gains-card-brand">Netflix</div>
         <div class="gains-price-row">
-          <button class="gains-price-btn" onclick="redeemGift('pack_netflix_10')">10€<span>8k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_netflix_10')">10€<span>7k pts</span></button>
           <button class="gains-price-btn" onclick="redeemGift('pack_netflix_20')">20€<span>16k pts</span></button>
-          <button class="gains-price-btn" onclick="redeemGift('pack_netflix_50')">50€<span>40k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_netflix_50')">50€<span>45k pts</span></button>
         </div>
       </div>
       <div class="gains-card">
-        <div class="gains-card-logo" style="background:#003087"><img src="https://logo.clearbit.com/playstation.com" width="44" height="44" alt="PlayStation"></div>
+        <div class="gains-card-logo" style="background:#003087"><img src="assets/brand-logos/playstation.png" width="44" height="44" alt="PlayStation"></div>
         <div class="gains-card-brand">PlayStation</div>
         <div class="gains-price-row">
-          <button class="gains-price-btn" onclick="redeemGift('pack_playstation_10')">10€<span>8k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_playstation_10')">10€<span>7k pts</span></button>
           <button class="gains-price-btn" onclick="redeemGift('pack_playstation_20')">20€<span>16k pts</span></button>
-          <button class="gains-price-btn" onclick="redeemGift('pack_playstation_50')">50€<span>40k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_playstation_50')">50€<span>45k pts</span></button>
         </div>
       </div>
     </div>
@@ -6028,35 +6028,36 @@ function openGains(){
   const el=document.getElementById('gainsBalance');
   if(el&&typeof balance!=='undefined')el.textContent=(balance||0).toLocaleString('fr-FR')+' pts';
 }
+// ── Pack ID → brand + value (display only — server re-validates prices)
+const _PACK_MAP={
+  pack_apple_10:{b:'apple',v:10},pack_apple_20:{b:'apple',v:20},pack_apple_50:{b:'apple',v:50},
+  pack_amazon_10:{b:'amazon',v:10},pack_amazon_20:{b:'amazon',v:20},pack_amazon_50:{b:'amazon',v:50},
+  pack_spotify_10:{b:'spotify',v:10},pack_spotify_20:{b:'spotify',v:20},pack_spotify_50:{b:'spotify',v:50},
+  pack_epic_10:{b:'epic',v:10},pack_epic_20:{b:'epic',v:20},pack_epic_50:{b:'epic',v:50},
+  pack_netflix_10:{b:'netflix',v:10},pack_netflix_20:{b:'netflix',v:20},pack_netflix_50:{b:'netflix',v:50},
+  pack_playstation_10:{b:'playstation',v:10},pack_playstation_20:{b:'playstation',v:20},pack_playstation_50:{b:'playstation',v:50},
+};
+const _BRAND_NAMES={apple:'Apple',amazon:'Amazon',spotify:'Spotify',epic:'Epic Games',netflix:'Netflix',playstation:'PlayStation',xbox:'Xbox'};
+// Display pts (for confirm dialog only — server is the source of truth)
+const _DISPLAY_PTS={10:7000,20:16000,50:45000};
+let _redeemLock=false;
 async function redeemGift(packId){
   if(!window.currentUser){showToast('warn','Connexion requise','Connectez-vous pour échanger vos points');return;}
   const token=typeof window.getAuthToken==='function'?window.getAuthToken():'';
   if(!token){showToast('warn','Connexion requise','');return;}
-  const labels={
-    pack_apple_10:'Apple 10€',pack_apple_20:'Apple 20€',pack_apple_50:'Apple 50€',
-    pack_amazon_10:'Amazon 10€',pack_amazon_20:'Amazon 20€',pack_amazon_50:'Amazon 50€',
-    pack_spotify_10:'Spotify 10€',pack_spotify_20:'Spotify 20€',pack_spotify_50:'Spotify 50€',
-    pack_epic_10:'Epic Games 10€',pack_epic_20:'Epic Games 20€',pack_epic_50:'Epic Games 50€',
-    pack_netflix_10:'Netflix 10€',pack_netflix_20:'Netflix 20€',pack_netflix_50:'Netflix 50€',
-    pack_playstation_10:'PlayStation 10€',pack_playstation_20:'PlayStation 20€',pack_playstation_50:'PlayStation 50€',
-  };
-  const costs={
-    pack_apple_10:8000,pack_apple_20:16000,pack_apple_50:40000,
-    pack_amazon_10:8000,pack_amazon_20:16000,pack_amazon_50:40000,
-    pack_spotify_10:8000,pack_spotify_20:16000,pack_spotify_50:40000,
-    pack_epic_10:8000,pack_epic_20:16000,pack_epic_50:40000,
-    pack_netflix_10:8000,pack_netflix_20:16000,pack_netflix_50:40000,
-    pack_playstation_10:8000,pack_playstation_20:16000,pack_playstation_50:40000,
-  };
-  const label=labels[packId]||packId;
-  const cost=(costs[packId]||0).toLocaleString('fr-FR');
-  if(!confirm(`Échanger ${cost} pts contre une carte ${label} ?\n\nLe code sera envoyé sur votre email.`))return;
+  const pack=_PACK_MAP[packId];
+  if(!pack){showToast('err','Carte inconnue','');return;}
+  const brandName=_BRAND_NAMES[pack.b]||pack.b;
+  const displayPts=(_DISPLAY_PTS[pack.v]||0).toLocaleString('fr-FR');
+  if(!confirm(`Échanger ${displayPts} pts contre une carte ${brandName} ${pack.v}€ ?\n\nVous recevrez le code par email.`))return;
+  if(_redeemLock){showToast('warn','Patienter','Un échange est déjà en cours');return;}
+  _redeemLock=true;
   try{
-    showToast('info','Traitement…','Échange en cours');
+    showToast('info','Traitement…','Échange en cours, ne fermez pas la page');
     const r=await fetch(BACKEND_URL+'/api/gifts/redeem',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({packId}),
+      body:JSON.stringify({giftCardBrand:pack.b,giftCardValue:pack.v}),
     });
     const data=await r.json();
     if(!r.ok)throw new Error(data.error||'Erreur serveur');
@@ -6064,10 +6065,12 @@ async function redeemGift(packId){
     if(typeof syncProfileDom==='function')syncProfileDom();
     const gainsEl=document.getElementById('gainsBalance');
     if(gainsEl)gainsEl.textContent=(data.newBalance||0).toLocaleString('fr-FR')+' pts';
-    showToast('coins','Échange confirmé !','Code en route sur votre email 📧');
+    showToast('coins','Échange confirmé !','Votre carte cadeau arrive par email 📧');
     closeGains();
   }catch(e){
-    showToast('err','Échec de l\'échange',e.message);
+    showToast('err','Échec de l\'échange',e.message||'Erreur inconnue');
+  }finally{
+    _redeemLock=false;
   }
 }
 function closeGains(){
