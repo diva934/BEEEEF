@@ -1036,7 +1036,7 @@ body::before{
 }
 .live-page-title{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .live-page-meta{display:flex;align-items:center;gap:8px}
-.live-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;padding:18px;max-width:1440px;margin:0 auto;height:auto;overflow:visible}
+.live-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;padding:18px 18px 136px;max-width:1440px;margin:0 auto;height:auto;overflow:visible}
 .live-main-column{display:flex;flex-direction:column;gap:18px;min-width:0}
 .live-video-card,.live-info-card,.betting-panel,.live-right{background:#fff;border:1px solid #e5e5e5;border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .live-video-card{overflow:hidden}
@@ -1054,6 +1054,45 @@ body::before{
 .video-fallback-link{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:#f97316;text-decoration:none}
 .video-fallback-link:hover{text-decoration:underline}
 .live-info-card{padding:14px}
+.live-data-card{order:1;display:flex;flex-direction:column;gap:14px;padding:16px}
+.live-context-card{order:2}
+.ended-banner{order:3}
+.betting-panel{order:4}
+.live-video-card{order:5}
+.live-video-card[hidden]{display:none!important}
+.legacy-bet-controls{display:none!important}
+.live-data-top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.live-data-main{display:flex;flex-direction:column;gap:6px;min-width:0}
+.live-data-caption,.live-data-side-label,.live-data-metric span{
+  font-family:var(--fn-mono);font-size:10px;letter-spacing:1.2px;color:var(--txt3);text-transform:uppercase
+}
+.live-data-value-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.live-data-value{font-family:var(--fn-disp);font-size:44px;font-weight:900;line-height:1;letter-spacing:-0.04em;color:var(--txt)}
+.live-data-change,.live-data-side-value{font-family:var(--fn-body);font-size:14px;font-weight:700;color:var(--txt)}
+.live-chart-card{border:1px solid #e5e7eb;border-radius:14px;background:rgba(245,245,247,.8);overflow:hidden;padding:8px 10px 0}
+.live-chart-svg{display:block;width:100%;height:220px}
+.live-data-foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.live-data-metric{border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:10px 12px;background:rgba(255,255,255,0.78);display:flex;flex-direction:column;gap:4px}
+.live-data-metric strong{font-family:var(--fn-disp);font-size:18px;font-weight:800;color:var(--txt)}
+.live-event-data{display:flex;flex-direction:column;gap:14px}
+.live-event-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.live-event-note{font-size:14px;line-height:1.5;color:var(--txt2)}
+.live-context-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.live-context-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.live-inline-badge,.live-inline-viewers{position:static}
+.live-inline-badge.is-ended{background:rgba(107,114,128,0.88)}
+.sticky-predict-bar{
+  position:sticky;bottom:0;z-index:26;background:#f5f5f7;
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid #e5e7eb
+}
+.sticky-predict-inner{
+  max-width:1440px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:14px;
+  box-shadow:0 1px 2px rgba(15,23,42,.04);padding:12px
+}
+.sticky-predict-inner .bet-input-row{margin-bottom:10px}
+.sticky-bet-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sticky-bet-btns .bet-btn{width:100%;min-height:54px}
 .live-info-title{font-size:20px;font-weight:800;line-height:1.25}
 .live-info-description{margin-top:8px;color:#4b5563;font-size:14px;line-height:1.5}
 .live-info-link{display:inline-block;margin-top:10px;font-weight:700;font-size:13px;color:#f97316;text-decoration:none}
@@ -1073,9 +1112,12 @@ body::before{
 .video-container.controls-visible .live-progress-wrap{opacity:1;pointer-events:auto;transform:translateY(0)}
 
 @media(max-width:980px){
-  .live-layout{grid-template-columns:1fr;padding:10px;gap:10px}
+  .live-layout{grid-template-columns:1fr;padding:10px 10px 120px;gap:10px}
   .live-right{position:static;height:420px;width:100%}
   .live-page-header{padding:10px}
+  .live-data-value{font-size:36px}
+  .live-data-foot,.live-event-grid,.sticky-bet-btns{grid-template-columns:1fr}
+  .sticky-predict-bar{padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px))}
 }
 
 /* ══════════════════════════════════════════════════
@@ -3729,30 +3771,98 @@ body{
 
     <div class="live-layout">
       <section class="live-main-column">
-        <div class="live-video-card">
-          <div class="video-container">
-            <div class="context-video-shell no-video" id="contextVideoShell">
-              <video id="contextVideo" class="context-video" muted playsinline preload="metadata"></video>
-              <iframe id="contextVideoFrame" class="context-video-frame" title="Context video" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-              <div class="context-video-fallback" id="contextVideoFallback"></div>
-              <div class="video-fallback-card" id="videoFallbackCard">
-                <div class="video-fallback-label" id="videoFallbackSource">SOURCE MÉDIA</div>
-                <div class="video-fallback-title">Vidéo de contexte indisponible</div>
-                <a id="videoFallbackLink" class="video-fallback-link" href="#" target="_blank" rel="noopener noreferrer">Voir la source</a>
+        <section class="live-info-card live-data-card">
+          <div class="panel-title" id="liveDataLabel">Données live</div>
+
+          <div class="live-market-data" id="liveMarketData" hidden>
+            <div class="live-data-top">
+              <div class="live-data-main">
+                <div class="live-data-caption">Prix du contrat YES</div>
+                <div class="live-data-value-row">
+                  <div class="live-data-value" id="livePriceValue">50¢</div>
+                  <div class="live-data-change" id="livePriceChange">+0¢</div>
+                </div>
+              </div>
+              <div class="live-data-side">
+                <div class="live-data-side-label">Évolution</div>
+                <div class="live-data-side-value" id="livePriceTrend">Stable</div>
               </div>
             </div>
-            <canvas id="liveCanvas"></canvas>
-            <div class="video-live-badge"><div class="live-dot"></div>CONTEXTE</div>
-            <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
-            <div class="live-progress-wrap" id="liveProgressWrap">
-              <span class="live-progress-time" id="liveProgressCurrent">00:00</span>
-              <input type="range" id="liveProgressSlider" class="live-progress-slider" min="0" max="100" value="0" step="0.1" aria-label="Live progress">
-              <span class="live-progress-time" id="liveProgressTotal">00:00</span>
+
+            <div class="live-chart-card">
+              <svg class="live-chart-svg" id="liveChartSvg" viewBox="0 0 640 240" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="liveChartAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(48,209,88,0.24)"></stop>
+                    <stop offset="100%" stop-color="rgba(48,209,88,0.02)"></stop>
+                  </linearGradient>
+                </defs>
+                <path id="liveChartArea" fill="url(#liveChartAreaGradient)" d=""></path>
+                <path id="liveChartLine" fill="none" stroke="var(--elec)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d=""></path>
+              </svg>
+            </div>
+
+            <div class="live-data-foot">
+              <div class="live-data-metric">
+                <span>Prix NO</span>
+                <strong id="liveNoPrice">50¢</strong>
+              </div>
+              <div class="live-data-metric">
+                <span>Volume</span>
+                <strong id="liveDataVolume">0 pts</strong>
+              </div>
+              <div class="live-data-metric">
+                <span>Viewers</span>
+                <strong id="liveDataViewers">0</strong>
+              </div>
             </div>
           </div>
-        </div>
 
-        <article class="live-info-card">
+          <div class="live-event-data" id="liveEventData">
+            <div class="live-data-top">
+              <div class="live-data-main">
+                <div class="live-data-caption" id="liveEventCaption">État du marché</div>
+                <div class="live-data-value-row">
+                  <div class="live-data-value" id="liveEventPrimary">—</div>
+                  <div class="live-data-change" id="liveEventTrend"></div>
+                </div>
+              </div>
+              <div class="live-data-side">
+                <div class="live-data-side-label">État</div>
+                <div class="live-data-side-value" id="liveEventState">LIVE</div>
+              </div>
+            </div>
+
+            <div class="live-event-grid">
+              <div class="live-bet-kpi">
+                <div class="live-bet-kpi-label">Volume</div>
+                <div class="live-bet-kpi-value" id="liveEventPool">0 pts</div>
+              </div>
+              <div class="live-bet-kpi">
+                <div class="live-bet-kpi-label">Odds YES</div>
+                <div class="live-bet-kpi-value" id="liveEventOddYes" style="color:var(--elec)">—</div>
+              </div>
+              <div class="live-bet-kpi">
+                <div class="live-bet-kpi-label">Odds NO</div>
+                <div class="live-bet-kpi-value" id="liveEventOddNo" style="color:var(--blood)">—</div>
+              </div>
+            </div>
+
+            <div class="live-event-note" id="liveEventInfo"></div>
+          </div>
+        </section>
+
+        <!-- canvas garde pour les animations de fond uniquement -->
+        <canvas id="liveCanvas" style="display:none"></canvas>
+
+        <article class="live-info-card live-context-card">
+          <div class="live-context-top">
+            <div class="live-context-status">
+              <div class="video-live-badge live-inline-badge" id="liveStatusBadge"><div class="live-dot"></div><span id="liveStatusText">LIVE</span></div>
+              <div class="live-countdown" id="liveCountdown">00:00</div>
+            </div>
+            <div class="video-viewers live-inline-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></div>
+          </div>
           <div class="live-info-title" id="liveTitle"></div>
           <div class="live-info-description" id="liveInfoDescription">Vidéo de contexte et source média liées au sujet du débat.</div>
           <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Voir la source</a>
@@ -3786,14 +3896,14 @@ body{
           </div>
           <div class="big-bet-bar"><div class="big-bet-fill" id="bigBarFill" style="width:50%"></div></div>
           <div class="pool-total">Total pool: <span id="poolTotal">0 pts</span></div>
-          <div class="bet-input-row">
+          <div class="bet-input-row legacy-bet-controls">
             <div class="bet-input-wrap">
-              <input class="bet-input" id="betAmount" type="number" value="50" min="1">
+              <input class="bet-input" id="betAmountLegacy" type="number" value="50" min="1">
             </div>
           </div>
-          <div class="bet-btns">
-            <button class="bet-btn bet-btn-yes" id="betYesBtn">Prédire YES</button>
-            <button class="bet-btn bet-btn-no" id="betNoBtn">Prédire NO</button>
+          <div class="bet-btns legacy-bet-controls">
+            <button class="bet-btn bet-btn-yes" id="betYesBtnLegacy">Prédire YES</button>
+            <button class="bet-btn bet-btn-no" id="betNoBtnLegacy">Prédire NO</button>
           </div>
           <div class="bets-feed">
             <div class="bets-feed-title">Prédictions récentes</div>
@@ -3831,6 +3941,20 @@ body{
           </div>
         </div>
       </aside>
+    </div>
+
+    <div class="sticky-predict-bar">
+      <div class="sticky-predict-inner">
+        <div class="bet-input-row">
+          <div class="bet-input-wrap">
+            <input class="bet-input" id="betAmount" type="number" value="50" min="1">
+          </div>
+        </div>
+        <div class="bet-btns sticky-bet-btns">
+          <button class="bet-btn bet-btn-yes" id="betYesBtn">Prédire OUI</button>
+          <button class="bet-btn bet-btn-no" id="betNoBtn">Prédire NON</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -4355,6 +4479,7 @@ function setupFinish() {
   document.getElementById('setupOverlay').classList.remove('open');
   applyUserPrefs();
   renderGrid(activeFilter);
+  refreshDebatesFromServer();
   showToast('ok','Profil configuré','Langues enregistrées. Serveur détecté automatiquement');
 }
 function applyUserPrefs() {
@@ -4551,9 +4676,14 @@ let wasLiveSocketConnected = false;
 let liveProgressDragging = false;
 
 function seedFallbackDebate(seed, index) {
+  const preview = isRenderablePreviewImage(seed.photo)
+    ? seed.photo
+    : (buildContextualPreviewImage(seed) || generatedPreviewImage(seed));
   return {
     ...seed,
     id: String(seed.id),
+    photo: preview,
+    sourceImageUrl: preview,
     durationMs: getTimerDuration(seed.pool),
     openedAt: null,
     endsAt: null,
@@ -4600,12 +4730,20 @@ function upgradeMediaImageUrl(value){
     .replace('/ace/standard/320/','/ace/standard/976/')
     .replace('/ace/standard/480/','/ace/standard/976/');
 }
+function isRenderablePreviewImage(value){
+  const raw=String(value||'').trim();
+  return /^(https?:\/\/|data:image\/|blob:)/i.test(raw);
+}
 function generatedPreviewImage(debate){
   const colors=debate?.gradColors||catGradients[debate?.category]||['#ff6432','#0a84ff','#050506'];
   const title=escapeHtml(String(debate?.title||'Media debate').slice(0,78));
   const category=escapeHtml(catLabel(debate?.category||'general'));
   const yes=escapeHtml(debate?.yesLabel||'YES');
   const no=escapeHtml(debate?.noLabel||'NO');
+  const seed=hashString(`${debate?.id||''}|${debate?.title||''}|${debate?.category||''}`);
+  const cx1=140+(seed%220), cy1=110+(seed%140), r1=120+(seed%90);
+  const cx2=980-(seed%180), cy2=520-(seed%110), r2=180+((seed>>3)%110);
+  const barW=240+((seed>>5)%220);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 624">
     <defs>
       <linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="${colors[0]}"/><stop offset=".52" stop-color="${colors[1]}"/><stop offset="1" stop-color="${colors[2]||'#050506'}"/></linearGradient>
@@ -4613,55 +4751,132 @@ function generatedPreviewImage(debate){
     </defs>
     <rect width="1200" height="624" fill="url(#g)"/>
     <rect width="1200" height="624" fill="url(#r)"/>
-    <circle cx="1030" cy="72" r="210" fill="#fff" opacity=".08"/>
-    <circle cx="104" cy="545" r="260" fill="#000" opacity=".18"/>
+    <circle cx="${cx1}" cy="${cy1}" r="${r1}" fill="#fff" opacity=".08"/>
+    <circle cx="${cx2}" cy="${cy2}" r="${r2}" fill="#000" opacity=".18"/>
+    <rect x="72" y="504" width="${barW}" height="12" rx="6" fill="rgba(255,255,255,.84)"/>
     <text x="72" y="92" fill="rgba(255,255,255,.78)" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="5">${category}</text>
     <text x="72" y="292" fill="#fff" font-family="Arial, sans-serif" font-size="70" font-weight="900">${title}</text>
     <text x="72" y="540" fill="rgba(255,255,255,.82)" font-family="Arial, sans-serif" font-size="32" font-weight="800">${yes} vs ${no}</text>
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
-const CONTEXTUAL_IMAGE_KEYWORDS={
-  politics:['politics','election','parliament'],
-  sports:['sports','stadium','football'],
-  crypto:['crypto','bitcoin','blockchain'],
-  geopolitics:['geopolitics','world','diplomacy'],
-  economy:['economy','finance','market'],
-  technology:['technology','ai','innovation'],
-  society:['society','people','city'],
-  general:['news','analysis','world']
+const CONTEXTUAL_IMAGE_LIBRARY=[
+  {
+    pattern:/\b(bitcoin|btc|crypto|ethereum|blockchain)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1621761191319-c6fb62004040?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(ai|artificial intelligence|openai|chatgpt|nvidia|robot|jobs)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(messi|football|soccer|stadium|premier league|ligue 1|uefa|champions league|arsenal|chelsea|real madrid|barcelona|psg|juventus|inter|benfica|porto)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(trump|election|vote|president|government|senate|congress|parliament|politics)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(china|war|geopolitics|diplomacy|nato|russia|ukraine|conflict|world)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1526778548025-fa2f459cd5ce?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(remote work|teletravail|office|bureau|school|schools|community|communities|society)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(universal basic income|revenu universel|economy|finance|inflation|market|banks|regulation)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80'
+    ]
+  }
+];
+const CATEGORY_CONTEXTUAL_IMAGES={
+  politics:[
+    'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80'
+  ],
+  sports:[
+    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1200&q=80'
+  ],
+  crypto:[
+    'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1621761191319-c6fb62004040?auto=format&fit=crop&w=1200&q=80'
+  ],
+  geopolitics:[
+    'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1526778548025-fa2f459cd5ce?auto=format&fit=crop&w=1200&q=80'
+  ],
+  economy:[
+    'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80'
+  ],
+  technology:[
+    'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80'
+  ],
+  society:[
+    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80'
+  ],
+  general:[
+    'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80'
+  ]
 };
 function hashString(value){
   return String(value||'').split('').reduce((acc,ch)=>((acc*31)+ch.charCodeAt(0))>>>0,7);
 }
-function normalizeKeyword(value){
-  return String(value||'')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g,' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0,2)
-    .join('-');
+function pickContextualImage(images,seed){
+  if(!Array.isArray(images)||!images.length)return'';
+  return images[Math.abs(Number(seed)||0)%images.length]||'';
 }
 function buildContextualPreviewImage(debate){
   const category=String(debate?.category||'general').toLowerCase();
-  const categoryKeywords=CONTEXTUAL_IMAGE_KEYWORDS[category]||CONTEXTUAL_IMAGE_KEYWORDS.general;
-  const titleKeywords=String(debate?.title||'')
-    .split(/\s+/)
-    .map(normalizeKeyword)
-    .filter(Boolean)
-    .slice(0,2);
-  const keywordList=[...new Set([...titleKeywords,...categoryKeywords])].slice(0,3);
-  if(!keywordList.length)return '';
-  const lock=hashString(`${debate?.id||''}|${debate?.title||''}|${category}`)%1000000;
-  return `https://loremflickr.com/1200/624/${keywordList.join(',')}?lock=${lock}`;
+  const seed=hashString(`${debate?.id||''}|${debate?.title||''}|${category}`);
+  const haystack=[
+    debate?.title,
+    debate?.sourceTitle,
+    debate?.sourceExcerpt,
+    debate?.sourceDescription,
+    category
+  ].filter(Boolean).join(' ');
+
+  for(const entry of CONTEXTUAL_IMAGE_LIBRARY){
+    if(entry.pattern.test(haystack)){
+      return pickContextualImage(entry.images,seed);
+    }
+  }
+
+  return pickContextualImage(CATEGORY_CONTEXTUAL_IMAGES[category]||CATEGORY_CONTEXTUAL_IMAGES.general,seed);
 }
 function getDebatePreviewImage(debate){
   const explicitImage=upgradeMediaImageUrl(debate?.sourceImageUrl||debate?.photo);
-  if(explicitImage)return explicitImage;
-  return buildContextualPreviewImage(debate) || generatedPreviewImage(debate);
+  if(isRenderablePreviewImage(explicitImage))return explicitImage;
+  const contextualImage=buildContextualPreviewImage(debate);
+  if(isRenderablePreviewImage(contextualImage))return contextualImage;
+  return generatedPreviewImage(debate);
 }
 function isDirectPlayableVideoUrl(value){
   const raw=String(value||'').trim();
@@ -4696,7 +4911,6 @@ function getDebateStreamUrl(debate,{muted:forceMuted=muted}={}){
     debate?.contextVideoUrl,
     debate?.previewVideoUrl,
     debate?.sourceVideoUrl,
-    DEFAULT_CONTEXT_VIDEO_URL,
   ].map(value=>String(value||'').trim()).filter(Boolean);
 
   for(const candidate of candidates){
@@ -4704,7 +4918,226 @@ function getDebateStreamUrl(debate,{muted:forceMuted=muted}={}){
     if(isYouTubeEmbedUrl(candidate))return buildYouTubeSearchEmbedUrl(candidate.includes('list=') ? safeDecode((candidate.match(/[?&]list=([^&]+)/)||[])[1]||'') : buildContextMediaQuery(debate),{muted:forceMuted});
   }
 
-  return buildYouTubeSearchEmbedUrl(buildContextMediaQuery(debate),{muted:forceMuted});
+  return '';
+}
+
+let liveDataHistory = [];
+
+function isMarketDrivenDebate(debate){
+  const category=String(debate?.category||'').toLowerCase();
+  const text=[debate?.title,debate?.sourceTitle,debate?.sourceDescription,debate?.sourceExcerpt].filter(Boolean).join(' ');
+  return category==='crypto' || category==='economy' || /\b(bitcoin|btc|crypto|ethereum|market|finance|stock|nasdaq|dow|s&p|price|inflation|rates)\b/i.test(text);
+}
+
+function formatContractPrice(value){
+  return `${Math.round(Math.max(0,Math.min(100,Number(value)||0)))}¢`;
+}
+
+function seedLiveDataHistory(debate=currentDebate){
+  const basePct=Math.max(5,Math.min(95,Number(debate?.yesPct||liveYesPct||50)));
+  const basePool=Math.max(0,Number(debate?.pool||livePool||0));
+  liveDataHistory=Array.from({length:24},(_,index)=>{
+    const wave=Math.sin((index/23)*Math.PI*1.15)*1.6;
+    const drift=((index%4)-1.5)*0.22;
+    return {
+      value:Math.max(5,Math.min(95,basePct+wave+drift)),
+      pool:Math.max(0,basePool+Math.round((index-12)*280)),
+      ts:Date.now()-((23-index)*60000),
+    };
+  });
+}
+
+function captureLiveDataPoint(force=false){
+  if(!currentDebate)return;
+  const point={
+    value:Math.max(5,Math.min(95,Number(liveYesPct)||50)),
+    pool:Math.max(0,Number(livePool)||0),
+    ts:Date.now(),
+  };
+  const last=liveDataHistory[liveDataHistory.length-1];
+  if(!force && last && Math.abs((last.value||0)-point.value)<0.2 && Math.abs((last.pool||0)-point.pool)<10){
+    return;
+  }
+  liveDataHistory.push(point);
+  if(liveDataHistory.length>32)liveDataHistory=liveDataHistory.slice(-32);
+}
+
+function buildChartPath(points,width,height,padding){
+  if(!Array.isArray(points)||!points.length)return{line:'',area:''};
+  const values=points.map(point=>Number(point?.value)||0);
+  const min=Math.min(...values)-2;
+  const max=Math.max(...values)+2;
+  const range=Math.max(1,max-min);
+  const coords=points.map((point,index)=>{
+    const x=padding+((width-padding*2)*(points.length===1?0:index/(points.length-1)));
+    const y=height-padding-(((Number(point?.value)||0)-min)/range)*(height-padding*2);
+    return [x,y];
+  });
+  const line=coords.map(([x,y],index)=>`${index===0?'M':'L'} ${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
+  const area=`${line} L ${coords[coords.length-1][0].toFixed(2)} ${(height-padding).toFixed(2)} L ${coords[0][0].toFixed(2)} ${(height-padding).toFixed(2)} Z`;
+  return { line, area };
+}
+
+function updateLiveContextStatus(debate=currentDebate){
+  const badge=document.getElementById('liveStatusBadge');
+  const text=document.getElementById('liveStatusText');
+  if(text)text.textContent=debate&&!debate.closed?'LIVE':'ENDED';
+  if(badge)badge.classList.toggle('is-ended',Boolean(debate?.closed));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CoinGecko — prix crypto en temps réel
+// ─────────────────────────────────────────────────────────────
+const CRYPTO_COIN_IDS = {
+  bitcoin:'bitcoin',btc:'bitcoin',
+  ethereum:'ethereum',eth:'ethereum',
+  solana:'solana',sol:'solana',
+  cardano:'cardano',ada:'cardano',
+  ripple:'ripple',xrp:'ripple',
+  dogecoin:'dogecoin',doge:'dogecoin',
+  binance:'binancecoin',bnb:'binancecoin',
+  polkadot:'polkadot',dot:'polkadot',
+  avalanche:'avalanche-2',avax:'avalanche-2',
+  chainlink:'chainlink',link:'chainlink',
+  litecoin:'litecoin',ltc:'litecoin',
+  tron:'tron',trx:'tron',
+  shiba:'shiba-inu',shib:'shiba-inu',
+  polygon:'matic-network',matic:'matic-network',
+  uniswap:'uniswap',uni:'uniswap',
+  stellar:'stellar',xlm:'stellar',
+  monero:'monero',xmr:'monero',
+  cosmos:'cosmos',atom:'cosmos',
+};
+
+function detectCoinId(debate){
+  if(!debate||debate.category!=='crypto')return null;
+  const text=(debate.title+' '+(debate.sourceTitle||'')+' '+(debate.description||'')).toLowerCase();
+  for(const [keyword,coinId] of Object.entries(CRYPTO_COIN_IDS)){
+    if(text.includes(keyword))return coinId;
+  }
+  return null;
+}
+
+let _cryptoRefreshTimer=null;
+let _cryptoLivePrice=null;
+
+async function fetchCoinGeckoPrice(coinId){
+  try{
+    const url=`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=eur&include_24hr_vol=true&include_24hr_change=true`;
+    const r=await fetch(url,{headers:{'Accept':'application/json'}});
+    if(!r.ok)throw new Error('CoinGecko '+r.status);
+    const data=await r.json();
+    const coin=data[coinId];
+    if(!coin)return null;
+    return{
+      price:coin['eur'],
+      vol24h:coin['eur_24h_vol'],
+      change24h:coin['eur_24h_change'],
+    };
+  }catch(e){
+    console.warn('[coingecko]',e.message);
+    return null;
+  }
+}
+
+function fmtCryptoPrice(p){
+  if(p===null||p===undefined)return'—';
+  if(p>=1000)return'€'+p.toLocaleString('fr-FR',{maximumFractionDigits:0});
+  if(p>=1)return'€'+p.toLocaleString('fr-FR',{maximumFractionDigits:2});
+  return'€'+p.toLocaleString('fr-FR',{minimumSignificantDigits:3,maximumSignificantDigits:4});
+}
+
+function fmtCryptoVol(v){
+  if(!v)return'—';
+  if(v>=1e9)return'€'+(v/1e9).toFixed(1)+'Md';
+  if(v>=1e6)return'€'+(v/1e6).toFixed(1)+'M';
+  if(v>=1e3)return'€'+(v/1e3).toFixed(0)+'k';
+  return'€'+Math.round(v);
+}
+
+async function refreshCryptoData(coinId){
+  const data=await fetchCoinGeckoPrice(coinId);
+  if(!data)return;
+  _cryptoLivePrice=data;
+  // Mettre à jour l'affichage
+  const primary=document.getElementById('liveEventPrimary');
+  const trend=document.getElementById('liveEventTrend');
+  const poolEl=document.getElementById('liveEventPool');
+  const infoEl=document.getElementById('liveEventInfo');
+  if(primary)primary.textContent=fmtCryptoPrice(data.price);
+  if(trend){
+    const pct=data.change24h;
+    const sign=pct>=0?'+':'';
+    trend.textContent=`${sign}${pct.toFixed(2)}% 24h`;
+    trend.style.color=pct>=0?'var(--elec)':'var(--blood)';
+  }
+  if(poolEl)poolEl.textContent=fmtCryptoVol(data.vol24h);
+  if(infoEl)infoEl.textContent=`Prix ${coinId} en temps réel — CoinGecko`;
+}
+
+function startCryptoRefresh(debate){
+  stopCryptoRefresh();
+  _cryptoLivePrice=null;
+  const coinId=detectCoinId(debate);
+  if(!coinId)return;
+  // Première récupération immédiate
+  refreshCryptoData(coinId);
+  // Rafraîchissement toutes les 60 secondes
+  _cryptoRefreshTimer=setInterval(()=>refreshCryptoData(coinId),60000);
+}
+
+function stopCryptoRefresh(){
+  if(_cryptoRefreshTimer){clearInterval(_cryptoRefreshTimer);_cryptoRefreshTimer=null;}
+  _cryptoLivePrice=null;
+}
+
+function updateLiveDataCore(){
+  if(!currentDebate)return;
+  if(!liveDataHistory.length)seedLiveDataHistory(currentDebate);
+  captureLiveDataPoint();
+
+  // Masquer le bloc "marché" style Polymarket (chart SVG), toujours utiliser liveEventData
+  const marketCard=document.getElementById('liveMarketData');
+  const eventCard=document.getElementById('liveEventData');
+  const label=document.getElementById('liveDataLabel');
+  if(marketCard)marketCard.hidden=true;
+  if(eventCard)eventCard.hidden=false;
+  if(label)label.textContent='État du marché';
+
+  const currentPct=Math.max(5,Math.min(95,Number(liveYesPct)||50));
+  const noPct=100-currentPct;
+
+  const caption=document.getElementById('liveEventCaption');
+  const primary=document.getElementById('liveEventPrimary');
+  const trend=document.getElementById('liveEventTrend');
+  const state=document.getElementById('liveEventState');
+  const poolEl=document.getElementById('liveEventPool');
+  const oddYesEl=document.getElementById('liveEventOddYes');
+  const oddNoEl=document.getElementById('liveEventOddNo');
+  const infoEl=document.getElementById('liveEventInfo');
+
+  if(state)state.textContent=currentDebate?.closed?'Terminé':'LIVE';
+  if(oddYesEl)oddYesEl.textContent=calcOdds(currentPct);
+  if(oddNoEl)oddNoEl.textContent=calcOdds(noPct);
+
+  const isCrypto=currentDebate?.category==='crypto'&&_cryptoLivePrice;
+
+  if(isCrypto){
+    // Prix crypto réel — déjà mis à jour par refreshCryptoData()
+    if(caption)caption.textContent='Prix actuel';
+  }else{
+    // Débat standard — afficher les % YES/NO comme signal
+    if(caption)caption.textContent=currentDebate?.category==='sports'?'État du match':'État du marché';
+    if(primary)primary.textContent=`${currentDebate?.yesLabel||'OUI'} ${currentPct}%`;
+    if(trend){
+      const margin=Math.abs(currentPct-noPct);
+      trend.textContent=`${Math.round(margin)} pts d'avance`;
+      trend.style.color=currentPct>=50?'var(--elec)':'var(--blood)';
+    }
+    if(poolEl)poolEl.textContent=fmt(livePool);
+    const note=String(currentDebate?.sourceExcerpt||currentDebate?.sourceDescription||'').trim();
+    if(infoEl)infoEl.textContent=note;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4752,6 +5185,7 @@ function buildClientVerdictFromDebate(debate) {
 
 function updateLiveSourceCard(debate) {
   const card = document.getElementById('liveSourceCard');
+  const infoTitle = document.getElementById('liveTitle');
   const infoDescription = document.getElementById('liveInfoDescription');
   const infoSourceLink = document.getElementById('liveInfoSourceLink');
   const fallbackSource = document.getElementById('videoFallbackSource');
@@ -4774,6 +5208,9 @@ function updateLiveSourceCard(debate) {
   const label = debate?.sourceFeedLabel || 'BBC News';
   const linkText = sourceTitle || sourceUrl;
 
+  if (infoTitle) {
+    infoTitle.textContent = sourceTitle || 'Contexte live';
+  }
   if (infoDescription) {
     infoDescription.textContent = excerpt || debate?.description || 'Contexte média et source liée au débat.';
   }
@@ -4823,12 +5260,8 @@ function playMutedVideo(video) {
 }
 
 function prepareContextVideo(debate) {
-  const shell = document.getElementById('contextVideoShell');
-  const video = document.getElementById('contextVideo');
-  const frame = document.getElementById('contextVideoFrame');
-  const fallback = document.getElementById('contextVideoFallback');
-  const fallbackCard = document.getElementById('videoFallbackCard');
-  if (!shell || !video || !frame || !fallback) return;
+  // Vidéos supprimées — le contexte est désormais affiché en mode texte via updateLiveSourceCard
+  return;
 
   const image = getDebatePreviewImage(debate);
   fallback.style.backgroundImage = `linear-gradient(135deg,rgba(0,0,0,.1),rgba(0,0,0,.52)),url("${image}")`;
@@ -4842,8 +5275,15 @@ function prepareContextVideo(debate) {
   const hideFallbackCard = () => {
     if (fallbackCard) fallbackCard.classList.remove('show');
   };
+  const showVideoCard = () => {
+    if (videoCard) videoCard.hidden = false;
+  };
+  const hideVideoCard = () => {
+    if (videoCard) videoCard.hidden = true;
+  };
 
   if (useDirectVideo && streamUrl) {
+    showVideoCard();
     hideFallbackCard();
     if (video.dataset.src !== streamUrl) {
       video.dataset.src = streamUrl;
@@ -4856,7 +5296,7 @@ function prepareContextVideo(debate) {
       video.dataset.src = '';
       shell.classList.remove('has-video');
       shell.classList.add('no-video');
-      showFallbackCard();
+      hideVideoCard();
     };
     frame.src = 'about:blank';
     frame.dataset.src = '';
@@ -4869,6 +5309,7 @@ function prepareContextVideo(debate) {
     const pending = video.play();
     if (pending && typeof pending.catch === 'function') pending.catch(() => {});
   } else if (streamUrl) {
+    showVideoCard();
     hideFallbackCard();
     video.pause();
     video.removeAttribute('src');
@@ -4882,7 +5323,8 @@ function prepareContextVideo(debate) {
     shell.classList.add('has-frame');
     shell.classList.remove('no-video');
   } else {
-    showFallbackCard();
+    hideFallbackCard();
+    hideVideoCard();
     video.pause();
     video.removeAttribute('src');
     video.dataset.src = '';
@@ -4903,6 +5345,7 @@ function setContextVideoMode(mode = 'idle') {
 }
 
 function stopContextVideo() {
+  const videoCard = document.getElementById('liveVideoCard');
   const video = document.getElementById('contextVideo');
   const frame = document.getElementById('contextVideoFrame');
   if (video) video.pause();
@@ -4920,6 +5363,7 @@ function stopContextVideo() {
     shell.classList.remove('has-video','has-frame');
     shell.classList.add('no-video');
   }
+  if (videoCard) videoCard.hidden = true;
   setContextVideoMode('idle');
 }
 
@@ -4972,6 +5416,7 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
     liveViewers = Number(currentDebate.viewers || 0);
     updateBettingUI();
     updateLiveSourceCard(currentDebate);
+    prepareContextVideo(currentDebate);
   }
 
   if (rerender) {
@@ -4999,7 +5444,7 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
 
 async function refreshDebatesFromServer() {
   try {
-    const response = await fetch(BACKEND_URL + '/debates', {
+    const response = await fetch(BACKEND_URL + '/debates?region=' + encodeURIComponent(getServerRegion()), {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
@@ -5223,8 +5668,8 @@ function closeAIVerdict(){document.getElementById('aiVerdictOverlay').classList.
 
 function launchAIDebate(cat) {
   const topic = getNextTopic(cat); if(!topic) return;
-  const previewImage = topic.sourceImageUrl || topic.photo || '';
-  if(!previewImage) return;
+  const previewImage = getDebatePreviewImage(topic);
+  if(!isRenderablePreviewImage(previewImage)) return;
   const yL = LANG_YES[topic.lang]||'YES', nL = LANG_NO[topic.lang]||'NO';
   const nd = {
     id:makeId(),title:topic.title,category:cat,trending:Math.random()>0.7,ai:true,
@@ -5447,15 +5892,15 @@ function openLive(d) {
   if(d.closed)return;
   disconnectLiveSocket();
   currentDebate=d; livePool=Number(d.pool||0); liveYesPct=Number(d.yesPct||50); liveViewers=Number(d.viewers||0);
+  seedLiveDataHistory(d);
   document.getElementById('homepage').style.display='none';
   document.getElementById('live-view').style.display='block';
   document.getElementById('liveTopTitle').textContent=d.title;
-  document.getElementById('liveTitle').textContent=d.title;
   updateLiveSourceCard(d);
   document.getElementById('sideLabelYes').textContent=d.yesLabel||'OUI';
   document.getElementById('sideLabelNo').textContent=d.noLabel||'NON';
-  document.getElementById('betYesBtn').textContent='Prédire YES';
-  document.getElementById('betNoBtn').textContent='Prédire NO';
+  document.getElementById('betYesBtn').textContent='Prédire OUI';
+  document.getElementById('betNoBtn').textContent='Prédire NON';
   document.getElementById('betYesBtn').disabled=false;
   document.getElementById('betNoBtn').disabled=false;
   setMobileBetActionsDisabled(false);
@@ -5468,10 +5913,10 @@ function openLive(d) {
   setContextVideoMode('active');
   setMutedState(muted);
   updateBettingUI(); updateLiveTimer(d);
-  startCanvas(d.gradColors);
   wireLiveProgress();
   updateLiveProgressFromDebate(d);
   startSimulation();
+  startCryptoRefresh(d);
 }
 
 function goHome() {
@@ -5480,6 +5925,7 @@ function goHome() {
   document.getElementById('homepage').style.display='block';
   stopSimulation(); stopSpeakerAnim();
   stopContextVideo();
+  stopCryptoRefresh();
   if(liveAnimFrame){cancelAnimationFrame(liveAnimFrame);liveAnimFrame=null;}
   currentDebate=null; renderGrid(activeFilter);
 }
@@ -5502,6 +5948,8 @@ function updateBettingUI() {
   const viewersKpi=document.getElementById('liveViewersKpi'); if(viewersKpi)viewersKpi.textContent=fmtV(liveViewers);
   const oddYesKpi=document.getElementById('liveOddYesKpi'); if(oddYesKpi)oddYesKpi.textContent=calcOdds(liveYesPct);
   const oddNoKpi=document.getElementById('liveOddNoKpi'); if(oddNoKpi)oddNoKpi.textContent=calcOdds(noPct);
+  updateLiveContextStatus(currentDebate);
+  updateLiveDataCore();
   updateMobileLiveScore();
 }
 
@@ -5901,6 +6349,10 @@ function setMutedState(nextMuted){
     if(nextSrc&&contextFrame.dataset.src!==nextSrc){
       contextFrame.dataset.src=nextSrc;
       contextFrame.src=nextSrc;
+    } else if(!nextSrc){
+      contextFrame.src='about:blank';
+      contextFrame.dataset.src='';
+      contextFrame.dataset.mode='';
     }
   }
 }
@@ -7258,8 +7710,8 @@ function endParticipantRoom(natural){
       .filter(d=>!d.closed)
       .slice()
       .sort((a,b)=>{
-        const aHasImage = !!String(a?.sourceImageUrl || a?.photo || '').trim();
-        const bHasImage = !!String(b?.sourceImageUrl || b?.photo || '').trim();
+        const aHasImage = isRenderablePreviewImage(upgradeMediaImageUrl(a?.sourceImageUrl || a?.photo || ''));
+        const bHasImage = isRenderablePreviewImage(upgradeMediaImageUrl(b?.sourceImageUrl || b?.photo || ''));
         if (aHasImage !== bHasImage) return aHasImage ? -1 : 1;
         const score = (debate)=>
           (debate?.trending ? 2000000 : 0) +
