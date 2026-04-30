@@ -1,1 +1,265 @@
-{"usedArticles":[],"lastRunAt":null,"lastSuccessAt":null,"lastError":null,"lastReason":null,"lastFetchCount":0,"lastCandidateCount":0,"lastFetchSample":[],"lastCandidateSample":[],"lastCreated":[]}
+{
+  "lastRunAt": "2026-04-29T00:59:37.459Z",
+  "lastSuccessAt": "2026-04-29T00:59:42.031Z",
+  "lastError": null,
+  "lastReason": "emergency_refill",
+  "providerMode": "espn_plus_trusted_news",
+  "lastCreated": [],
+  "lastResolved": [],
+  "lastRegionCounts": {
+    "fr": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "de": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "gb": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "es": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "it": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "be": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "ch": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "nl": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "pt": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "pl": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "se": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    },
+    "at": {
+      "active": 0,
+      "prepared": 0,
+      "closed": 0,
+      "total": 0
+    }
+  },
+  "lastFetchErrors": [
+    {
+      "provider": "espn",
+      "league": "fra.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "fra.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "uefa.champions",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "uefa.champions",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "uefa.europa",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "uefa.europa",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "ger.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "ger.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "eng.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "eng.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "esp.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "esp.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "ita.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "ita.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "bel.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "bel.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "uefa.europa.conf",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "uefa.europa.conf",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "sui.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "sui.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "ned.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "ned.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "por.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "por.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "pol.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "pol.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "swe.1",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "swe.1",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "fifa.world",
+      "dateKey": "20260429",
+      "message": "fetch failed"
+    },
+    {
+      "provider": "espn",
+      "league": "fifa.world",
+      "dateKey": "20260430",
+      "message": "fetch failed"
+    }
+  ]
+}

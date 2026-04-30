@@ -12,18 +12,18 @@ The execution order is numbered. Do not skip ahead — earlier steps expose prob
 
 ## Part 1 — Deployment configuration conflicts
 
-These are the most dangerous issues because they determine *what actually runs on Railway*.
+These are the most dangerous issues because they determine *what actually runs on legacy-deploy*.
 
-### Issue 1 — Duplicate railway.json files (🔴 High)
+### Issue 1 — Duplicate legacy-deploy.json files (🔴 High)
 
 | File | `startCommand` |
 |---|---|
-| `/railway.json` (root) | `npm start` → runs `node server/server.js` |
-| `/server/railway.json` | `node server.js` (relative, runs from `server/`) |
+| `/legacy-deploy.json` (root) | `npm start` → runs `node server/server.js` |
+| `/server/legacy-deploy.json` | `node server.js` (relative, runs from `server/`) |
 
-**What happens:** Railway picks up one of these. If it picks the root one it works correctly. If it picks `server/railway.json` it also works, but only because `server.js` there is the real server file. In practice the root file wins, but having two is a maintenance trap — the next person to edit `server/railway.json` thinking it's the active one will break the deploy silently.
+**What happens:** legacy-deploy picks up one of these. If it picks the root one it works correctly. If it picks `server/legacy-deploy.json` it also works, but only because `server.js` there is the real server file. In practice the root file wins, but having two is a maintenance trap — the next person to edit `server/legacy-deploy.json` thinking it's the active one will break the deploy silently.
 
-**Fix (Step 1):** Delete `/server/railway.json`. Keep only the root one.
+**Fix (Step 1):** Delete `/server/legacy-deploy.json`. Keep only the root one.
 
 ---
 
@@ -34,7 +34,7 @@ These are the most dangerous issues because they determine *what actually runs o
 | `/Procfile` (root) | `web: npm start` |
 | `/server/Procfile` | `web: node server.js` |
 
-Same problem as above — two sources of truth. The root Procfile wins on Railway (since `rootDirectory` is not set), but `/server/Procfile` will confuse any tooling that scans the repo.
+Same problem as above — two sources of truth. The root Procfile wins on legacy-deploy (since `rootDirectory` is not set), but `/server/Procfile` will confuse any tooling that scans the repo.
 
 **Fix (Step 2):** Delete `/server/Procfile`. Keep only the root one.
 
@@ -44,7 +44,7 @@ Same problem as above — two sources of truth. The root Procfile wins on Railwa
 
 `/package.json` (root) lists `stripe` as a dependency. `/server/package.json` does not.
 
-Railway runs `npm start` from the root, so it installs from `/package.json` — `stripe` is present. But if anyone ever deploys from the `server/` subdirectory (or if Railway's build detection changes), `require('stripe')` inside `server/stripe.js` will throw at startup.
+legacy-deploy runs `npm start` from the root, so it installs from `/package.json` — `stripe` is present. But if anyone ever deploys from the `server/` subdirectory (or if legacy-deploy's build detection changes), `require('stripe')` inside `server/stripe.js` will throw at startup.
 
 **Fix (Step 3):** Add `"stripe": "^X.Y.Z"` to `/server/package.json` with the same version as the root.
 
@@ -108,14 +108,14 @@ Line 4620 makes a direct `fetch` to the Anthropic API. There is no API key in th
 
 This is not a user-visible bug today, but it wastes a round-trip on every verdict generation and exposes the intent to put an API key here in future (which would be a security risk — API keys must never ship in client-side code).
 
-**Fix (Step 8):** Remove the `fetch` to Anthropic entirely and keep only the local fallback. If AI verdicts are desired in future, proxy the call through the Railway backend.
+**Fix (Step 8):** Remove the `fetch` to Anthropic entirely and keep only the local fallback. If AI verdicts are desired in future, proxy the call through the legacy-deploy backend.
 
 ---
 
 ## Execution order
 
 ```
-Step 1  Delete /server/railway.json
+Step 1  Delete /server/legacy-deploy.json
 Step 2  Delete /server/Procfile
 Step 3  Add stripe to /server/package.json
 Step 4  Remove duplicate getLogoutButton in sync.js
@@ -135,7 +135,7 @@ Steps 7–8 are frontend (`index.html.html`) — optional, commit separately.
 
 - `server.js` (root) — it's a one-line proxy (`require('./server/server')`). Harmless, leave it.
 - `vercel.json` — SPA routing is correct as-is.
-- `/railway.json` (root) — correct, keep.
+- `/legacy-deploy.json` (root) — correct, keep.
 - Any UI/UX in `index.html.html` beyond the dead-code removal above.
 - `patch.js` / `sync.js` auth flow logic — out of scope here.
 
@@ -145,9 +145,9 @@ Steps 7–8 are frontend (`index.html.html`) — optional, commit separately.
 
 | # | Risk | Severity | Notes |
 |---|---|---|---|
-| 1 | Dual railway.json | 🔴 | Silent deploy misconfiguration |
+| 1 | Dual legacy-deploy.json | 🔴 | Silent deploy misconfiguration |
 | 2 | Dual Procfile | 🔴 | Same as above |
-| 3 | Missing stripe dep | 🟠 | Breaks cold Railway boot if directory changes |
+| 3 | Missing stripe dep | 🟠 | Breaks cold legacy-deploy boot if directory changes |
 | 4 | Double getLogoutButton | 🟡 | Shadow bug, no user impact yet |
 | 5 | Double handleLogout | 🟡 | Shadow bug, no user impact yet |
 | 6 | setAuthFormEnabled bug | 🟠 | Double-submit on login form possible |

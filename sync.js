@@ -1,1292 +1,850 @@
-var currentUser = window.currentUser || null;
-window.currentUser = currentUser;
+'use strict';
 
-(function syncBeeef() {
-  const LAST_EMAIL_KEY = 'beeef_last_email';
+(function bootBeeefAuthSync() {
+  const AUTH_MODAL_ID = 'authModal';
+  const SESSION_STORAGE_KEY = 'beeef_auth_session';
+  const DIRECT_TOKEN_KEY = 'beeef_auth_token';
+  const REFRESH_SKEW_MS = 60 * 1000;
 
-  const baseFns = {
-    applyVerdictUI: typeof _origApplyVerdict !== 'undefined' ? _origApplyVerdict : applyVerdict,
-    cancelWaiting,
-    openFunds,
-    openJoinParticipantModal,
-    openProfile,
-    placeBet: typeof _origPlaceBet !== 'undefined' ? _origPlaceBet : placeBet,
-    setupFinish,
-  };
+  let authConfigPromise = null;
+  let authSession = null;
+  let authModalMode = 'login';
 
-  let authReady = false;
-  let authMode = 'signup';
-  let authInitError = '';
-  let supabase = null;
-  let currentSession = null;
-  let lastBootstrappedToken = '';
-
-  function applyReturnedDebate(payload, { rerender = false } = {}) {
-    if (!payload?.debate || typeof applyDebatePayload !== 'function') return;
-
-    const debateId = String(payload.debate.id);
-    let found = false;
-    const mergedDebates = Array.isArray(debates)
-      ? debates.map(item => {
-        if (String(item.id) !== debateId) return item;
-        found = true;
-        return { ...item, ...payload.debate };
-      })
-      : [];
-
-    if (!found) {
-      mergedDebates.push({ ...payload.debate });
-    }
-
-    applyDebatePayload({
-      serverNow: typeof payload.serverNow === 'number' ? payload.serverNow : Date.now(),
-      debates: mergedDebates,
-    }, { rerender });
+  function normalizeText(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim();
   }
 
-  injectStyles();
-  injectAuthModal();
-  wireButtons();
+  function nowSeconds() {
+    return Math.floor(Date.now() / 1000);
+  }
 
-  placeBet = function syncedPlaceBet(side) {
-    if (!ensureLoggedIn()) return;
-    return baseFns.placeBet(side);
-  };
+  function getBackendBaseUrl() {
+    return typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '';
+  }
 
-  openProfile = function syncedOpenProfile() {
-    if (!ensureLoggedIn()) return;
-    syncProfileDom();
-    return baseFns.openProfile();
-  };
-
-  openFunds = function syncedOpenFunds() {
-    if (!ensureLoggedIn()) return;
-    return baseFns.openFunds();
-  };
-
-  openJoinParticipantModal = function syncedOpenJoinModal() {
-    if (!ensureLoggedIn()) return;
-    return baseFns.openJoinParticipantModal();
-  };
-
-  setupFinish = async function syncedSetupFinish() {
-    baseFns.setupFinish();
-    if (document.getElementById('setupOverlay').classList.contains('open')) return;
-    if (!currentUser) {
-      openAuthModal('signup');
-      return;
-    }
-
+  function safeJsonParse(raw, fallback = null) {
+    if (!raw) return fallback;
     try {
-      const payload = await api('/me/profile', {
-        method: 'PUT',
-        body: {
-          region: userRegion,
-          langs: userLangs,
-        },
-      });
-      hydrateSessionState(payload);
-      applyReturnedDebate(payload);
-    } catch (error) {
-      showToast('warn', 'Prefs locales uniquement', error.message);
+      return JSON.parse(raw);
+    } catch (_) {
+      return fallback;
     }
-  };
+  }
 
-  saveProfile = async function syncedSaveProfile() {
-    if (!ensureLoggedIn()) return;
-
-    const emailInput = document.getElementById('profileEmail');
-    const phoneInput = document.getElementById('phoneInput');
-    const twoFaToggle = document.getElementById('twoFaToggle');
-    const nextEmail = emailInput ? emailInput.value.trim() : currentUser.email;
-    const emailChanged = nextEmail && nextEmail !== currentUser.email;
-
+  function getLegacySupabaseSession() {
     try {
-      const client = requireSupabaseClient();
-      if (emailChanged) {
-        const { error } = await client.auth.updateUser({ email: nextEmail });
-        if (error) throw error;
-      }
-
-      const payload = await api('/me/profile', {
-        method: 'PUT',
-        body: {
-          username: currentUser.username,
-          region: userRegion,
-          langs: userLangs,
-          phone: phoneInput ? phoneInput.value.trim() : currentUser.phone,
-          twoFactorEnabled: twoFaToggle ? Boolean(twoFaToggle.checked) : currentUser.twoFactorEnabled,
-        },
-      });
-      hydrateSessionState(payload);
-      closeModal('profileModal');
-      showToast(
-        'ok',
-        'Profil synchronise',
-        emailChanged
-          ? 'Profil mis a jour. Verifie ton email si Supabase demande une confirmation.'
-          : 'Compte mis a jour sur tous vos appareils'
-      );
-    } catch (error) {
-      showToast('err', 'Profil non enregistre', error.message);
-    }
-  };
-
-  savePwd = async function syncedSavePwd() {
-    if (!ensureLoggedIn()) return;
-
-    const nextPassword = document.getElementById('newPwd1').value;
-    const confirmPassword = document.getElementById('newPwd2').value;
-
-    if (!nextPassword || nextPassword.length < 6) {
-      showToast('err', 'Trop court', '6 caracteres minimum');
-      return;
-    }
-    if (nextPassword !== confirmPassword) {
-      showToast('err', 'Ne correspond pas', '');
-      return;
-    }
-
-    try {
-      const client = requireSupabaseClient();
-      const { error } = await client.auth.updateUser({ password: nextPassword });
-      if (error) throw error;
-
-      document.getElementById('newPwd1').value = '';
-      document.getElementById('newPwd2').value = '';
-      document.getElementById('pwdChangeFields').style.display = 'none';
-      if (typeof pwdOpen !== 'undefined') pwdOpen = false;
-      showToast('ok', 'Mot de passe mis a jour', 'Session conservee');
-    } catch (error) {
-      showToast('err', 'Mot de passe non modifie', error.message);
-    }
-  };
-
-  // ── Stripe Checkout redirect ──────────────────────────────────
-  confirmDeposit = async function syncedConfirmDeposit() {
-    if (!ensureLoggedIn()) return;
-
-    // selectedPackId is set by selectPack() in index.html.html
-    const packId = typeof selectedPackId !== 'undefined' ? selectedPackId : 'pack_popular';
-    if (!packId) {
-      showToast('err', 'Pack invalide', 'Selectionnez un pack');
-      return;
-    }
-
-    const btn = document.getElementById('fundsPayBtn');
-    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
-
-    try {
-      const origin = window.location.origin;
-      const session = await api('/payment/checkout', {
-        method: 'POST',
-        body: {
-          packId,
-          successUrl: `${origin}/?paid=ok&session={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${origin}/?paid=cancel`,
-        },
-      });
-
-      if (session && session.url) {
-        window.location.href = session.url;
-      } else {
-        throw new Error('URL de paiement manquante');
-      }
-    } catch (error) {
-      showToast('err', 'Achat impossible', error.message || 'Reessayez');
-      if (btn) { btn.disabled = false; btn.style.opacity = ''; }
-    }
-  };
-
-  submitJoinParticipant = async function syncedJoinParticipant() {
-    if (!ensureLoggedIn()) return;
-    if (!joinedSide) {
-      showToast('warn', 'Choisissez votre camp', '');
-      return;
-    }
-
-    const amount = parseFloat(document.getElementById('joinBetAmount').value) || 50;
-    if (amount < 50) {
-      showToast('err', 'Minimum 50 pts', '');
-      return;
-    }
-    if (amount > balance) {
-      showToast('err', 'Points insuffisants', '');
-      return;
-    }
-
-    try {
-      const payload = await api('/me/bets', {
-        method: 'POST',
-        body: {
-          debateId: String(currentDebate?.id || 'demo'),
-          title: currentDebate?.title || 'Debat live',
-          category: currentDebate?.category || currentDebate?.cat || 'live',
-          side: joinedSide,
-          yesLabel: currentDebate?.yesLabel || 'OUI',
-          noLabel: currentDebate?.noLabel || 'NON',
-          amount,
-          kind: 'participant',
-        },
-      });
-      hydrateSessionState(payload);
-      applyReturnedDebate(payload);
-    } catch (error) {
-      showToast('err', 'Participation impossible', error.message);
-      return;
-    }
-
-    closeModal('joinParticipantModal');
-    myBetAsParticipant = amount;
-    userBetSideInRoom = joinedSide;
-    showWaitingRoom();
-  };
-
-  cancelWaiting = async function syncedCancelWaiting() {
-    if (currentDebate && currentDebate._participantBet) {
-      try {
-        const payload = await api('/me/bets/participant/cancel', {
-          method: 'POST',
-          body: { debateId: String(currentDebate.id) },
-        });
-        hydrateSessionState(payload);
-        applyReturnedDebate(payload);
-      } catch (error) {
-        showToast('err', 'Remboursement impossible', error.message);
-        return;
-      }
-    }
-
-    document.getElementById('waitingRoom').classList.remove('open');
-    rtcClose();
-    if (currentDebate) {
-      currentDebate._participantBet = 0;
-      currentDebate._participantSide = null;
-    }
-    myBetAsParticipant = 0;
-    syncDebateBetState();
-    showToast('ok', 'Annule', 'Mise remboursee');
-  };
-
-  leaveParticipantRoom = async function syncedLeaveParticipantRoom() {
-    const natural = totalDebateDuration >= MIN_DEBATE_DURATION;
-
-    if (!natural && debateRoomActive) {
-      const minutes = Math.floor(totalDebateDuration / 60);
-      const confirmed = confirm(
-        `Duree actuelle : ${minutes}min. Minimum requis : 15min.\n\nQuitter maintenant = perte de votre mise. Confirmer ?`
-      );
-      if (!confirmed) return;
-
-      if (currentDebate) {
-        try {
-          const payload = await api('/me/bets/participant/forfeit', {
-            method: 'POST',
-            body: { debateId: String(currentDebate.id) },
-          });
-          hydrateSessionState(payload);
-          applyReturnedDebate(payload);
-        } catch (error) {
-          showToast('err', 'Abandon impossible', error.message);
-          return;
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key || !/^sb-.*-auth-token$/i.test(key)) continue;
+        const value = safeJsonParse(localStorage.getItem(key));
+        if (Array.isArray(value) && value[0] && value[0].access_token) {
+          return value[0];
         }
-        currentDebate._participantBet = 0;
-        currentDebate._participantSide = null;
-      }
-
-      myBetAsParticipant = 0;
-    }
-
-    endParticipantRoom(natural);
-  };
-
-  applyVerdict = async function syncedApplyVerdict(verdict, debate) {
-    syncDebateBetState();
-    baseFns.applyVerdictUI(verdict, debate);
-
-    try {
-      const oddsRaw = verdict.winnerSide === 'yes'
-        ? parseFloat(calcOdds(debate.yesPct))
-        : parseFloat(calcOdds(100 - debate.yesPct));
-      const odds = isNaN(oddsRaw) ? 2 : oddsRaw;
-      const payload = await api('/me/bets/settle', {
-        method: 'POST',
-        body: {
-          debateId: String(debate.id),
-          winnerSide: verdict.winnerSide,
-          odds,
-        },
-      });
-      hydrateSessionState(payload);
-      applyReturnedDebate(payload, { rerender: true });
-    } catch (error) {
-      showToast('warn', 'Synchro differee', error.message);
-    }
-  };
-
-  init().catch(error => {
-    console.error('[sync] init failed', error);
-    authInitError = error.message || 'Configuration Supabase manquante';
-    setAuthFormEnabled(false, 'Reessayer');
-    setAuthStatus('err', authInitError);
-    setAuthInlineHelp('Vérifie Railway puis redéploie le backend avant de reessayer.');
-    openAuthModal(getDefaultAuthMode());
-  });
-
-  async function init() {
-    syncProfileDom();
-
-    const logoutButton = getLogoutButton();
-    if (logoutButton) {
-      logoutButton.addEventListener('click', handleLogout);
-    }
-
-    const authForm = document.getElementById('authForm');
-    authForm.addEventListener('submit', handleAuthSubmit);
-    document.getElementById('authModeLogin').addEventListener('click', () => setAuthMode('login'));
-    document.getElementById('authModeSignup').addEventListener('click', () => setAuthMode('signup'));
-    setAuthFormEnabled(false, 'Chargement...');
-
-    const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
-    if (lastEmail) {
-      document.getElementById('authEmail').value = lastEmail;
-    }
-    setAuthMode(lastEmail ? 'login' : 'signup');
-
-    const config = await fetchPublicConfig();
-    const supabaseModule = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-    supabase = supabaseModule.createClient(config.supabaseUrl, config.supabasePublishableKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    });
-    authInitError = '';
-    setAuthFormEnabled(true);
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      currentSession = session || null;
-
-      if (!session) {
-        clearLocalSession();
-        if (hasCompletedSetup()) {
-          openAuthModal(getDefaultAuthMode());
-        } else {
-          closeAuthModal();
+        if (value && value.access_token) {
+          return value;
         }
-        return;
       }
-
-      bootstrapFromSession(session).catch(error => {
-        console.error('[sync] auth state bootstrap failed', error);
-      });
-    });
-
-    const sessionResult = await supabase.auth.getSession();
-    currentSession = sessionResult?.data?.session || null;
-
-    if (currentSession) {
-      await bootstrapFromSession(currentSession);
-      closeAuthModal();
-      await syncPrefsIfMissing();
-    } else {
-      if (hasCompletedSetup()) {
-        openAuthModal(getDefaultAuthMode());
-      } else {
-        closeAuthModal();
-      }
-    }
-
-    authReady = true;
-
-    // ── Handle Stripe return URL ──────────────────────────────────
-    // Stripe redirects back with ?paid=ok or ?paid=cancel after checkout.
-    handleStripeReturn();
-  }
-
-  function handleStripeReturn() {
-    const params = new URLSearchParams(window.location.search);
-    const paid = params.get('paid');
-    if (!paid) return;
-
-    // Clean up the URL immediately (avoid repeat on refresh)
-    const cleanUrl = window.location.pathname;
-    history.replaceState({}, '', cleanUrl);
-
-    if (paid === 'ok') {
-      // Poll until balance increases (webhook may take a few seconds to land)
-      showToast('info', 'Paiement reçu…', 'Crédit des tokens en cours');
-      (async () => {
-        if (!currentSession) return;
-        const balanceBefore = balance || 0;
-        const MAX_ATTEMPTS = 8;
-        const INTERVAL_MS  = 1500;
-        for (let i = 0; i < MAX_ATTEMPTS; i++) {
-          await new Promise(r => setTimeout(r, INTERVAL_MS));
-          try {
-            const payload = await api('/me/bootstrap', { method: 'GET' });
-            hydrateSessionState(payload);
-            if ((balance || 0) > balanceBefore) {
-              showToast('coins', 'Tokens crédités !', `Solde mis à jour : ${balance} pts`);
-              return;
-            }
-          } catch (_) { /* retry */ }
-        }
-        // After all retries, just show generic success
-        showToast('coins', 'Paiement confirmé', 'Rafraîchissez si le solde ne s\'affiche pas');
-      })();
-    } else if (paid === 'cancel') {
-      showToast('warn', 'Achat annule', 'Aucun debit effectue');
-    }
-  }
-
-  function wireButtons() {
-    const oldConfirmBet = document.getElementById('confirmBetBtn');
-    const freshConfirmBet = oldConfirmBet.cloneNode(true);
-    oldConfirmBet.replaceWith(freshConfirmBet);
-    freshConfirmBet.addEventListener('click', confirmBet);
-  }
-
-  function injectStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-      .auth-modal {
-        max-width: 430px;
-      }
-      .auth-view {
-        display: block;
-      }
-      .auth-view.hidden {
-        display: none;
-      }
-      .auth-kicker {
-        font-family: var(--fn-mono);
-        font-size: 10px;
-        letter-spacing: 1.8px;
-        text-transform: uppercase;
-        color: var(--txt3);
-        margin-bottom: 10px;
-      }
-      .auth-sub {
-        color: var(--txt2);
-        font-size: 13px;
-        line-height: 1.65;
-        margin-bottom: 18px;
-      }
-      .auth-tabs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 16px;
-      }
-      .auth-tab {
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,0.65);
-        color: var(--txt2);
-        border-radius: 10px;
-        padding: 10px 12px;
-        font-family: var(--fn-disp);
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.4px;
-        cursor: pointer;
-        transition: all 0.18s ease;
-      }
-      .auth-tab:hover {
-        color: var(--txt);
-        border-color: rgba(255,107,53,0.24);
-      }
-      .auth-tab.active {
-        background: linear-gradient(135deg,var(--fire),var(--fire2));
-        color: #fff;
-        border-color: transparent;
-        box-shadow: 0 8px 24px rgba(255,107,53,0.24);
-      }
-      .auth-status {
-        display: none;
-        margin-top: 12px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        font-size: 12px;
-        line-height: 1.5;
-      }
-      .auth-status.show {
-        display: block;
-      }
-      .auth-status.info {
-        border: 1px solid rgba(61, 158, 255, 0.22);
-        background: rgba(61, 158, 255, 0.08);
-        color: var(--ice);
-      }
-      .auth-status.err {
-        border: 1px solid rgba(255, 69, 58, 0.22);
-        background: rgba(255, 69, 58, 0.08);
-        color: var(--blood);
-      }
-      .auth-status.ok {
-        border: 1px solid rgba(48, 209, 88, 0.24);
-        background: rgba(48, 209, 88, 0.08);
-        color: var(--elec2);
-      }
-      .auth-note {
-        margin-top: 14px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        border: 1px solid rgba(61, 158, 255, 0.16);
-        background: rgba(61, 158, 255, 0.06);
-        color: var(--txt2);
-        font-size: 12px;
-        line-height: 1.55;
-      }
-      .auth-inline-help {
-        margin-top: 10px;
-        color: var(--txt3);
-        font-size: 11px;
-        line-height: 1.5;
-      }
-      .auth-mail-hero {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 68px;
-        height: 68px;
-        margin: 2px auto 14px;
-        border-radius: 18px;
-        background:
-          radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6)),
-          linear-gradient(135deg, rgba(255,107,53,0.16), rgba(61,158,255,0.16));
-        border: 1px solid rgba(255,107,53,0.18);
-        color: var(--fire);
-        box-shadow: 0 16px 36px rgba(255,107,53,0.14);
-      }
-      .auth-mail-title {
-        margin-bottom: 10px;
-        text-align: center;
-      }
-      .auth-mail-copy {
-        color: var(--txt2);
-        font-size: 13px;
-        line-height: 1.7;
-        text-align: center;
-      }
-      .auth-mail-copy strong {
-        color: var(--txt);
-      }
-      .auth-mail-steps {
-        margin-top: 16px;
-        padding: 12px 14px;
-        border-radius: 10px;
-        border: 1px solid rgba(61, 158, 255, 0.16);
-        background: rgba(61, 158, 255, 0.06);
-        color: var(--txt2);
-        font-size: 12px;
-        line-height: 1.6;
-      }
-      .auth-mail-actions {
-        display: grid;
-        gap: 10px;
-        margin-top: 18px;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function injectAuthModal() {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'authModal';
-    overlay.innerHTML = `
-      <div class="modal auth-modal">
-        <div class="auth-view" id="authFormView">
-          <div class="auth-kicker">Compte synchronise</div>
-          <div class="modal-title" style="margin-bottom:10px">Retrouve tes points partout</div>
-          <div class="auth-sub" id="authSub">
-            Cree ton compte puis retrouve tes points, tes paris et tes preferences sur tous tes appareils.
-          </div>
-          <div class="auth-tabs">
-            <button class="auth-tab" id="authModeSignup" type="button">Creer un compte</button>
-            <button class="auth-tab" id="authModeLogin" type="button">Connexion</button>
-          </div>
-          <form id="authForm">
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input class="form-input" id="authEmail" type="email" placeholder="vous@exemple.com" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Mot de passe</label>
-              <input class="form-input" id="authPassword" type="password" placeholder="6 caracteres minimum" minlength="6" required>
-            </div>
-            <div class="form-group" id="authUsernameGroup">
-              <label class="form-label">Pseudo (uniquement pour creer un compte)</label>
-              <input class="form-input" id="authUsername" type="text" placeholder="Pierrick">
-            </div>
-            <button class="btn-primary" id="authSubmitBtn" type="submit">Creer mon compte</button>
-          </form>
-          <div class="auth-inline-help" id="authInlineHelp"></div>
-          <div class="auth-status" id="authStatus"></div>
-          <div class="auth-note" id="authNote">
-            Tes paris, tes points, ton profil et tes preferences seront recharges automatiquement au prochain appareil.
-          </div>
-        </div>
-        <div class="auth-view hidden" id="authMailView">
-          <div class="auth-kicker">Verification email</div>
-          <div class="auth-mail-hero">
-            <svg class="ic" width="28" height="28" viewBox="0 0 24 24"><use href="#ic-speech"/></svg>
-          </div>
-          <div class="modal-title auth-mail-title" id="authMailTitle">Vérifie ton email</div>
-          <div class="auth-mail-copy" id="authMailCopy">
-            Tu vas recevoir un email d'authentification. Ouvre-le puis reviens te connecter.
-          </div>
-          <div class="auth-mail-steps" id="authMailSteps">
-            1. Ouvre ta boite mail.
-            <br>2. Clique sur le lien d'authentification.
-            <br>3. Reviens ici pour te connecter avec le meme compte.
-          </div>
-          <div class="auth-mail-actions">
-            <button class="btn-primary" id="authMailPrimaryBtn" type="button">Aller a la connexion</button>
-            <button class="btn-secondary" id="authMailSecondaryBtn" type="button">Modifier mon email</button>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-  }
-
-  function normalizeBet(raw) {
-    return {
-      ...raw,
-      category: raw.category || raw.cat || 'general',
-      cat: raw.cat || raw.category || 'general',
-      ts: raw.ts ? new Date(raw.ts) : new Date(),
-    };
-  }
-
-  function getDetectedRegion() {
-    try {
-      return typeof window.detectBeeefRegion === 'function'
-        ? window.detectBeeefRegion()
-        : null;
     } catch (_) {
       return null;
     }
+    return null;
   }
 
-  // Expose auth token for admin panel (admin only — never used client-side otherwise)
-  window.getAuthToken = () => currentSession?.access_token || '';
+  function normalizeSession(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const accessToken = normalizeText(raw.access_token || raw.accessToken);
+    if (!accessToken) return null;
 
-  function hydrateSessionState(payload) {
-    currentUser = payload.user;
-    window.currentUser = currentUser;
+    const expiresAt = Number(raw.expires_at || raw.expiresAt || 0);
+    const expiresIn = Number(raw.expires_in || raw.expiresIn || 0);
+    const normalized = {
+      access_token: accessToken,
+      refresh_token: normalizeText(raw.refresh_token || raw.refreshToken),
+      token_type: normalizeText(raw.token_type || raw.tokenType || 'bearer') || 'bearer',
+      expires_at: Number.isFinite(expiresAt) && expiresAt > 0
+        ? expiresAt
+        : (Number.isFinite(expiresIn) && expiresIn > 0 ? nowSeconds() + expiresIn : 0),
+      expires_in: expiresIn > 0 ? expiresIn : 0,
+      user: raw.user && typeof raw.user === 'object' ? raw.user : null,
+    };
+    return normalized;
+  }
 
-    if (currentUser?.email) {
-      localStorage.setItem(LAST_EMAIL_KEY, currentUser.email);
-    }
-
-    const detectedRegion = getDetectedRegion();
-    if (detectedRegion) {
-      userRegion = detectedRegion;
-    } else if (currentUser.region || !userRegion) {
-      userRegion = currentUser.region || userRegion || null;
-    }
-    if ((currentUser.langs && currentUser.langs.length) || !userLangs.length) {
-      userLangs = Array.isArray(currentUser.langs) && currentUser.langs.length
-        ? currentUser.langs.slice()
-        : userLangs;
-    }
-
-    localStorage.setItem('beeef_region', userRegion || '');
-    localStorage.setItem('beeef_langs', JSON.stringify(userLangs || []));
-
-    balance = Number(currentUser.balance || 0);
-    myBets.splice(0, myBets.length, ...(payload.bets || []).map(normalizeBet));
-    syncDebateBetState();
-    updateBalanceUI();
-    applyUserPrefs();
-    updateSettingsPanel();
-    syncProfileDom();
-    if (typeof window.refreshDebatesFromServer === 'function') {
-      window.refreshDebatesFromServer();
-    }
-
-    const parisView = document.getElementById('mes-paris-view');
-    const classementView = document.getElementById('classement-view');
-    if (parisView && parisView.style.display !== 'none') renderMyBets();
-    if (classementView && classementView.style.display !== 'none') renderClassement();
-
-    if (Array.isArray(payload.autoSettlements) && payload.autoSettlements.length) {
-      showToast(
-        'ok',
-        'Paris resynchronises',
-        payload.autoSettlements.length + ' debat(s) soldes pendant votre absence'
-      );
+  function getSupabaseProjectRef(url) {
+    try {
+      return new URL(url).hostname.split('.')[0] || '';
+    } catch (_) {
+      return '';
     }
   }
 
-  function syncDebateBetState() {
-    if (!Array.isArray(debates)) return;
-
-    myBetAsParticipant = 0;
-    userBetSideInRoom = null;
-
-    debates.forEach(debate => {
-      debate._userBetYes = 0;
-      debate._userBetNo = 0;
-      debate._participantBet = 0;
-      debate._participantSide = null;
-    });
-
-    myBets.forEach(bet => {
-      if (bet.status !== 'pending') return;
-      const debate = debates.find(item => String(item.id) === String(bet.debateId));
-      if (!debate) return;
-
-      if (bet.kind === 'participant') {
-        debate._participantBet = bet.amt;
-        debate._participantSide = bet.side;
-        if (currentDebate && String(currentDebate.id) === String(bet.debateId)) {
-          myBetAsParticipant = bet.amt;
-          userBetSideInRoom = bet.side;
-        }
+  function persistSession(session) {
+    authSession = normalizeSession(session);
+    try {
+      if (!authSession) {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        localStorage.removeItem(DIRECT_TOKEN_KEY);
         return;
       }
-
-      if (bet.side === 'yes') debate._userBetYes += bet.amt;
-      if (bet.side === 'no') debate._userBetNo += bet.amt;
-    });
-  }
-
-  function syncProfileDom() {
-    const profileModal = document.getElementById('profileModal');
-    if (!profileModal) return;
-
-    const displayName = currentUser?.username || 'Compte local';
-    const initials = displayName.trim().charAt(0).toUpperCase() || 'P';
-
-    const headerAvatar = document.getElementById('headerAvatar');
-    if (headerAvatar) headerAvatar.textContent = initials;
-
-    const avatar = profileModal.querySelector('.profile-avatar-big');
-    const name = profileModal.querySelector('.profile-name');
-    const since = profileModal.querySelector('.profile-since');
-    const email = document.getElementById('profileEmail');
-    const phone = document.getElementById('phoneInput');
-    const twoFa = document.getElementById('twoFaToggle');
-
-    if (avatar) avatar.textContent = initials;
-    if (name) name.textContent = displayName;
-    if (since && currentUser?.createdAt) {
-      const created = new Date(currentUser.createdAt);
-      since.textContent = 'Membre depuis ' + created.toLocaleDateString('fr-FR', {
-        month: 'long',
-        year: 'numeric',
-      });
-    }
-    if (email) email.value = currentUser?.email || localStorage.getItem(LAST_EMAIL_KEY) || '';
-    if (phone) phone.value = currentUser?.phone || '';
-    if (twoFa) twoFa.checked = Boolean(currentUser?.twoFactorEnabled);
-
-    // Show admin button if user has admin rights
-    const adminBtn = document.getElementById('adminHeaderBtn');
-    if (adminBtn) adminBtn.style.display = currentUser?.isAdmin ? 'inline-flex' : 'none';
-  }
-
-  function getLogoutButton() {
-    const buttons = document.querySelectorAll('#profileModal .btn-secondary');
-    return Array.from(buttons).find(button => button.textContent.includes('Deconnexion') || button.textContent.includes('DÃ©connexion'));
-  }
-
-  function hasCompletedSetup() {
-    return Boolean(userRegion) && Array.isArray(userLangs) && userLangs.length > 0;
-  }
-
-  function getLogoutButton() {
-    const directMatch = document.getElementById('logoutBtn');
-    if (directMatch) return directMatch;
-
-    const buttons = document.querySelectorAll('#profileModal .btn-secondary');
-    return Array.from(buttons).find(button => {
-      const label = String(button.textContent || '').toLowerCase();
-      return label.includes('deconnexion');
-    });
-  }
-
-  function getDefaultAuthMode() {
-    return localStorage.getItem(LAST_EMAIL_KEY) ? 'login' : 'signup';
-  }
-
-  function setAuthInlineHelp(message) {
-    const help = document.getElementById('authInlineHelp');
-    if (help) {
-      help.textContent = message || '';
-    }
-  }
-
-  function setAuthFormEnabled(enabled, label) {
-    const submitButton = document.getElementById('authSubmitBtn');
-    const username = document.getElementById('authUsername');
-
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = label || (authMode === 'signup' ? 'Creer mon compte' : 'Se connecter');
-      submitButton.dataset.ready = enabled ? 'true' : 'false';
-    }
-    if (username) username.disabled = authMode !== 'signup';
-  }
-
-  function requireSupabaseClient() {
-    if (supabase && supabase.auth) {
-      return supabase;
-    }
-
-    throw new Error(
-      authInitError ||
-      'Supabase n est pas pret. Redéploie Railway avec SUPABASE_URL et SUPABASE_PUBLISHABLE_KEY.'
-    );
-  }
-
-  function setAuthStatus(kind, message) {
-    const status = document.getElementById('authStatus');
-    if (!status) return;
-
-    if (!message) {
-      status.className = 'auth-status';
-      status.textContent = '';
-      return;
-    }
-
-    status.className = `auth-status show ${kind || 'info'}`;
-    status.textContent = message;
-  }
-
-  function setAuthView(view) {
-    const formView = document.getElementById('authFormView');
-    const mailView = document.getElementById('authMailView');
-
-    if (formView) formView.classList.toggle('hidden', view === 'mail');
-    if (mailView) mailView.classList.toggle('hidden', view !== 'mail');
-  }
-
-  function focusAuthField(field) {
-    const targetId = field === 'password' ? 'authPassword' : 'authEmail';
-    const input = document.getElementById(targetId);
-    if (input) input.focus();
-  }
-
-  function showAuthForm(mode, focusField = 'email') {
-    setAuthView('form');
-    if (mode) {
-      setAuthMode(mode);
-    }
-    focusAuthField(focusField);
-  }
-
-  function showAuthMailNotice({
-    email = '',
-    title = 'Vérifie ton email',
-    body = '',
-    primaryLabel = 'Aller a la connexion',
-    primaryMode = 'login',
-    primaryFocus = 'email',
-    secondaryLabel = 'Modifier mon email',
-    secondaryMode = 'signup',
-    secondaryFocus = 'email',
-  } = {}) {
-    const copy = document.getElementById('authMailCopy');
-    const heading = document.getElementById('authMailTitle');
-    const primaryBtn = document.getElementById('authMailPrimaryBtn');
-    const secondaryBtn = document.getElementById('authMailSecondaryBtn');
-
-    if (heading) heading.textContent = title;
-    if (copy) {
-      copy.innerHTML = body || (
-        email
-          ? `Un email d'authentification va etre envoye sur <strong>${email}</strong>.`
-          : `Un email d'authentification va etre envoye sur ton adresse email.`
-      );
-    }
-    if (primaryBtn) {
-      primaryBtn.textContent = primaryLabel;
-      primaryBtn.onclick = () => showAuthForm(primaryMode, primaryFocus);
-    }
-    if (secondaryBtn) {
-      secondaryBtn.textContent = secondaryLabel;
-      secondaryBtn.onclick = () => showAuthForm(secondaryMode, secondaryFocus);
-    }
-
-    setAuthView('mail');
-  }
-
-  function setAuthMode(mode) {
-    authMode = mode === 'login' ? 'login' : 'signup';
-
-    const isSignup = authMode === 'signup';
-    const signupTab = document.getElementById('authModeSignup');
-    const loginTab = document.getElementById('authModeLogin');
-    const usernameGroup = document.getElementById('authUsernameGroup');
-    const usernameInput = document.getElementById('authUsername');
-    const submitButton = document.getElementById('authSubmitBtn');
-    const sub = document.getElementById('authSub');
-    const note = document.getElementById('authNote');
-
-    if (signupTab) signupTab.classList.toggle('active', isSignup);
-    if (loginTab) loginTab.classList.toggle('active', !isSignup);
-    if (usernameGroup) usernameGroup.style.display = isSignup ? 'block' : 'none';
-    if (usernameInput) {
-      usernameInput.required = isSignup;
-      if (!isSignup) usernameInput.value = '';
-      usernameInput.disabled = !supabase || !isSignup;
-    }
-    if (submitButton) {
-      submitButton.textContent = isSignup ? 'Creer mon compte' : 'Se connecter';
-    }
-    if (sub) {
-      sub.textContent = isSignup
-        ? 'Cree ton compte puis retrouve tes points, tes paris et tes preferences sur tous tes appareils.'
-        : 'Connecte-toi avec ton email et ton mot de passe pour recuperer instantanement ton compte.';
-    }
-    if (note) {
-      note.textContent = isSignup
-        ? 'Si la confirmation email est activee dans Supabase, un message de verification pourra etre demande.'
-        : 'Utilise le meme compte sur chaque appareil pour retrouver exactement les memes points et les memes paris.';
-    }
-
-    setAuthStatus('', '');
-    setAuthInlineHelp(
-      isSignup
-        ? 'Mode creation: renseigne email, mot de passe et pseudo.'
-        : 'Mode connexion: email + mot de passe suffisent.'
-    );
-    setAuthFormEnabled(Boolean(supabase), authMode === 'signup' ? 'Creer mon compte' : 'Se connecter');
-  }
-
-  function ensureLoggedIn() {
-    if (currentUser) return true;
-    openAuthModal(getDefaultAuthMode());
-    return false;
-  }
-
-  function openAuthModal(mode) {
-    showAuthForm(mode || authMode, 'email');
-    const overlay = document.getElementById('authModal');
-    if (!overlay) return;
-    overlay.classList.add('open');
-  }
-
-  function closeAuthModal() {
-    const overlay = document.getElementById('authModal');
-    if (overlay) {
-      overlay.classList.remove('open');
-    }
-    setAuthView('form');
-    setAuthInlineHelp('');
-    setAuthStatus('', '');
-  }
-
-  function clearLocalSession() {
-    lastBootstrappedToken = '';
-    currentSession = null;
-    currentUser = null;
-    window.currentUser = null;
-    balance = 0;
-    myBetAsParticipant = 0;
-    userBetSideInRoom = null;
-    joinedSide = null;
-    pendingBetSide = null;
-    myBets.splice(0, myBets.length);
-    syncDebateBetState();
-    updateBalanceUI();
-    syncProfileDom();
-  }
-
-  async function handleLogout() {
-    try {
-      const client = requireSupabaseClient();
-      await client.auth.signOut();
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authSession));
+      localStorage.setItem(DIRECT_TOKEN_KEY, authSession.access_token);
     } catch (_) {
-      // Ignore logout API failures.
+      // Ignore storage errors.
     }
-
-    clearLocalSession();
-    openAuthModal('login');
-    closeModal('profileModal');
-    showToast('ok', 'Session fermee', 'Reconnectez-vous pour retrouver vos points');
   }
 
-  async function handleLogout(event) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
+  function clearSessionStorage() {
+    authSession = null;
     try {
-      const client = requireSupabaseClient();
-      await client.auth.signOut();
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      localStorage.removeItem(DIRECT_TOKEN_KEY);
+      for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+        const key = localStorage.key(index);
+        if (key && /^sb-.*-auth-token$/i.test(key)) {
+          localStorage.removeItem(key);
+        }
+      }
     } catch (_) {
-      // Ignore logout API failures.
-    }
-
-    closeModal('profileModal');
-    if (typeof closeSettings === 'function') closeSettings();
-    clearLocalSession();
-
-    const authPassword = document.getElementById('authPassword');
-    if (authPassword) authPassword.value = '';
-
-    openAuthModal('login');
-    showToast('ok', 'Session fermee', 'Reconnectez-vous pour retrouver vos points');
-  }
-
-  async function handleAuthSubmit(event) {
-    event.preventDefault();
-
-    const submitButton = document.getElementById('authSubmitBtn');
-    const help = document.getElementById('authInlineHelp');
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value;
-    const username = document.getElementById('authUsername').value.trim();
-
-    help.textContent = '';
-    setAuthStatus('', '');
-    submitButton.disabled = true;
-    submitButton.textContent = authMode === 'signup' ? 'Creation...' : 'Connexion...';
-
-    try {
-      const client = requireSupabaseClient();
-      let authResult;
-
-      if (authMode === 'signup') {
-        if (!username) {
-          throw new Error('Le pseudo est requis pour creer un compte.');
-        }
-        authResult = await client.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { username },
-          },
-        });
-      } else {
-        authResult = await client.auth.signInWithPassword({ email, password });
-      }
-
-      if (authResult.error) {
-        const rawMessage = String(authResult.error.message || '').toLowerCase();
-        if (authMode === 'login' && rawMessage.includes('invalid login credentials')) {
-          throw new Error('Compte introuvable ou mot de passe incorrect. Passe sur "Creer un compte" si besoin.');
-        }
-        if (authMode === 'login' && (
-          rawMessage.includes('email not confirmed') ||
-          rawMessage.includes('email_not_confirmed')
-        )) {
-          document.getElementById('authPassword').value = '';
-          showAuthMailNotice({
-            email,
-            title: 'Confirme ton email',
-            body: `Ton compte existe deja, mais tu dois d'abord confirmer l'adresse <strong>${email}</strong> via le mail d'authentification.`,
-            primaryLabel: 'Retour a la connexion',
-            primaryMode: 'login',
-            primaryFocus: 'password',
-            secondaryLabel: 'Modifier mon email',
-            secondaryMode: 'signup',
-            secondaryFocus: 'email',
-          });
-          showToast('warn', 'Email a confirmer', 'Ouvre le mail d auth puis reconnecte-toi');
-          return;
-        }
-        throw authResult.error;
-      }
-
-      localStorage.setItem(LAST_EMAIL_KEY, email);
-
-      if (!authResult.data?.session) {
-        document.getElementById('authPassword').value = '';
-        showAuthMailNotice({
-          email,
-          title: 'Email d auth envoyé',
-          body: `Ton compte vient d'etre cree. Tu vas recevoir un mail d'authentification sur <strong>${email}</strong> pour valider ton compte.`,
-          primaryLabel: 'J ai compris',
-          primaryMode: 'login',
-          primaryFocus: 'email',
-          secondaryLabel: 'Changer d email',
-          secondaryMode: 'signup',
-          secondaryFocus: 'email',
-        });
-        showToast('ok', 'Compte cree', 'Verifie ton email puis reconnecte-toi');
-        return;
-      }
-
-      await bootstrapFromSession(authResult.data.session);
-      closeAuthModal();
-      document.getElementById('authPassword').value = '';
-      document.getElementById('authUsername').value = '';
-      await syncPrefsIfMissing();
-      showToast(
-        'ok',
-        authMode === 'signup' ? 'Compte cree' : 'Compte connecte',
-        authReady ? 'Points et paris synchronises' : 'Connexion en cours'
-      );
-    } catch (error) {
-      setAuthStatus('err', error.message || 'Action impossible');
-      help.textContent = authMode === 'signup'
-        ? 'Si tu as deja un compte, passe sur l onglet Connexion.'
-        : 'Si tu n as pas encore de compte, passe sur l onglet Creer un compte.';
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = authMode === 'signup' ? 'Creer mon compte' : 'Se connecter';
+      // Ignore storage errors.
     }
   }
 
-  async function bootstrapFromSession(session) {
-    const accessToken = session?.access_token || '';
-    currentSession = session || null;
+  function restoreSessionFromStorage() {
+    if (authSession) return authSession;
 
-    if (!accessToken) {
-      clearLocalSession();
-      return;
+    const stored = safeJsonParse(localStorage.getItem(SESSION_STORAGE_KEY));
+    const normalizedStored = normalizeSession(stored);
+    if (normalizedStored) {
+      authSession = normalizedStored;
+      return authSession;
     }
 
-    if (lastBootstrappedToken === accessToken && currentUser) {
-      return;
+    const legacy = normalizeSession(getLegacySupabaseSession());
+    if (legacy) {
+      authSession = legacy;
+      return authSession;
     }
 
-    const payload = await api('/me/bootstrap', { method: 'GET' }, accessToken);
-    lastBootstrappedToken = accessToken;
-    hydrateSessionState(payload);
+    const directToken = normalizeText(localStorage.getItem(DIRECT_TOKEN_KEY));
+    if (directToken) {
+      authSession = {
+        access_token: directToken,
+        refresh_token: '',
+        token_type: 'bearer',
+        expires_at: 0,
+        expires_in: 0,
+        user: null,
+      };
+      return authSession;
+    }
+
+    return null;
   }
 
-  async function syncPrefsIfMissing() {
-    if (!currentUser) return;
-
-    const shouldSyncRegion = Boolean(userRegion) && currentUser.region !== userRegion;
-    const shouldSyncLangs = (!currentUser.langs || !currentUser.langs.length) && Array.isArray(userLangs) && userLangs.length;
-    if (!shouldSyncRegion && !shouldSyncLangs) return;
-
-    try {
-      const payload = await api('/me/profile', {
-        method: 'PUT',
-        body: {
-          region: userRegion,
-          langs: userLangs,
+  async function getPublicConfig() {
+    if (!authConfigPromise) {
+      authConfigPromise = fetch(`${getBackendBaseUrl()}/public/config`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
         },
-      });
-      hydrateSessionState(payload);
-    } catch (_) {
-      // Keep local prefs if server sync fails.
+      })
+        .then(async response => {
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload?.error || `Config auth indisponible (${response.status})`);
+          }
+          if (!payload?.supabaseUrl || !payload?.supabasePublishableKey) {
+            throw new Error('Configuration Supabase incomplète');
+          }
+          return payload;
+        })
+        .catch(error => {
+          authConfigPromise = null;
+          throw error;
+        });
     }
+
+    return authConfigPromise;
   }
 
-  async function confirmBet() {
-    if (!ensureLoggedIn()) return;
-    if (!pendingBetSide || !currentDebate) return;
-
-    const side = pendingBetSide;
-    pendingBetSide = null;
-    closeModal('betConfirmModal');
-
-    const amount = parseFloat(document.getElementById('betAmount').value) || 50;
-
-    try {
-      const payload = await api('/me/bets', {
-        method: 'POST',
-        body: {
-          debateId: String(currentDebate.id),
-          title: currentDebate.title,
-          category: currentDebate.category || currentDebate.cat || 'general',
-          side,
-          yesLabel: currentDebate.yesLabel || 'OUI',
-          noLabel: currentDebate.noLabel || 'NON',
-          amount,
-          kind: 'market',
-        },
-      });
-      hydrateSessionState(payload);
-      applyReturnedDebate(payload);
-    } catch (error) {
-      showToast('err', 'Pari refuse', error.message);
-      return;
-    }
-    flashScreen(side);
-    addBetEntry(
-      currentUser.username || 'Vous',
-      amount,
-      side === 'yes' ? (currentDebate.yesLabel || 'OUI') : (currentDebate.noLabel || 'NON'),
-      side
-    );
-    showToast(
-      side === 'yes' ? 'yes' : 'no',
-      'Pari synchronise',
-      fmt(amount) + ' sur ' + (side === 'yes' ? (currentDebate.yesLabel || 'OUI') : (currentDebate.noLabel || 'NON'))
-    );
-  }
-
-  async function fetchPublicConfig() {
-    const response = await fetch(BACKEND_URL + '/public/config', {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache',
-        Pragma: 'no-cache',
-      },
-    });
-    const raw = await response.text();
-    let payload = {};
-    try {
-      payload = raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      payload = { error: raw || 'Configuration backend indisponible' };
-    }
-
-    if (!response.ok) {
-      throw new Error(payload.error || 'Configuration backend indisponible');
-    }
-
-    if (!payload.supabaseUrl || !payload.supabasePublishableKey) {
-      throw new Error('Configuration Supabase incomplète sur Railway');
-    }
-
-    return payload;
-  }
-
-  async function api(path, options, overrideToken) {
-    const headers = { ...(options?.headers || {}) };
-    let body = options?.body;
-    const method = options?.method || 'GET';
-    const token = overrideToken || currentSession?.access_token || '';
+  async function supabaseAuthFetch(path, { method = 'GET', token = '', body } = {}) {
+    const { supabaseUrl, supabasePublishableKey } = await getPublicConfig();
+    const headers = {
+      apikey: supabasePublishableKey,
+      'Content-Type': 'application/json',
+    };
 
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    if (body && typeof body === 'object' && !(body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
-      body = JSON.stringify(body);
-    }
-
-    const response = await fetch(BACKEND_URL + path, {
+    const response = await fetch(`${supabaseUrl}${path}`, {
       method,
       headers,
-      body,
-      cache: method === 'GET' ? 'no-store' : 'default',
+      body: body ? JSON.stringify(body) : undefined,
     });
 
-    const raw = await response.text();
-    let payload = {};
-    try {
-      payload = raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      payload = { error: raw || 'Reponse invalide' };
-    }
-
+    const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (response.status === 401) {
-        clearLocalSession();
-        openAuthModal('login');
-      }
-      const error = new Error(payload.error || 'Requete impossible');
-      error.status = response.status;
-      throw error;
+      throw new Error(
+        payload?.msg ||
+        payload?.message ||
+        payload?.error_description ||
+        payload?.error ||
+        `Erreur Supabase (${response.status})`
+      );
     }
 
     return payload;
   }
+
+  function writeLegacySupabaseSession(session) {
+    const normalized = normalizeSession(session);
+    if (!normalized) return;
+    getPublicConfig()
+      .then(({ supabaseUrl }) => {
+        const projectRef = getSupabaseProjectRef(supabaseUrl);
+        if (!projectRef) return;
+        try {
+          localStorage.setItem(`sb-${projectRef}-auth-token`, JSON.stringify(normalized));
+        } catch (_) {
+          // Ignore storage errors.
+        }
+      })
+      .catch(() => {
+        // Ignore config failures here.
+      });
+  }
+
+  function getAuthToken() {
+    const session = restoreSessionFromStorage();
+    return normalizeText(session?.access_token);
+  }
+
+  window.getAuthToken = getAuthToken;
+
+  function setAccountButtonState(user) {
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (headerAvatar) {
+      const fallbackLetter = user?.username ? String(user.username).trim().charAt(0).toUpperCase() : 'P';
+      headerAvatar.textContent = fallbackLetter || 'P';
+    }
+
+    const accountLabel = document.querySelector('.account-label');
+    if (accountLabel) {
+      accountLabel.textContent = user?.username ? user.username : 'Compte';
+    }
+
+    const accountSub = document.querySelector('.account-sub');
+    if (accountSub) {
+      accountSub.textContent = user ? 'Profil & paramètres' : 'Connexion requise';
+    }
+
+    const adminBtn = document.getElementById('adminHeaderBtn');
+    if (adminBtn) {
+      adminBtn.style.display = user?.isAdmin ? 'inline-flex' : 'none';
+    }
+  }
+
+  function setProfileModalState(user) {
+    const profileName = document.querySelector('.profile-name');
+    if (profileName) {
+      profileName.textContent = user?.username || 'Compte invité';
+    }
+
+    const profileSince = document.querySelector('.profile-since');
+    if (profileSince) {
+      profileSince.textContent = user?.createdAt
+        ? `Membre depuis ${new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
+        : 'Connecte-toi pour synchroniser tes points';
+    }
+
+    const profileAvatar = document.querySelector('.profile-avatar-big');
+    if (profileAvatar) {
+      profileAvatar.textContent = (user?.username || 'P').trim().charAt(0).toUpperCase() || 'P';
+    }
+
+    const emailInput = document.getElementById('profileEmail');
+    if (emailInput) {
+      emailInput.value = user?.email || '';
+      emailInput.readOnly = true;
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.style.display = user ? 'block' : 'none';
+    }
+  }
+
+  function applyLoggedOutState() {
+    window.currentUser = null;
+    balance = 0;
+    if (typeof updateBalanceUI === 'function') {
+      updateBalanceUI();
+    }
+    setAccountButtonState(null);
+    setProfileModalState(null);
+  }
+
+  function applyBootstrapPayload(payload) {
+    const user = payload?.user || null;
+    window.currentUser = user;
+    balance = Number(user?.balance || 0);
+    if (typeof updateBalanceUI === 'function') {
+      updateBalanceUI();
+    }
+
+    if (user?.region) {
+      userRegion = user.region;
+      localStorage.setItem('beeef_region', userRegion);
+    }
+    if (Array.isArray(user?.langs) && user.langs.length) {
+      userLangs = user.langs.slice();
+      localStorage.setItem('beeef_langs', JSON.stringify(userLangs));
+    }
+
+    if (typeof applyUserPrefs === 'function') {
+      applyUserPrefs();
+    }
+
+    setAccountButtonState(user);
+    setProfileModalState(user);
+  }
+
+  async function authorizedFetch(path, { method = 'GET', body } = {}) {
+    const token = await ensureValidSession();
+    if (!token) {
+      throw new Error('Connexion requise');
+    }
+
+    const response = await fetch(`${getBackendBaseUrl()}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) {
+        clearSessionStorage();
+        applyLoggedOutState();
+      }
+      throw new Error(payload?.error || `Erreur API (${response.status})`);
+    }
+    return payload;
+  }
+
+  async function refreshSessionWithToken(refreshToken) {
+    const payload = await supabaseAuthFetch('/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      body: { refresh_token: refreshToken },
+    });
+    persistSession(payload);
+    writeLegacySupabaseSession(payload);
+    return normalizeText(payload?.access_token);
+  }
+
+  async function hydrateUser(accessToken) {
+    const user = await supabaseAuthFetch('/auth/v1/user', {
+      method: 'GET',
+      token: accessToken,
+    });
+    if (authSession) {
+      authSession.user = user;
+      persistSession(authSession);
+    }
+    return user;
+  }
+
+  async function ensureValidSession() {
+    const session = restoreSessionFromStorage();
+    if (!session?.access_token) return '';
+
+    if (session.expires_at && (session.expires_at * 1000) <= (Date.now() + REFRESH_SKEW_MS)) {
+      if (session.refresh_token) {
+        return refreshSessionWithToken(session.refresh_token);
+      }
+      clearSessionStorage();
+      applyLoggedOutState();
+      return '';
+    }
+
+    if (!session.user) {
+      try {
+        await hydrateUser(session.access_token);
+      } catch (error) {
+        if (session.refresh_token) {
+          return refreshSessionWithToken(session.refresh_token);
+        }
+        clearSessionStorage();
+        applyLoggedOutState();
+        return '';
+      }
+    }
+
+    return session.access_token;
+  }
+
+  async function loadBootstrap({ silent = false } = {}) {
+    const token = await ensureValidSession();
+    if (!token) {
+      applyLoggedOutState();
+      return null;
+    }
+
+    try {
+      const payload = await authorizedFetch('/me/bootstrap');
+      applyBootstrapPayload(payload);
+      return payload;
+    } catch (error) {
+      if (!silent && typeof showToast === 'function') {
+        showToast('err', 'Session expirée', error.message || 'Reconnecte-toi');
+      }
+      throw error;
+    }
+  }
+
+  async function syncPreferencesToProfile() {
+    if (!window.currentUser) return null;
+    return authorizedFetch('/me/profile', {
+      method: 'PUT',
+      body: {
+        region: userRegion || null,
+        langs: Array.isArray(userLangs) ? userLangs : [],
+        phone: normalizeText(document.getElementById('phoneInput')?.value || ''),
+        twoFactorEnabled: Boolean(document.getElementById('twoFaToggle')?.checked),
+      },
+    });
+  }
+
+  function ensureAuthModal() {
+    if (document.getElementById(AUTH_MODAL_ID)) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = AUTH_MODAL_ID;
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:420px">
+        <div class="modal-header">
+          <div class="modal-title" id="authModalTitle">Connexion</div>
+          <div class="modal-close" onclick="window.closeAuthModal()">✕</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="btn-secondary" id="authModeLoginBtn" type="button" style="margin:0;flex:1">Connexion</button>
+          <button class="btn-secondary" id="authModeSignupBtn" type="button" style="margin:0;flex:1">Créer un compte</button>
+        </div>
+        <div class="form-group" id="authUsernameGroup" style="display:none">
+          <label class="form-label">Pseudo</label>
+          <input class="form-input" id="authUsernameInput" type="text" autocomplete="nickname" placeholder="Ton pseudo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="authEmailInput" type="email" autocomplete="email" placeholder="vous@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input class="form-input" id="authPasswordInput" type="password" autocomplete="current-password" placeholder="Mot de passe">
+        </div>
+        <div class="form-group" id="authPasswordConfirmGroup" style="display:none">
+          <label class="form-label">Confirmer le mot de passe</label>
+          <input class="form-input" id="authPasswordConfirmInput" type="password" autocomplete="new-password" placeholder="Confirmer">
+        </div>
+        <div id="authModalMessage" style="display:none;font-family:var(--fn-mono);font-size:11px;margin-bottom:12px"></div>
+        <button class="btn-primary" id="authSubmitBtn" type="button">Se connecter</button>
+      </div>
+    `;
+    overlay.addEventListener('click', event => {
+      if (event.target === overlay) {
+        closeAuthModal();
+      }
+    });
+    document.body.appendChild(overlay);
+
+    document.getElementById('authModeLoginBtn').addEventListener('click', () => setAuthMode('login'));
+    document.getElementById('authModeSignupBtn').addEventListener('click', () => setAuthMode('signup'));
+    document.getElementById('authSubmitBtn').addEventListener('click', submitAuthForm);
+  }
+
+  function setAuthModalMessage(message, tone = 'neutral') {
+    const el = document.getElementById('authModalMessage');
+    if (!el) return;
+    if (!message) {
+      el.style.display = 'none';
+      el.textContent = '';
+      return;
+    }
+    el.style.display = 'block';
+    el.textContent = message;
+    el.style.color = tone === 'error'
+      ? 'var(--blood)'
+      : tone === 'success'
+        ? 'var(--elec)'
+        : 'var(--txt3)';
+  }
+
+  function setAuthMode(mode) {
+    authModalMode = mode === 'signup' ? 'signup' : 'login';
+    const isSignup = authModalMode === 'signup';
+    const title = document.getElementById('authModalTitle');
+    const loginBtn = document.getElementById('authModeLoginBtn');
+    const signupBtn = document.getElementById('authModeSignupBtn');
+    const usernameGroup = document.getElementById('authUsernameGroup');
+    const confirmGroup = document.getElementById('authPasswordConfirmGroup');
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const passwordInput = document.getElementById('authPasswordInput');
+
+    if (title) title.textContent = isSignup ? 'Créer un compte' : 'Connexion';
+    if (loginBtn) loginBtn.style.borderColor = isSignup ? 'var(--line)' : 'var(--fire)';
+    if (signupBtn) signupBtn.style.borderColor = isSignup ? 'var(--fire)' : 'var(--line)';
+    if (usernameGroup) usernameGroup.style.display = isSignup ? 'block' : 'none';
+    if (confirmGroup) confirmGroup.style.display = isSignup ? 'block' : 'none';
+    if (submitBtn) submitBtn.textContent = isSignup ? 'Créer mon compte' : 'Se connecter';
+    if (passwordInput) {
+      passwordInput.autocomplete = isSignup ? 'new-password' : 'current-password';
+    }
+    setAuthModalMessage('');
+  }
+
+  function openAuthModal(mode = 'login', message = '') {
+    ensureAuthModal();
+    setAuthMode(mode);
+    if (message) {
+      setAuthModalMessage(message, 'neutral');
+    }
+    document.getElementById(AUTH_MODAL_ID)?.classList.add('open');
+    const emailInput = document.getElementById('authEmailInput');
+    if (emailInput) {
+      setTimeout(() => emailInput.focus(), 30);
+    }
+  }
+
+  function closeAuthModal() {
+    document.getElementById(AUTH_MODAL_ID)?.classList.remove('open');
+  }
+
+  window.openAuthModal = openAuthModal;
+  window.closeAuthModal = closeAuthModal;
+
+  async function signInWithPassword(email, password) {
+    return supabaseAuthFetch('/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      body: {
+        email,
+        password,
+      },
+    });
+  }
+
+  async function signUpWithPassword(email, password, username) {
+    return supabaseAuthFetch('/auth/v1/signup', {
+      method: 'POST',
+      body: {
+        email,
+        password,
+        data: {
+          username,
+        },
+      },
+    });
+  }
+
+  async function submitAuthForm() {
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const email = normalizeText(document.getElementById('authEmailInput')?.value);
+    const password = String(document.getElementById('authPasswordInput')?.value || '');
+    const confirmPassword = String(document.getElementById('authPasswordConfirmInput')?.value || '');
+    const username = normalizeText(document.getElementById('authUsernameInput')?.value);
+
+    if (!email || !password) {
+      setAuthModalMessage('Renseigne ton email et ton mot de passe.', 'error');
+      return;
+    }
+
+    if (authModalMode === 'signup') {
+      if (!username) {
+        setAuthModalMessage('Ajoute un pseudo pour créer ton compte.', 'error');
+        return;
+      }
+      if (password.length < 6) {
+        setAuthModalMessage('Le mot de passe doit faire au moins 6 caractères.', 'error');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setAuthModalMessage('Les mots de passe ne correspondent pas.', 'error');
+        return;
+      }
+    }
+
+    const originalLabel = submitBtn?.textContent || '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = authModalMode === 'signup' ? 'Création...' : 'Connexion...';
+    }
+    setAuthModalMessage('');
+
+    try {
+      let payload;
+      if (authModalMode === 'signup') {
+        payload = await signUpWithPassword(email, password, username);
+        if (!payload?.access_token && payload?.user) {
+          setAuthModalMessage('Compte créé. Vérifie ton email puis connecte-toi.', 'success');
+          setAuthMode('login');
+          document.getElementById('authPasswordInput').value = '';
+          document.getElementById('authPasswordConfirmInput').value = '';
+          return;
+        }
+      } else {
+        payload = await signInWithPassword(email, password);
+      }
+
+      persistSession(payload);
+      writeLegacySupabaseSession(payload);
+      await hydrateUser(payload.access_token);
+      const bootstrap = await loadBootstrap({ silent: true });
+      if (bootstrap?.user) {
+        await syncPreferencesToProfile().catch(() => null);
+      }
+      closeAuthModal();
+      if (typeof showToast === 'function') {
+        showToast('ok', authModalMode === 'signup' ? 'Compte créé' : 'Connexion réussie', 'Ton compte est synchronisé');
+      }
+    } catch (error) {
+      setAuthModalMessage(error.message || 'Connexion impossible', 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel || (authModalMode === 'signup' ? 'Créer mon compte' : 'Se connecter');
+      }
+    }
+  }
+
+  async function logout() {
+    const token = getAuthToken();
+    try {
+      if (token) {
+        await supabaseAuthFetch('/auth/v1/logout', {
+          method: 'POST',
+          token,
+          body: {},
+        }).catch(() => null);
+      }
+      if (token) {
+        await fetch(`${getBackendBaseUrl()}/auth/session`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).catch(() => null);
+      }
+    } finally {
+      clearSessionStorage();
+      applyLoggedOutState();
+      closeModal('profileModal');
+      if (typeof showToast === 'function') {
+        showToast('ok', 'Déconnexion faite', 'À bientôt');
+      }
+    }
+  }
+
+  async function refreshBalanceFromServer() {
+    if (!window.currentUser) {
+      applyLoggedOutState();
+      return null;
+    }
+    const payload = await authorizedFetch('/me/balance');
+    balance = Number(payload?.balance || 0);
+    if (typeof updateBalanceUI === 'function') {
+      updateBalanceUI();
+    }
+    return payload;
+  }
+
+  function bindStaticActions() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', event => {
+        event.preventDefault();
+        logout();
+      });
+    }
+  }
+
+  function overrideInteractionHooks() {
+    const originalOpenProfile = window.openProfile;
+    window.openProfile = function openProfileProxy() {
+      if (!window.currentUser) {
+        openAuthModal('login', 'Connecte-toi pour accéder à ton profil.');
+        return;
+      }
+      if (typeof originalOpenProfile === 'function') {
+        originalOpenProfile();
+      }
+    };
+
+    const originalSetupFinish = window.setupFinish;
+    window.setupFinish = function setupFinishProxy() {
+      if (typeof originalSetupFinish === 'function') {
+        originalSetupFinish();
+      }
+      if (!window.currentUser) {
+        openAuthModal('signup', 'Crée ton compte pour synchroniser tes points et tes préférences.');
+      } else {
+        syncPreferencesToProfile().catch(() => null);
+      }
+    };
+
+    window.saveProfile = async function saveProfileProxy() {
+      if (!window.currentUser) {
+        openAuthModal('login', 'Connecte-toi pour enregistrer ton profil.');
+        return;
+      }
+
+      try {
+        const payload = await syncPreferencesToProfile();
+        if (payload?.user) {
+          applyBootstrapPayload(payload);
+        }
+        closeModal('profileModal');
+        if (typeof showToast === 'function') {
+          showToast('ok', 'Profil enregistré', 'Paramètres synchronisés');
+        }
+      } catch (error) {
+        if (typeof showToast === 'function') {
+          showToast('err', 'Sauvegarde impossible', error.message || 'Réessaie');
+        }
+      }
+    };
+
+    window.savePwd = async function savePwdProxy() {
+      const p1 = String(document.getElementById('newPwd1')?.value || '');
+      const p2 = String(document.getElementById('newPwd2')?.value || '');
+      if (!p1 || p1.length < 6) {
+        showToast('err', 'Trop court', '6 caractères minimum');
+        return;
+      }
+      if (p1 !== p2) {
+        showToast('err', 'Ne correspond pas', '');
+        return;
+      }
+      const token = await ensureValidSession();
+      if (!token) {
+        openAuthModal('login', 'Reconnecte-toi pour changer ton mot de passe.');
+        return;
+      }
+
+      try {
+        await supabaseAuthFetch('/auth/v1/user', {
+          method: 'PUT',
+          token,
+          body: { password: p1 },
+        });
+        document.getElementById('newPwd1').value = '';
+        document.getElementById('newPwd2').value = '';
+        const pwdFields = document.getElementById('pwdChangeFields');
+        if (pwdFields) {
+          pwdFields.style.display = 'none';
+        }
+        if (typeof showToast === 'function') {
+          showToast('ok', 'Mot de passe mis à jour', '');
+        }
+      } catch (error) {
+        if (typeof showToast === 'function') {
+          showToast('err', 'Changement impossible', error.message || 'Réessaie');
+        }
+      }
+    };
+
+    window.confirmDeposit = async function confirmDepositProxy() {
+      if (!window.currentUser) {
+        openAuthModal('login', 'Connecte-toi pour acheter des points.');
+        return;
+      }
+
+      const token = await ensureValidSession();
+      if (!token) {
+        openAuthModal('login', 'Reconnecte-toi pour acheter des points.');
+        return;
+      }
+
+      const button = document.getElementById('fundsPayBtn');
+      const originalHtml = button?.innerHTML || '';
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<span>Redirection vers Stripe…</span>';
+      }
+
+      try {
+        const response = await fetch(`${getBackendBaseUrl()}/payment/checkout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            packId: (typeof selectedPackId !== 'undefined' ? selectedPackId : null) || 'pack_popular',
+            successUrl: `${window.location.origin}${window.location.pathname}?paid=ok`,
+            cancelUrl: `${window.location.origin}${window.location.pathname}?paid=cancel`,
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload?.url) {
+          throw new Error(payload?.error || payload?.message || 'Paiement indisponible');
+        }
+        window.location.href = payload.url;
+      } catch (error) {
+        if (typeof showToast === 'function') {
+          showToast('err', 'Paiement indisponible', error.message || 'Réessaie');
+        }
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalHtml;
+        }
+      }
+    };
+  }
+
+  async function handleStripeReturn() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('paid') === 'ok') {
+        if (typeof showToast === 'function') {
+          showToast('coins', 'Paiement reçu', 'Tes points arrivent…');
+        }
+        await loadBootstrap({ silent: true }).catch(() => null);
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('paid');
+        history.replaceState({}, '', cleanUrl.toString());
+      } else if (params.get('paid') === 'cancel') {
+        if (typeof showToast === 'function') {
+          showToast('warn', 'Paiement annulé', 'Aucun point crédité');
+        }
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('paid');
+        history.replaceState({}, '', cleanUrl.toString());
+      }
+    } catch (_) {
+      // Ignore URL cleanup errors.
+    }
+  }
+
+  window.refreshBalanceFromServer = refreshBalanceFromServer;
+  window.logout = logout;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    ensureAuthModal();
+    bindStaticActions();
+    overrideInteractionHooks();
+    handleStripeReturn();
+
+    try {
+      await loadBootstrap({ silent: true });
+      await syncPreferencesToProfile().catch(() => null);
+    } catch (_) {
+      applyLoggedOutState();
+    }
+  });
 })();

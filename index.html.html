@@ -1150,6 +1150,52 @@ body::before{
 .live-info-link{display:inline-block;margin-top:10px;font-weight:700;font-size:13px;color:#f97316;text-decoration:none}
 .live-info-link:hover{text-decoration:underline}
 .live-source-card{display:none!important}
+/* ── Article image hero ───────────────────────── */
+.live-context-card{padding:0;overflow:hidden}
+.live-context-hero{
+  position:relative;width:100%;aspect-ratio:16/9;
+  background:linear-gradient(135deg,#1a1a2e 0%,#0f1520 100%);
+  overflow:hidden;flex-shrink:0
+}
+.live-context-hero img{
+  width:100%;height:100%;object-fit:cover;object-position:center 30%;
+  display:block;transition:opacity .35s ease;opacity:0
+}
+.live-context-hero img.loaded{opacity:1}
+.live-context-hero img.error{opacity:0}
+.live-context-hero-overlay{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.58) 0%,rgba(0,0,0,.16) 50%,rgba(0,0,0,0) 100%)
+}
+.live-context-hero-placeholder{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#1a1a2e,#0d1117)
+}
+.live-context-hero-placeholder svg{opacity:.18}
+.live-context-hero-badge{
+  position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;
+  background:rgba(0,0,0,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-radius:20px;padding:4px 10px;
+  font-family:var(--fn-mono);font-size:9px;font-weight:700;letter-spacing:1.2px;
+  text-transform:uppercase;color:#fff;z-index:2
+}
+.live-context-hero-badge .src-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--fire);flex-shrink:0
+}
+.live-context-hero-source-label{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-context-hero-link{
+  position:absolute;bottom:10px;right:10px;z-index:2;
+  display:none;align-items:center;gap:5px;
+  background:rgba(0,0,0,.56);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  border-radius:20px;padding:5px 10px;
+  font-family:var(--fn-mono);font-size:9px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;color:#fff;text-decoration:none;
+  transition:background .18s ease
+}
+.live-context-hero-link:hover{background:rgba(0,0,0,.82)}
+.live-context-hero-link svg{opacity:.8}
+.live-context-hero-link.visible{display:flex}
+.live-context-body{padding:14px}
 .betting-panel{padding:16px}
 .live-right{display:flex;flex-direction:column;position:sticky;top:74px;height:calc(100vh - 90px);overflow:hidden}
 .chat-messages{background:#fff}
@@ -3837,7 +3883,7 @@ body{
         </div>
         <div class="live-probability-chart-canvas-wrap">
           <div class="live-probability-chart-surface" id="liveProbabilityChartSurface" aria-label="Graphique de probabilité YES"></div>
-          <div class="live-probability-chart-empty" id="liveProbabilityChartEmpty" hidden>Pas encore assez de données</div>
+          <div class="live-probability-chart-empty" id="liveProbabilityChartEmpty" hidden>Marché en initialisation — les premières données arrivent…</div>
         </div>
         <div class="live-probability-chart-footer">
           <div class="live-probability-chart-ranges" id="liveProbabilityChartRanges" role="tablist" aria-label="Période du graphique">
@@ -3938,17 +3984,36 @@ body{
         <canvas id="liveCanvas" style="display:none"></canvas>
 
         <article class="live-info-card live-context-card">
-          <div class="live-context-top">
-            <div class="live-context-status">
-              <div class="video-live-badge live-inline-badge" id="liveStatusBadge"><div class="live-dot"></div><span id="liveStatusText">LIVE</span></div>
-              <div class="live-countdown" id="liveCountdown">00:00</div>
+          <!-- ── Image hero article ────────────────────────── -->
+          <div class="live-context-hero" id="liveContextHero">
+            <div class="live-context-hero-placeholder" id="liveContextHeroPlaceholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             </div>
-            <div class="video-viewers live-inline-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></div>
+            <img id="liveContextHeroImg" src="" alt="" loading="lazy" style="display:none">
+            <div class="live-context-hero-overlay"></div>
+            <div class="live-context-hero-badge" id="liveContextHeroBadge">
+              <span class="src-dot"></span>
+              <span class="live-context-hero-source-label" id="liveContextHeroLabel">SOURCE</span>
+            </div>
+            <a class="live-context-hero-link" id="liveContextHeroLink" href="#" target="_blank" rel="noopener noreferrer">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Voir la source
+            </a>
           </div>
-          <div class="live-info-title" id="liveTitle"></div>
-          <div class="live-info-description" id="liveInfoDescription">Vidéo de contexte et source média liées au sujet du débat.</div>
-          <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Voir la source</a>
-          <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()" style="display:none">PARTICIPATE</button>
+          <!-- ── Context text body ──────────────────────────── -->
+          <div class="live-context-body">
+            <div class="live-context-top">
+              <div class="live-context-status">
+                <div class="video-live-badge live-inline-badge" id="liveStatusBadge"><div class="live-dot"></div><span id="liveStatusText">LIVE</span></div>
+                <div class="live-countdown" id="liveCountdown">00:00</div>
+              </div>
+              <div class="video-viewers live-inline-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></div>
+            </div>
+            <div class="live-info-title" id="liveTitle"></div>
+            <div class="live-info-description" id="liveInfoDescription"></div>
+            <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Voir la source</a>
+            <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()" style="display:none">PARTICIPATE</button>
+          </div>
         </article>
 
         <div class="ended-banner" id="endedBanner">
@@ -5256,22 +5321,33 @@ function updateProbabilityHistorySummaryReal(points){
 
   if(valueEl)valueEl.textContent=`${Math.round(Number(latest?.yesProbability||0))}% chance`;
   if(deltaEl){
-    const isPositive=delta>0.01;
-    const isNegative=delta<-0.01;
+    const hasMultiplePoints=normalized.length>1;
+    const isPositive=hasMultiplePoints&&delta>0.01;
+    const isNegative=hasMultiplePoints&&delta<-0.01;
     deltaEl.classList.toggle('is-up',isPositive);
     deltaEl.classList.toggle('is-down',isNegative);
-    if(isPositive){
+    if(!hasMultiplePoints){
+      // No variation data yet — hide the badge
+      deltaEl.textContent='';
+      deltaEl.style.visibility='hidden';
+    }else if(isPositive){
+      deltaEl.style.visibility='';
       deltaEl.textContent=`▲ ${Math.round(Math.abs(delta))}%`;
     }else if(isNegative){
+      deltaEl.style.visibility='';
       deltaEl.textContent=`▼ ${Math.round(Math.abs(delta))}%`;
     }else{
+      // Real data but no variation yet — show 0% dimly
+      deltaEl.style.visibility='';
       deltaEl.textContent='0%';
     }
   }
   if(noteEl){
-    noteEl.textContent=normalized.length>1
-      ? `${normalized.length} points • ${PROBABILITY_HISTORY_RANGE_LABELS[probabilityHistoryRange]||probabilityHistoryRange}`
-      : 'Pas encore assez de donnees';
+    if(normalized.length>1){
+      noteEl.textContent=`${normalized.length} points • ${PROBABILITY_HISTORY_RANGE_LABELS[probabilityHistoryRange]||probabilityHistoryRange}`;
+    }else{
+      noteEl.textContent='Marché en initialisation — données en cours';
+    }
   }
   if(volumeEl)volumeEl.textContent=`Volume : ${fmt(Number(latest?.volume||livePool||0))}`;
   if(emptyEl)emptyEl.hidden=normalized.length>1;
@@ -5324,7 +5400,8 @@ async function loadPredictionHistory(range=probabilityHistoryRange,{debate=curre
 
   const requestId=++probabilityHistoryRequestId;
   const noteEl=document.getElementById('liveProbabilityChartNote');
-  if(noteEl)noteEl.textContent='Chargement...';
+  // Only show loading text if we have no data yet (avoids flicker on range switches)
+  if(noteEl&&!probabilityHistoryPoints.length)noteEl.textContent='Chargement…';
 
   try{
     const response=await fetch(`${BACKEND_URL}/api/predictions/${encodeURIComponent(String(debate.id||''))}/history?range=${encodeURIComponent(probabilityHistoryRange)}`,{
@@ -5718,71 +5795,110 @@ function syncPredictionActionState(debate) {
   if (aiThinking) aiThinking.style.display = 'none';
 }
 
+// Category fallback images (Unsplash, stable)
+const CONTEXT_HERO_FALLBACKS = {
+  crypto:      'https://images.unsplash.com/photo-1621504450181-5d356f61d307?w=900&q=75&auto=format&fit=crop',
+  technology:  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&q=75&auto=format&fit=crop',
+  economy:     'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=900&q=75&auto=format&fit=crop',
+  politics:    'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=900&q=75&auto=format&fit=crop',
+  sports:      'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900&q=75&auto=format&fit=crop',
+  geopolitics: 'https://images.unsplash.com/photo-1576485375217-d6a95e34d043?w=900&q=75&auto=format&fit=crop',
+  society:     'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=900&q=75&auto=format&fit=crop',
+  culture:     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=75&auto=format&fit=crop',
+  general:     'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=900&q=75&auto=format&fit=crop',
+};
+
+function getContextHeroFallback(debate){
+  const cat=String(debate?.category||'general').toLowerCase();
+  return CONTEXT_HERO_FALLBACKS[cat]||CONTEXT_HERO_FALLBACKS.general;
+}
+
 function updateLiveSourceCard(debate) {
-  const card = document.getElementById('liveSourceCard');
-  const infoTitle = document.getElementById('liveTitle');
+  // ── Text elements (title, description, source link) ─────────
+  const infoTitle       = document.getElementById('liveTitle');
   const infoDescription = document.getElementById('liveInfoDescription');
-  const infoSourceLink = document.getElementById('liveInfoSourceLink');
-  const fallbackSource = document.getElementById('videoFallbackSource');
-  const fallbackLink = document.getElementById('videoFallbackLink');
+  const infoSourceLink  = document.getElementById('liveInfoSourceLink');
 
-  const excerpt = debate?.sourceExcerpt || debate?.sourceDescription || '';
-  const sourceUrl = debate?.sourceUrl || '';
-  const sourceTitle = debate?.sourceTitle || '';
-  const imageUrl = debate?.sourceImageUrl || debate?.photo || '';
+  const excerpt    = debate?.sourceExcerpt || debate?.sourceDescription || '';
+  const sourceUrl  = debate?.sourceUrl || '';
+  const sourceTitle= debate?.sourceTitle || '';
 
-  if (!sourceUrl && !excerpt && !imageUrl) {
-    if (card) {
-      card.classList.remove('is-visible');
-      card.innerHTML = '';
-    }
-  }
-
-  const host = sourceHost(sourceUrl) || debate?.sourceDomain || 'BBC News';
-  const date = sourceDateLabel(debate?.newsPublishedAt);
-  const label = debate?.sourceFeedLabel || 'BBC News';
-  const linkText = sourceTitle || sourceUrl;
-
-  if (infoTitle) {
-    infoTitle.textContent = sourceTitle || 'Contexte live';
-  }
-  if (infoDescription) {
-    infoDescription.textContent = excerpt || debate?.description || 'Contexte média et source liée au débat.';
-  }
-  if (infoSourceLink) {
-    if (sourceUrl) {
-      infoSourceLink.href = sourceUrl;
-      infoSourceLink.textContent = `Voir la source : ${linkText}`;
-      infoSourceLink.style.display = 'inline-block';
-    } else {
+  if(infoTitle)infoTitle.textContent=sourceTitle||debate?.title||'';
+  if(infoDescription)infoDescription.textContent=excerpt||debate?.description||'';
+  if(infoSourceLink){
+    if(sourceUrl){
+      infoSourceLink.href=sourceUrl;
+      infoSourceLink.textContent=`Voir la source${sourceTitle?' : '+sourceTitle:''}`;
+      infoSourceLink.style.display='inline-block';
+    }else{
       infoSourceLink.removeAttribute('href');
-      infoSourceLink.style.display = 'none';
-    }
-  }
-  if (fallbackSource) {
-    fallbackSource.textContent = `${label} ${host ? '· ' + host : ''}`.trim();
-  }
-  if (fallbackLink) {
-    if (sourceUrl) {
-      fallbackLink.href = sourceUrl;
-      fallbackLink.style.display = 'inline-block';
-    } else {
-      fallbackLink.removeAttribute('href');
-      fallbackLink.style.display = 'none';
+      infoSourceLink.style.display='none';
     }
   }
 
-  if (card) {
-    card.innerHTML = `
-      ${imageUrl ? `<div class="live-source-image"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(sourceTitle || debate?.title || 'Image source')}" loading="lazy"></div>` : '<div class="live-source-image"></div>'}
-      <div class="live-source-body">
-        <div class="live-source-kicker"><span>${escapeHtml(label)}</span><span>${escapeHtml(host)}</span>${date ? `<span>${escapeHtml(date)}</span>` : ''}</div>
-        ${excerpt ? `<div class="live-source-excerpt">${escapeHtml(excerpt)}</div>` : ''}
-        ${sourceUrl ? `<a class="live-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Voir la source : ${escapeHtml(linkText)}</a>` : ''}
-      </div>
-    `;
-    card.classList.add('is-visible');
+  // ── Article hero image ───────────────────────────────────────
+  const heroImg       = document.getElementById('liveContextHeroImg');
+  const heroPlaceholder = document.getElementById('liveContextHeroPlaceholder');
+  const heroLabel     = document.getElementById('liveContextHeroLabel');
+  const heroLink      = document.getElementById('liveContextHeroLink');
+
+  if(!heroImg)return;
+
+  // Resolve image: use debate image or category fallback (never empty)
+  const rawImage = String(debate?.sourceImageUrl||debate?.photo||'').trim();
+  const imageUrl = rawImage && !rawImage.startsWith('data:image/svg') ? rawImage : getContextHeroFallback(debate);
+
+  // Source badge label
+  const host  = sourceHost(sourceUrl)||debate?.sourceDomain||'';
+  const label = debate?.sourceFeedLabel||debate?.sourceDomain||'Source';
+  const badgeText = [label, host].filter(Boolean).join(' · ').slice(0, 40);
+  if(heroLabel)heroLabel.textContent=badgeText||'SOURCE';
+
+  // External link button
+  if(heroLink){
+    if(sourceUrl){
+      heroLink.href=sourceUrl;
+      heroLink.classList.add('visible');
+    }else{
+      heroLink.removeAttribute('href');
+      heroLink.classList.remove('visible');
+    }
   }
+
+  // Load image with graceful fallback
+  if(heroImg.dataset.loadedSrc===imageUrl){
+    // Already displaying the correct image — nothing to do
+    return;
+  }
+
+  heroImg.classList.remove('loaded','error');
+  heroImg.style.display='none';
+  if(heroPlaceholder)heroPlaceholder.style.display='flex';
+
+  const tmpImg=new Image();
+  tmpImg.onload=()=>{
+    heroImg.src=imageUrl;
+    heroImg.alt=escapeHtml(sourceTitle||debate?.title||'');
+    heroImg.style.display='block';
+    heroImg.dataset.loadedSrc=imageUrl;
+    requestAnimationFrame(()=>heroImg.classList.add('loaded'));
+    if(heroPlaceholder)heroPlaceholder.style.display='none';
+  };
+  tmpImg.onerror=()=>{
+    // Try category fallback if article image failed
+    const fallback=getContextHeroFallback(debate);
+    if(imageUrl!==fallback){
+      heroImg.src=fallback;
+      heroImg.style.display='block';
+      heroImg.dataset.loadedSrc=fallback;
+      requestAnimationFrame(()=>heroImg.classList.add('loaded'));
+      if(heroPlaceholder)heroPlaceholder.style.display='none';
+    }else{
+      // Fallback also failed — keep placeholder
+      heroImg.classList.add('error');
+    }
+  };
+  tmpImg.src=imageUrl;
 }
 
 function playMutedVideo(video) {
@@ -6434,6 +6550,9 @@ function openLive(d) {
   currentDebate=d; livePool=Number(d.pool||0); liveYesPct=Number(d.yesPct||50); liveViewers=Number(d.viewers||0);
   seedCryptoHistory(d);
   clearProbabilityHistoryState();
+  // Reset hero image cache so next debate shows fresh image
+  const _prevHeroImg=document.getElementById('liveContextHeroImg');
+  if(_prevHeroImg){_prevHeroImg.dataset.loadedSrc='';_prevHeroImg.classList.remove('loaded','error');}
   document.getElementById('homepage').style.display='none';
   document.getElementById('live-view').style.display='block';
   document.getElementById('liveTopTitle').textContent=d.title;

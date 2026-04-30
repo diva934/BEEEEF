@@ -1,7 +1,12 @@
 const crypto = require('crypto');
 const { hasUsablePreviewImage, isControversialNewsItem } = require('./news-filter');
 
-const DEFAULT_DURATION_MS = Math.max(900_000, Number(process.env.NEWS_DEBATE_DURATION_MS) || 8 * 60 * 60 * 1000);
+const MIN_DEBATE_DURATION_MS = 20 * 60 * 1000;
+const MAX_DEBATE_DURATION_MS = 5 * 60 * 60 * 1000;
+const DEFAULT_DURATION_MS = Math.max(
+  MIN_DEBATE_DURATION_MS,
+  Math.min(MAX_DEBATE_DURATION_MS, Number(process.env.NEWS_DEBATE_DURATION_MS) || 2 * 60 * 60 * 1000)
+);
 
 const CATEGORY_STYLES = {
   technology: ['#3d9eff', '#667eea', '#0d0d1a'],
@@ -46,19 +51,19 @@ function buildDebateVideoQuery(item) {
     .slice(0, 6);
 
   const categoryHints = {
-    politics: 'political debate panel live',
-    geopolitics: 'world news panel debate live',
-    economy: 'economy market debate panel',
-    technology: 'technology debate panel AI jobs discussion',
-    crypto: 'crypto market debate panel',
-    sports: 'sports debate panel live',
-    culture: 'talk show panel discussion',
-    society: 'news panel discussion live',
-    general: 'news debate panel live',
+    politics: 'political analysis panel discussion',
+    geopolitics: 'world news analysis panel documentary discussion',
+    economy: 'economy market analysis panel discussion',
+    technology: 'technology AI analysis report discussion',
+    crypto: 'crypto market analysis panel discussion',
+    sports: 'sports analysis debate discussion highlights',
+    culture: 'talk show cultural analysis discussion',
+    society: 'news analysis panel discussion',
+    general: 'news analysis panel discussion',
   };
 
   const editorialHint = categoryHints[category] || categoryHints.general;
-  const channelHint = ['BBC News', 'CNN', 'Reuters', 'Sky News'].join(' OR ');
+  const channelHint = ['BBC News', 'Reuters', 'DW News', 'France 24', 'Sky News'].join(' OR ');
 
   return [...terms, editorialHint, channelHint].join(' ').trim();
 }
@@ -123,6 +128,25 @@ function hashNumber(seed) {
 function seededRange(seed, min, max) {
   const value = hashNumber(seed);
   return min + (value % (max - min + 1));
+}
+
+function clampDurationMs(value) {
+  return Math.max(MIN_DEBATE_DURATION_MS, Math.min(MAX_DEBATE_DURATION_MS, Number(value) || DEFAULT_DURATION_MS));
+}
+
+function resolveDebateDurationMs(pool, explicitDurationMs) {
+  const explicit = Number(explicitDurationMs);
+  if (Number.isFinite(explicit) && explicit > 0) {
+    return clampDurationMs(explicit);
+  }
+
+  const amount = Number(pool) || 0;
+  if (amount >= 160000) return 5 * 60 * 60 * 1000;
+  if (amount >= 120000) return 4 * 60 * 60 * 1000;
+  if (amount >= 85000) return 3 * 60 * 60 * 1000;
+  if (amount >= 50000) return 2 * 60 * 60 * 1000;
+  if (amount >= 20000) return 60 * 60 * 1000;
+  return MIN_DEBATE_DURATION_MS;
 }
 
 function buildDescription(item) {
@@ -217,8 +241,6 @@ function isUsableQuestion(question) {
 }
 
 function buildDebateFromNews(item, options = {}) {
-  const durationMs = Math.max(900_000, Number(options.durationMs) || DEFAULT_DURATION_MS);
-  const liveEmbed = options.liveEmbed || null; // { videoId, embedUrl, thumbnailUrl, channelTitle }
   const title = buildQuestion(item);
 
   // Controversy is still required
@@ -236,25 +258,25 @@ function buildDebateFromNews(item, options = {}) {
   const yesPct = seededRange(seed, 42, 58);
   const viewers = seededRange(`${seed}:viewers`, 650, 2600);
   const pool = seededRange(`${seed}:pool`, 25, 95) * 1000;
+  const durationMs = resolveDebateDurationMs(pool, options.durationMs);
   const openedAt = Date.now();
 
   const imageUrl = resolvePreviewImage(item);
-  const liveEmbedUrl = liveEmbed ? liveEmbed.embedUrl : null;
-  const liveThumb    = liveEmbed ? liveEmbed.thumbnailUrl : null;
+  const contextVideoUrl = normalizeWhitespace(options.contextVideoUrl || buildYouTubeSearchUrl(item));
 
   return {
     title,
     description: buildDescription(item),
     sourceExcerpt: buildSourceExcerpt(item),
     sourceDescription: normalizeWhitespace(item.sourceDescription),
-    sourceImageUrl: liveThumb || imageUrl,
-    photo: liveThumb || imageUrl,
-    previewVideoUrl: liveEmbedUrl,
-    contextVideoUrl: liveEmbedUrl,
-    liveVideoId: liveEmbed ? liveEmbed.videoId : null,
-    liveEmbedUrl: liveEmbedUrl,
-    liveChannel: liveEmbed ? (liveEmbed.channelTitle || '') : null,
-    createdFromLive: Boolean(liveEmbed),
+    sourceImageUrl: imageUrl,
+    photo: imageUrl,
+    previewVideoUrl: contextVideoUrl,
+    contextVideoUrl,
+    liveVideoId: null,
+    liveEmbedUrl: null,
+    liveChannel: null,
+    createdFromLive: false,
     sourceFeedLabel: item.sourceFeedLabel || '',
     sourceDomain: item.domain || '',
     yesLabel: 'YES',
@@ -369,7 +391,6 @@ function buildQuestionFromLiveTitle(rawTitle) {
 }
 
 function buildDebateFromLiveStream(streamItem, options = {}) {
-  const durationMs = Math.max(900_000, Number(options.durationMs) || DEFAULT_DURATION_MS);
   const title      = buildQuestionFromLiveTitle(streamItem.title);
 
   if (!isUsableQuestion(title)) return null;
@@ -380,6 +401,7 @@ function buildDebateFromLiveStream(streamItem, options = {}) {
   const yesPct     = seededRange(seed, 42, 58);
   const viewers    = seededRange(`${seed}:viewers`, 650, 2600);
   const pool       = seededRange(`${seed}:pool`, 25, 95) * 1000;
+  const durationMs = resolveDebateDurationMs(pool, options.durationMs);
   const openedAt   = Date.now();
 
   const channelLabel = streamItem.channelTitle || streamItem.channelHandle;
@@ -425,6 +447,9 @@ function buildDebateFromLiveStream(streamItem, options = {}) {
 
 module.exports = {
   DEFAULT_DURATION_MS,
+  MAX_DEBATE_DURATION_MS,
+  MIN_DEBATE_DURATION_MS,
   buildDebateFromNews,
   buildDebateFromLiveStream,
+  resolveDebateDurationMs,
 };

@@ -26,11 +26,31 @@ function uniqueStrings(values) {
   return [...new Set(values.map(value => String(value).trim()).filter(Boolean))];
 }
 
+function firstEnv(...keys) {
+  for (const key of keys) {
+    const value = String(process.env[key] || '').trim();
+    if (value) return value;
+  }
+  return '';
+}
+
 function getConfig() {
-  const url = String(process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-  const publishableKey = String(
-    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || ''
-  ).trim();
+  const url = firstEnv(
+    'SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'VITE_SUPABASE_URL',
+    'PUBLIC_SUPABASE_URL'
+  ).replace(/\/+$/, '');
+  const publishableKey = firstEnv(
+    'SUPABASE_PUBLISHABLE_KEY',
+    'SUPABASE_ANON_KEY',
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'VITE_SUPABASE_PUBLISHABLE_KEY',
+    'VITE_SUPABASE_ANON_KEY',
+    'PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+    'PUBLIC_SUPABASE_ANON_KEY'
+  );
 
   if (!url || !publishableKey) {
     throw createError(
@@ -47,6 +67,35 @@ function getPublicConfig() {
   return {
     supabaseUrl: url,
     supabasePublishableKey: publishableKey,
+  };
+}
+
+function getRuntimeConfigStatus() {
+  const errors = [];
+  let publicConfig = null;
+
+  try {
+    publicConfig = getPublicConfig();
+  } catch (error) {
+    errors.push(error.message || 'SUPABASE public config missing');
+  }
+
+  const serviceRoleConfigured = Boolean(firstEnv(
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_SERVICE_KEY',
+    'SUPABASE_SECRET_KEY',
+    'SUPABASE_SERVICE_ROLE'
+  ));
+
+  if (!serviceRoleConfigured) {
+    errors.push('SUPABASE_SERVICE_ROLE_KEY missing');
+  }
+
+  return {
+    supabasePublicConfigured: Boolean(publicConfig?.supabaseUrl && publicConfig?.supabasePublishableKey),
+    supabaseServiceRoleConfigured: serviceRoleConfigured,
+    supabaseUrl: publicConfig?.supabaseUrl || '',
+    errors,
   };
 }
 
@@ -145,6 +194,9 @@ function normalizeProfile(profile, authUser) {
 }
 
 function normalizeBet(row) {
+  const status = ['pending', 'won', 'lost', 'refunded'].includes(row.status)
+    ? row.status
+    : 'pending';
   return {
     id: row.id,
     debateId: row.debate_id,
@@ -156,7 +208,7 @@ function normalizeBet(row) {
     noLabel: row.no_label || 'NON',
     kind: row.kind || 'market',
     amt: roundCurrency(row.amt || 0),
-    status: row.status || 'pending',
+    status,
     payout: roundCurrency(row.payout || 0),
     ts: row.created_at,
     settledAt: row.settled_at || null,
@@ -426,7 +478,12 @@ async function creditBalanceAsAdmin(userId, points, meta = {}) {
     throw createError('creditBalanceAsAdmin: userId + points required', 400);
   }
 
-  const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const serviceKey = firstEnv(
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_SERVICE_KEY',
+    'SUPABASE_SECRET_KEY',
+    'SUPABASE_SERVICE_ROLE'
+  );
   if (!serviceKey) {
     throw createError('SUPABASE_SERVICE_ROLE_KEY manquante — webhook Stripe ne peut créditer', 500);
   }
@@ -531,19 +588,560 @@ async function listTokenTransactions(token, userId, { limit = 50 } = {}) {
   }));
 }
 
+// ──────────────────────────────────────────────────────────────────
+//  Redeem gift card — deducts tokens from user balance
+// ──────────────────────────────────────────────────────────────────
+async function getProfileBalance(userId) {
+  if (!userId) throw createError('userId requis', 400);
+
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const getRes = await fetch(new URL(`/rest/v1/profiles?id=eq.${userId}&select=id,balance`, url), { headers });
+  const current = await getRes.json().catch(() => []);
+  const row = Array.isArray(current) ? current[0] : null;
+  if (!row) throw createError(`Profil ${userId} introuvable`, 404);
+
+  return {
+    id: row.id,
+    balance: Number(row.balance || 0),
+  };
+}
+
+async function redeemGiftCard(userId, pointsCost, meta = {}) {
+  const cost = Math.round(Number(pointsCost) || 0);
+  if (!userId || cost <= 0) throw createError('userId + pointsCost requis', 400);
+
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const profile = await getProfileBalance(userId);
+  const currentBalance = Number(profile.balance || 0);
+  if (currentBalance < cost) throw createError(`Solde insuffisant — il te faut ${cost} pts, tu as ${currentBalance} pts`, 400);
+
+  const newBalance = currentBalance - cost;
+
+  const patchRes = await fetch(new URL(`/rest/v1/profiles?id=eq.${userId}`, url), {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ balance: newBalance }),
+  });
+  if (!patchRes.ok) {
+    const errText = await patchRes.text();
+    throw createError(`Erreur déduction Supabase: ${patchRes.status} ${errText}`, 502);
+  }
+
+  const txRes = await fetch(new URL('/rest/v1/token_transactions', url), {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'return=representation' },
+    body: JSON.stringify({
+      user_id: userId,
+      type: 'gift_redemption',
+      amount: -cost,
+      metadata: {
+        brand: meta.brand || null,
+        valueEur: meta.valueEur || null,
+        email: meta.email || null,
+        orderId: meta.orderId || null,
+        reason: meta.reason || 'gift_points_reserved',
+      },
+    }),
+  });
+  const txRows = await txRes.json().catch(() => []);
+  const redemptionId = Array.isArray(txRows) && txRows[0] ? txRows[0].id : `gift_${Date.now()}`;
+
+  console.log(`[gifts] ${userId} redeemed ${cost} pts → ${meta.brand} ${meta.valueEur}€ — balance=${newBalance}`);
+  return { userId, reserved: cost, newBalance, redemptionId };
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  Gift card orders — CRUD helpers (service role)
+// ──────────────────────────────────────────────────────────────────
+
+function getServiceHeaders() {
+  const serviceKey = firstEnv(
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_SERVICE_KEY',
+    'SUPABASE_SECRET_KEY',
+    'SUPABASE_SERVICE_ROLE'
+  );
+  if (!serviceKey) throw createError('SUPABASE_SERVICE_ROLE_KEY manquante', 500);
+  return {
+    apikey:        serviceKey,
+    Authorization: `Bearer ${serviceKey}`,
+    'Content-Type': 'application/json',
+    Prefer:        'return=representation',
+  };
+}
+
+function getServiceRestUrl(path, params = {}) {
+  const { url } = getConfig();
+  const target = new URL(path.startsWith('/') ? path : `/${path}`, url);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    target.searchParams.set(key, String(value));
+  });
+  return target;
+}
+
+async function serviceRoleFetchJson(target, options = {}) {
+  const response = await fetch(target, {
+    headers: getServiceHeaders(),
+    ...options,
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw createError(`Supabase service role error: ${response.status}`, 502, payload);
+  }
+  return payload;
+}
+
+async function listPendingBetsForDebateAsAdmin(debateId) {
+  if (!debateId) throw createError('debateId requis', 400);
+  const target = getServiceRestUrl('/rest/v1/bets', {
+    debate_id: `eq.${debateId}`,
+    status: 'eq.pending',
+    select: 'id,user_id,debate_id,side,amt,title,category,kind,yes_label,no_label,created_at',
+    order: 'created_at.asc',
+  });
+  const rows = await serviceRoleFetchJson(target);
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function getProfileBalanceAsAdmin(userId) {
+  if (!userId) throw createError('userId requis', 400);
+  const target = getServiceRestUrl('/rest/v1/profiles', {
+    id: `eq.${userId}`,
+    select: 'id,balance',
+    limit: 1,
+  });
+  const rows = await serviceRoleFetchJson(target);
+  const row = Array.isArray(rows) ? rows[0] : null;
+  if (!row) throw createError(`Profil ${userId} introuvable`, 404);
+  return {
+    id: row.id,
+    balance: Number(row.balance || 0),
+  };
+}
+
+async function patchProfileBalanceAsAdmin(userId, nextBalance) {
+  const target = getServiceRestUrl('/rest/v1/profiles', {
+    id: `eq.${userId}`,
+  });
+  await serviceRoleFetchJson(target, {
+    method: 'PATCH',
+    body: JSON.stringify({ balance: roundCurrency(nextBalance) }),
+  });
+}
+
+async function insertTokenTransactionAsAdmin(row) {
+  const target = getServiceRestUrl('/rest/v1/token_transactions');
+  await serviceRoleFetchJson(target, {
+    method: 'POST',
+    headers: { ...getServiceHeaders(), Prefer: 'return=minimal' },
+    body: JSON.stringify(row),
+  });
+}
+
+async function patchBetAsAdmin(betId, patch) {
+  const target = getServiceRestUrl('/rest/v1/bets', {
+    id: `eq.${betId}`,
+  });
+  return serviceRoleFetchJson(target, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+async function deleteBetAsAdmin(betId) {
+  const target = getServiceRestUrl('/rest/v1/bets', {
+    id: `eq.${betId}`,
+  });
+  await serviceRoleFetchJson(target, {
+    method: 'DELETE',
+    headers: { ...getServiceHeaders(), Prefer: 'return=minimal' },
+  });
+}
+
+async function settleDebateBetsAsAdmin(debateId, winnerSide, odds, meta = {}) {
+  if (!debateId) throw createError('debateId requis', 400);
+  if (!['yes', 'no'].includes(winnerSide)) throw createError('winnerSide invalide', 400);
+  const normalizedOdds = roundCurrency(odds);
+  if (!Number.isFinite(normalizedOdds) || normalizedOdds <= 1) {
+    throw createError('Odds invalides', 400);
+  }
+
+  const rows = await listPendingBetsForDebateAsAdmin(debateId);
+  if (!rows.length) {
+    return { debateId: String(debateId), settledCount: 0, totalGain: 0, totalLoss: 0, winners: 0 };
+  }
+
+  const creditByUser = new Map();
+  const winTransactions = [];
+  let settledCount = 0;
+  let totalGain = 0;
+  let totalLoss = 0;
+  let winners = 0;
+  const settledAt = new Date().toISOString();
+
+  for (const bet of rows) {
+    const amount = roundCurrency(bet.amt || 0);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    const won = bet.side === winnerSide;
+    const payout = won ? roundCurrency(amount * normalizedOdds) : roundCurrency(-amount);
+
+    await patchBetAsAdmin(bet.id, {
+      status: won ? 'won' : 'lost',
+      payout,
+      settled_at: settledAt,
+    });
+
+    if (won) {
+      winners += 1;
+      totalGain += payout;
+      creditByUser.set(
+        bet.user_id,
+        roundCurrency((creditByUser.get(bet.user_id) || 0) + payout)
+      );
+      winTransactions.push({
+        user_id: bet.user_id,
+        type: 'win',
+        amount: payout,
+        debate_id: String(debateId),
+        metadata: {
+          source: 'prediction_auto_settlement',
+          winnerSide,
+          odds: normalizedOdds,
+          settledAt,
+          reason: meta.reason || 'validated_prediction',
+        },
+      });
+    } else {
+      totalLoss += amount;
+    }
+
+    settledCount += 1;
+  }
+
+  for (const [userId, creditAmount] of creditByUser.entries()) {
+    if (!creditAmount) continue;
+    const profile = await getProfileBalanceAsAdmin(userId);
+    await patchProfileBalanceAsAdmin(userId, profile.balance + creditAmount);
+  }
+
+  for (const row of winTransactions) {
+    await insertTokenTransactionAsAdmin(row);
+  }
+
+  return {
+    debateId: String(debateId),
+    settledCount,
+    totalGain: roundCurrency(totalGain),
+    totalLoss: roundCurrency(totalLoss),
+    winners,
+  };
+}
+
+async function refundDebateBetsAsAdmin(debateId, meta = {}) {
+  if (!debateId) throw createError('debateId requis', 400);
+  const rows = await listPendingBetsForDebateAsAdmin(debateId);
+  if (!rows.length) {
+    return { debateId: String(debateId), refundedCount: 0, totalRefunded: 0, users: 0 };
+  }
+
+  const refundByUser = new Map();
+  const refundTransactions = [];
+  let refundedCount = 0;
+  let totalRefunded = 0;
+  const refundedAt = new Date().toISOString();
+
+  for (const bet of rows) {
+    const amount = roundCurrency(bet.amt || 0);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+
+    try {
+      await patchBetAsAdmin(bet.id, {
+        status: 'refunded',
+        payout: amount,
+        settled_at: refundedAt,
+      });
+    } catch (error) {
+      await deleteBetAsAdmin(bet.id);
+    }
+
+    refundByUser.set(
+      bet.user_id,
+      roundCurrency((refundByUser.get(bet.user_id) || 0) + amount)
+    );
+    totalRefunded += amount;
+    refundedCount += 1;
+
+    refundTransactions.push({
+      user_id: bet.user_id,
+      type: 'refund',
+      amount,
+      debate_id: String(debateId),
+      metadata: {
+        source: 'prediction_auto_refund',
+        refundedAt,
+        reason: meta.reason || 'prediction_cancelled',
+      },
+    });
+  }
+
+  for (const [userId, refundAmount] of refundByUser.entries()) {
+    if (!refundAmount) continue;
+    const profile = await getProfileBalanceAsAdmin(userId);
+    await patchProfileBalanceAsAdmin(userId, profile.balance + refundAmount);
+  }
+
+  for (const row of refundTransactions) {
+    await insertTokenTransactionAsAdmin(row);
+  }
+
+  return {
+    debateId: String(debateId),
+    refundedCount,
+    totalRefunded: roundCurrency(totalRefunded),
+    users: refundByUser.size,
+  };
+}
+
+async function checkDuplicateGiftOrder(userId, idempotencyKey) {
+  if (!idempotencyKey) return null;
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const res = await fetch(
+    new URL(
+      `/rest/v1/gift_card_orders?user_id=eq.${userId}&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&select=id,status&limit=1`,
+      url
+    ),
+    { headers }
+  );
+  if (!res.ok) return null;
+  const rows = await res.json().catch(() => []);
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+async function createGiftOrder({
+  userId,
+  email,
+  brand,
+  valueEur,
+  pointsCost,
+  idempotencyKey,
+  status = 'pending_review',
+  provider = 'manual_admin',
+  statusHistory,
+}) {
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const now = new Date().toISOString();
+  const res = await fetch(new URL('/rest/v1/gift_card_orders', url), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      user_id:          userId,
+      email,
+      gift_card_brand:  brand,
+      gift_card_value:  valueEur,
+      points_cost:      pointsCost,
+      status,
+      idempotency_key:  idempotencyKey || null,
+      provider,
+      status_history:   Array.isArray(statusHistory) ? statusHistory : [{ status, at: now, source: 'user_request' }],
+      created_at:       now,
+      updated_at:       now,
+    }),
+  });
+  const rows = await res.json().catch(() => []);
+  if (!res.ok) {
+    const msg = Array.isArray(rows) ? rows[0]?.message : rows?.message;
+    throw createError(`Erreur création commande: ${msg || res.status}`, 502);
+  }
+  return Array.isArray(rows) ? rows[0] : rows;
+}
+
+async function getGiftOrderById(orderId) {
+  if (!orderId) throw createError('orderId requis', 400);
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const res = await fetch(
+    new URL(`/rest/v1/gift_card_orders?id=eq.${orderId}&select=*&limit=1`, url),
+    { headers }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw createError(`Erreur lecture commande cadeau: ${res.status} ${text}`, 502);
+  }
+  const rows = await res.json().catch(() => []);
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function listGiftOrders({ limit = 50, status } = {}) {
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const params = new URLSearchParams();
+  params.set('select', '*');
+  params.set('order', 'created_at.desc');
+  params.set('limit', String(Math.min(200, Math.max(1, Number(limit) || 50))));
+  if (status) params.set('status', `eq.${status}`);
+
+  const res = await fetch(new URL(`/rest/v1/gift_card_orders?${params.toString()}`, url), { headers });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw createError(`Erreur liste commandes cadeau: ${res.status} ${text}`, 502);
+  }
+  const rows = await res.json().catch(() => []);
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function findOpenGiftOrder(userId, brand, valueEur) {
+  if (!userId || !brand || !valueEur) return null;
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const res = await fetch(
+    new URL(
+      `/rest/v1/gift_card_orders?user_id=eq.${userId}&gift_card_brand=eq.${brand}&gift_card_value=eq.${Number(valueEur)}&status=in.(pending_review,points_reserved,gift_ready)&select=id,status,created_at&order=created_at.desc&limit=1`,
+      url
+    ),
+    { headers }
+  );
+  if (!res.ok) return null;
+  const rows = await res.json().catch(() => []);
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+async function updateGiftOrder(orderId, updates) {
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+  const patch = { ...updates, updated_at: new Date().toISOString() };
+  const res = await fetch(new URL(`/rest/v1/gift_card_orders?id=eq.${orderId}`, url), {
+    method: 'PATCH',
+    headers: { ...headers, Prefer: 'return=representation' },
+    body: JSON.stringify(patch),
+  });
+  const rows = await res.json().catch(() => []);
+  if (!res.ok) {
+    const msg = Array.isArray(rows) ? rows[0]?.message : rows?.message;
+    throw createError(`Erreur mise Ã  jour commande cadeau: ${msg || res.status}`, 502);
+  }
+  return Array.isArray(rows) ? rows[0] || null : rows;
+}
+
+function buildGiftStatusHistoryEntry(status, meta = {}) {
+  return {
+    status,
+    at: new Date().toISOString(),
+    ...meta,
+  };
+}
+
+async function transitionGiftOrder(orderId, {
+  status,
+  adminId,
+  adminNote,
+  giftCode,
+  errorMessage,
+  extra = {},
+  historyMeta = {},
+} = {}) {
+  if (!orderId || !status) throw createError('orderId + status requis', 400);
+
+  const order = await getGiftOrderById(orderId);
+  if (!order) throw createError('Commande cadeau introuvable', 404);
+
+  const statusHistory = Array.isArray(order.status_history) ? order.status_history.slice() : [];
+  statusHistory.push(buildGiftStatusHistoryEntry(status, {
+    adminId: adminId || null,
+    note: adminNote || null,
+    error: errorMessage || null,
+    ...historyMeta,
+  }));
+
+  const patch = {
+    ...extra,
+    status,
+    status_history: statusHistory,
+  };
+
+  if (adminId) patch.processed_by_admin_id = adminId;
+  if (adminNote !== undefined) patch.admin_note = adminNote || null;
+  if (giftCode !== undefined) patch.gift_code = giftCode || null;
+  if (errorMessage !== undefined) patch.error_message = errorMessage || null;
+
+  const now = new Date().toISOString();
+  if (status === 'points_reserved') patch.reserved_at = now;
+  if (status === 'gift_ready') patch.ready_at = now;
+  if (status === 'gift_sent') patch.sent_at = now;
+  if (status === 'points_refunded') patch.refunded_at = now;
+
+  return updateGiftOrder(orderId, patch);
+}
+
+async function refundGiftPoints(userId, orderId, pointsCost, meta = {}) {
+  const { url } = getConfig();
+  const headers = getServiceHeaders();
+
+  // Fetch current balance
+  const profile = await getProfileBalance(userId);
+
+  const newBalance = Number(profile.balance || 0) + Number(pointsCost || 0);
+
+  await fetch(new URL(`/rest/v1/profiles?id=eq.${userId}`, url), {
+    method: 'PATCH',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify({ balance: newBalance }),
+  });
+
+  // Log refund transaction
+  try {
+    await fetch(new URL('/rest/v1/token_transactions', url), {
+      method: 'POST',
+      headers: { ...headers, Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        user_id: userId,
+        type:    'gift_refund',
+        amount:  Number(pointsCost || 0),
+        metadata: {
+          orderId,
+          reason: meta.reason || 'gift_unavailable',
+          brand: meta.brand || null,
+          valueEur: meta.valueEur || null,
+        },
+      }),
+    });
+  } catch (_) { /* non-fatal */ }
+
+  console.log(`[gifts] refunded ${pointsCost} pts to ${userId} (order=${orderId}) → balance=${newBalance}`);
+  return { userId, refunded: pointsCost, newBalance };
+}
+
 module.exports = {
   autoSettleDebates,
   bootstrapState,
+  buildGiftStatusHistoryEntry,
   cancelParticipantBet,
+  checkDuplicateGiftOrder,
+  createGiftOrder,
   createError,
   creditBalanceAsAdmin,
   depositBalance,
+  findOpenGiftOrder,
   forfeitParticipantBet,
+  getGiftOrderById,
+  getProfileBalance,
   getPublicConfig,
+  getRuntimeConfigStatus,
   isAdminUser,
+  listGiftOrders,
   listTokenTransactions,
   placeBet,
+  redeemGiftCard,
+  refundDebateBetsAsAdmin,
+  refundGiftPoints,
+  settleDebateBetsAsAdmin,
+  transitionGiftOrder,
   settleDebateBets,
+  updateGiftOrder,
   updateProfile,
   verifyAccessToken,
 };

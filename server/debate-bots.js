@@ -260,7 +260,8 @@ function sendBotMessage(debateId, bot, io, pushMsg) {
 }
 
 // Start bots for a debate. Target: 25-30 bots per debate.
-function startBotsForDebate(debateId, debate, io, pushMsg) {
+// onBotBet(debateId, side, amount) — optional callback that updates the real pool.
+function startBotsForDebate(debateId, debate, io, pushMsg, onBotBet) {
   var id = String(debateId);
   if (_botTimers.has(id)) return;
 
@@ -272,6 +273,7 @@ function startBotsForDebate(debateId, debate, io, pushMsg) {
   var timers = [];
   _botTimers.set(id, timers);
 
+  // ── Chat messages ─────────────────────────────────────────────
   assigned.forEach(function (bot, i) {
     // Stagger initial messages: first bot at 8s, spread out over ~4 minutes
     var initialDelay = 8000 + i * (6000 + Math.floor(Math.random() * 8000));
@@ -297,7 +299,38 @@ function startBotsForDebate(debateId, debate, io, pushMsg) {
     timers.push(initTimeout);
   });
 
-  console.log('[debate-bots] started ' + assigned.length + ' bots for debate ' + id);
+  // ── Market activity: bots place real bets to move the pool ────
+  // First bet arrives 20-60 s after debate opens, then every 90-240 s.
+  if (typeof onBotBet === 'function') {
+    (function scheduleBotBet(delay) {
+      var t = setTimeout(function () {
+        if (!_botTimers.has(id)) return;
+
+        // Pick a random bot and determine which side it bets on
+        var betBot = assigned[Math.floor(Math.random() * assigned.length)];
+        var side;
+        if (betBot.side) {
+          // 70 % on the bot's natural side, 30 % on the opposite
+          side = Math.random() < 0.70 ? betBot.side : (betBot.side === 'yes' ? 'no' : 'yes');
+        } else {
+          side = Math.random() < 0.5 ? 'yes' : 'no';
+        }
+
+        // Realistic bet amounts: 30-250 pts, occasionally larger (5 % chance of 500-1500 pts)
+        var amount = Math.random() < 0.05
+          ? 500 + Math.floor(Math.random() * 1001)
+          : 30  + Math.floor(Math.random() * 221);
+
+        try { onBotBet(id, side, amount); } catch (e) { /* ignore */ }
+
+        // Schedule the next bet: 90-240 s
+        scheduleBotBet(90000 + Math.floor(Math.random() * 150001));
+      }, delay);
+      timers.push(t);
+    })(20000 + Math.floor(Math.random() * 40001)); // first bet: 20-60 s
+  }
+
+  console.log('[debate-bots] started ' + assigned.length + ' bots for debate ' + id + (onBotBet ? ' (market-active)' : ''));
 }
 
 function stopBotsForDebate(debateId) {

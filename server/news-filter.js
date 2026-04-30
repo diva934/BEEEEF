@@ -141,6 +141,9 @@ function ageHours(publishedAt) {
 function hasUsablePreviewImage(value) {
   const raw = String(value || '').trim();
   if (!raw) return false;
+  if (/^data:image\/[a-zA-Z0-9.+-]+;base64,/i.test(raw) || /^data:image\/svg\+xml[,;]/i.test(raw)) {
+    return true;
+  }
   try {
     const url = new URL(raw);
     return url.protocol === 'http:' || url.protocol === 'https:';

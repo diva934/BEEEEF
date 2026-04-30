@@ -43,7 +43,7 @@ function sanitizeBet(bet) {
     noLabel: String(bet.noLabel || 'NON'),
     kind: bet.kind === 'participant' ? 'participant' : 'market',
     amt: amount,
-    status: ['pending', 'won', 'lost'].includes(bet.status) ? bet.status : 'pending',
+    status: ['pending', 'won', 'lost', 'refunded'].includes(bet.status) ? bet.status : 'pending',
     payout: roundCurrency(bet.payout || 0),
     ts: bet.ts || nowIso(),
     settledAt: bet.settledAt || null,

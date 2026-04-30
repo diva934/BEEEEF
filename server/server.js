@@ -249,9 +249,11 @@ function emitPredictionUpdate(debateId, point = null) {
   const latestPoint = point || getLatestPredictionHistoryPoint(debateId);
   if (!latestPoint) return;
 
+  const yesProbability = Number(latestPoint.yesProbability || 0);
   io.to(String(debateId)).emit('prediction:update', {
     predictionId: String(debateId),
-    yesProbability: Number(latestPoint.yesProbability || 0),
+    yesProbability,
+    noProbability: Math.round((100 - yesProbability) * 100) / 100,
     volume: Number(latestPoint.volume || 0),
     timestamp: Number(latestPoint.timestamp || Date.now()),
   });
@@ -1306,7 +1308,16 @@ function spawnBotsForNewContextDebates() {
 
     contextDebates.forEach(debate => {
       _debatesWithBots.add(String(debate.id));
-      startBotsForDebate(debate.id, debate, io, pushDebateChatMessage);
+      startBotsForDebate(debate.id, debate, io, pushDebateChatMessage, (debateId, side, amount) => {
+        try {
+          const updated = applyBetToDebate(debateId, side, amount);
+          if (updated) {
+            emitPredictionUpdate(debateId);
+          }
+        } catch (e) {
+          console.warn('[bots] onBotBet error:', e.message);
+        }
+      });
     });
   } catch (e) {
     console.warn('[bots] spawnBotsForNewContextDebates error:', e.message);
