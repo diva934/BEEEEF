@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BEEEF — Live Debate Arenas</title>
+<title>BEEEF — Débats & prédictions média</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Inter+Tight:ital,wght@0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -186,12 +186,18 @@ body::before{
 .admin-btn:hover{background:rgba(191,90,242,0.2);border-color:rgba(191,90,242,0.5)}
 .gains-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;font-weight:700;letter-spacing:0.08em;background:rgba(255,74,14,0.1);border:1px solid rgba(255,74,14,0.3);color:var(--fire);cursor:pointer;transition:all 0.18s}
 .gains-btn:hover{background:rgba(255,74,14,0.2);border-color:rgba(255,74,14,0.55)}
-.gains-card{padding:14px 12px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
+.gains-btn.header-reminder-btn{justify-content:center;min-width:82px}
+.gains-card{padding:18px 14px;background:var(--ink);border:1.5px solid var(--line);border-radius:var(--rs);cursor:pointer;transition:all 0.18s;text-align:center}
 .gains-card:hover{border-color:var(--fire);background:rgba(255,74,14,0.05);transform:translateY(-2px)}
-.gains-card-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:22px}
-.gains-card-brand{font-family:var(--fn-disp);font-size:12px;font-weight:700;color:var(--txt);margin-bottom:4px}
-.gains-card-value{font-family:var(--fn-disp);font-size:20px;font-weight:900;color:var(--txt);margin-bottom:2px}
-.gains-card-pts{font-family:var(--fn-mono);font-size:10px;color:var(--fire)}
+.gains-card-logo{width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;overflow:hidden}
+.gains-card-logo img{width:100%;height:100%;object-fit:contain;padding:10px;display:block}
+.gains-card-brand{font-family:var(--fn-disp);font-size:14px;font-weight:700;color:var(--txt);margin-bottom:6px}
+.gains-card-value{font-family:var(--fn-disp);font-size:26px;font-weight:900;color:var(--txt);margin-bottom:4px}
+.gains-card-pts{font-family:var(--fn-mono);font-size:11px;color:var(--fire)}
+.gains-price-row{display:flex;gap:6px;margin-top:10px}
+.gains-price-btn{flex:1;padding:8px 4px;background:var(--s2);border:1px solid var(--line);border-radius:var(--rs);font-family:var(--fn-disp);font-size:13px;font-weight:700;color:var(--txt);cursor:pointer;transition:all 0.18s;display:flex;flex-direction:column;align-items:center;gap:2px}
+.gains-price-btn span{font-family:var(--fn-mono);font-size:9px;color:var(--fire);font-weight:400}
+.gains-price-btn:hover{border-color:var(--fire);background:rgba(255,74,14,0.06);color:var(--fire)}
 /* Admin modal */
 .admin-modal-overlay{
   position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.45);
@@ -1026,11 +1032,63 @@ body::before{
 #live-view{background:#f5f5f7;color:#111827;min-height:100vh}
 .live-page-header{
   display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;
-  border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:30
+  border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:30;
 }
 .live-page-title{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .live-page-meta{display:flex;align-items:center;gap:8px}
-.live-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;padding:18px;max-width:1440px;margin:0 auto;height:auto;overflow:visible}
+.live-probability-chart-wrap{
+  max-width:1440px;margin:20px auto 0;padding:0 18px;
+}
+.live-probability-chart-card{
+  background:#fff;border:1px solid #e5e5e5;border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.04);
+  padding:16px;
+}
+.live-probability-chart-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;
+}
+.live-probability-chart-copy{display:flex;flex-direction:column;gap:6px;min-width:0}
+.live-probability-chart-title{
+  font-family:var(--fn-mono);font-size:10px;letter-spacing:1.2px;color:var(--txt3);text-transform:uppercase;
+}
+.live-probability-chart-value-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.live-probability-chart-value{
+  font-family:var(--fn-disp);font-size:34px;font-weight:900;line-height:1;letter-spacing:-0.04em;color:var(--txt)
+}
+.live-probability-chart-delta{
+  font-family:var(--fn-body);font-size:14px;font-weight:800;color:var(--txt2)
+}
+.live-probability-chart-delta.is-up{color:var(--elec)}
+.live-probability-chart-delta.is-down{color:var(--blood)}
+.live-probability-chart-note{
+  font-size:12px;font-weight:600;color:var(--txt2);padding-top:3px
+}
+.live-probability-chart-canvas-wrap{
+  position:relative;height:260px;
+}
+.live-probability-chart-surface{
+  width:100%;height:100%;
+}
+.live-probability-chart-empty{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:var(--txt3);pointer-events:none
+}
+.live-probability-chart-footer{
+  margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap
+}
+.live-probability-chart-ranges{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap
+}
+.live-probability-range-btn{
+  appearance:none;-webkit-appearance:none;border:none;background:transparent;cursor:pointer;
+  padding:0 0 4px;font-family:var(--fn-mono);font-size:11px;font-weight:700;letter-spacing:1.2px;
+  text-transform:uppercase;color:var(--txt3);border-bottom:2px solid transparent;transition:color .18s ease,border-color .18s ease
+}
+.live-probability-range-btn:hover{color:var(--txt2)}
+.live-probability-range-btn.is-active{color:var(--txt);border-bottom-color:#2563eb}
+.live-probability-chart-volume{
+  font-family:var(--fn-body);font-size:13px;font-weight:600;color:var(--txt2)
+}
+.live-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;padding:18px 18px 136px;max-width:1440px;margin:0 auto;height:auto;overflow:visible}
 .live-main-column{display:flex;flex-direction:column;gap:18px;min-width:0}
 .live-video-card,.live-info-card,.betting-panel,.live-right{background:#fff;border:1px solid #e5e5e5;border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .live-video-card{overflow:hidden}
@@ -1048,6 +1106,45 @@ body::before{
 .video-fallback-link{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:#f97316;text-decoration:none}
 .video-fallback-link:hover{text-decoration:underline}
 .live-info-card{padding:14px}
+.live-data-card{order:1;display:flex;flex-direction:column;gap:14px;padding:16px}
+.live-context-card{order:2}
+.ended-banner{order:3}
+.betting-panel{order:4}
+.live-video-card{order:5}
+.live-video-card[hidden]{display:none!important}
+.legacy-bet-controls{display:none!important}
+.live-data-top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.live-data-main{display:flex;flex-direction:column;gap:6px;min-width:0}
+.live-data-caption,.live-data-side-label,.live-data-metric span{
+  font-family:var(--fn-mono);font-size:10px;letter-spacing:1.2px;color:var(--txt3);text-transform:uppercase
+}
+.live-data-value-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.live-data-value{font-family:var(--fn-disp);font-size:44px;font-weight:900;line-height:1;letter-spacing:-0.04em;color:var(--txt)}
+.live-data-change,.live-data-side-value{font-family:var(--fn-body);font-size:14px;font-weight:700;color:var(--txt)}
+.live-chart-card{border:1px solid #e5e7eb;border-radius:14px;background:rgba(245,245,247,.8);overflow:hidden;padding:8px 10px 0}
+.live-chart-svg{display:block;width:100%;height:220px}
+.live-data-foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.live-data-metric{border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:10px 12px;background:rgba(255,255,255,0.78);display:flex;flex-direction:column;gap:4px}
+.live-data-metric strong{font-family:var(--fn-disp);font-size:18px;font-weight:800;color:var(--txt)}
+.live-event-data{display:flex;flex-direction:column;gap:14px}
+.live-event-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.live-event-note{font-size:14px;line-height:1.5;color:var(--txt2)}
+.live-context-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.live-context-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.live-inline-badge,.live-inline-viewers{position:static}
+.live-inline-badge.is-ended{background:rgba(107,114,128,0.88)}
+.sticky-predict-bar{
+  position:sticky;bottom:0;z-index:26;background:#f5f5f7;
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid #e5e7eb
+}
+.sticky-predict-inner{
+  max-width:1440px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:14px;
+  box-shadow:0 1px 2px rgba(15,23,42,.04);padding:12px
+}
+.sticky-predict-inner .bet-input-row{margin-bottom:10px}
+.sticky-bet-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sticky-bet-btns .bet-btn{width:100%;min-height:54px}
 .live-info-title{font-size:20px;font-weight:800;line-height:1.25}
 .live-info-description{margin-top:8px;color:#4b5563;font-size:14px;line-height:1.5}
 .live-info-link{display:inline-block;margin-top:10px;font-weight:700;font-size:13px;color:#f97316;text-decoration:none}
@@ -1067,9 +1164,13 @@ body::before{
 .video-container.controls-visible .live-progress-wrap{opacity:1;pointer-events:auto;transform:translateY(0)}
 
 @media(max-width:980px){
-  .live-layout{grid-template-columns:1fr;padding:10px;gap:10px}
+  .live-probability-chart-wrap{padding:0 10px}
+  .live-layout{grid-template-columns:1fr;padding:10px 10px 120px;gap:10px}
   .live-right{position:static;height:420px;width:100%}
   .live-page-header{padding:10px}
+  .live-data-value{font-size:36px}
+  .live-data-foot,.live-event-grid,.sticky-bet-btns{grid-template-columns:1fr}
+  .sticky-predict-bar{padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px))}
 }
 
 /* ══════════════════════════════════════════════════
@@ -1097,6 +1198,12 @@ body::before{
   display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--txt2);transition:all 0.18s
 }
 .modal-close:hover{background:var(--s3);color:var(--txt)}
+.admin-close{
+  width:30px;height:30px;border-radius:var(--rs);background:var(--s2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--txt2);transition:all 0.18s;
+  padding:0;appearance:none;-webkit-appearance:none
+}
+.admin-close:hover{background:var(--s3);color:var(--txt)}
 
 /* ── FORMS ── */
 .form-group{margin-bottom:16px}
@@ -3381,6 +3488,7 @@ body{
   #live-view{background:#F5F5F7 !important;}
 }
 </style>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/liquid-web/liquid-core.min.js"></script>
 </head>
@@ -3427,59 +3535,74 @@ body{
 <!-- GAINS PAGE -->
 <div class="admin-modal-overlay" id="gainsOverlay" onclick="if(event.target===this)closeGains()">
   <div class="admin-modal" style="max-width:480px">
-    <div class="admin-modal-header">
-      <div class="admin-modal-title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        Mes Gains
-      </div>
+    <div class="modal-header">
+      <div class="modal-title">Mes Gains</div>
       <button class="admin-close" onclick="closeGains()">✕</button>
     </div>
-    <div style="padding:0 0 12px;border-bottom:1px solid var(--line);margin-bottom:16px">
-      <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Solde disponible</div>
-      <div style="font-family:var(--fn-disp);font-size:28px;font-weight:900;color:var(--fire)" id="gainsBalance">0 pts</div>
-      <div style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);margin-top:2px">Convertissez vos points en vraies récompenses</div>
+    <div style="padding:0 0 16px;border-bottom:1px solid var(--line);margin-bottom:18px;text-align:center">
+      <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Solde disponible</div>
+      <div style="font-family:var(--fn-disp);font-size:36px;font-weight:900;color:var(--fire)" id="gainsBalance">0 pts</div>
+      <div style="font-family:var(--fn-mono);font-size:11px;color:var(--txt3);margin-top:4px">Convertis tes points en vraies récompenses</div>
     </div>
-    <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Cartes cadeaux disponibles</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="gains-card" onclick="redeemGift('apple','10')">
-        <div class="gains-card-logo" style="background:#000;color:#fff">&#63743;</div>
+    <div style="font-family:var(--fn-mono);font-size:10px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">Cartes cadeaux</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="gains-card">
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/apple.svg" width="44" height="44" alt="Apple"></div>
         <div class="gains-card-brand">Apple</div>
-        <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
+        <div class="gains-price-row">
+          <button class="gains-price-btn" onclick="redeemGift('pack_apple_10')">10€<span>7k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_apple_20')">20€<span>16k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_apple_50')">50€<span>45k pts</span></button>
+        </div>
       </div>
-      <div class="gains-card" onclick="redeemGift('amazon','10')">
-        <div class="gains-card-logo" style="background:#FF9900;color:#fff;font-weight:900;font-size:15px">a</div>
+      <div class="gains-card">
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/amazon.png" width="44" height="44" alt="Amazon"></div>
         <div class="gains-card-brand">Amazon</div>
-        <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
+        <div class="gains-price-row">
+          <button class="gains-price-btn" onclick="redeemGift('pack_amazon_10')">10€<span>7k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_amazon_20')">20€<span>16k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_amazon_50')">50€<span>45k pts</span></button>
+        </div>
       </div>
-      <div class="gains-card" onclick="redeemGift('spotify','10')">
-        <div class="gains-card-logo" style="background:#1DB954;color:#fff;font-size:18px">♪</div>
+      <div class="gains-card">
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/spotify.png" width="44" height="44" alt="Spotify"></div>
         <div class="gains-card-brand">Spotify</div>
-        <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
+        <div class="gains-price-row">
+          <button class="gains-price-btn" onclick="redeemGift('pack_spotify_10')">10€<span>7k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_spotify_20')">20€<span>16k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_spotify_50')">50€<span>45k pts</span></button>
+        </div>
       </div>
-      <div class="gains-card" onclick="redeemGift('epic','10')">
-        <div class="gains-card-logo" style="background:#2a2a2a;color:#fff;font-family:var(--fn-disp);font-size:11px;font-weight:900">EPIC</div>
+      <div class="gains-card">
+        <div class="gains-card-logo" style="background:#fff;border:1.5px solid #eee"><img src="assets/brand-logos/epic-games.png" width="44" height="44" alt="Epic Games"></div>
         <div class="gains-card-brand">Epic Games</div>
-        <div class="gains-card-value">10 €</div>
-        <div class="gains-card-pts">8 000 pts</div>
+        <div class="gains-price-row">
+          <button class="gains-price-btn" onclick="redeemGift('pack_epic_10')">10€<span>7k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_epic_20')">20€<span>16k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_epic_50')">50€<span>45k pts</span></button>
+        </div>
       </div>
-      <div class="gains-card" onclick="redeemGift('netflix','15')">
-        <div class="gains-card-logo" style="background:#E50914;color:#fff;font-family:var(--fn-disp);font-size:13px;font-weight:900">N</div>
+      <div class="gains-card">
+        <div class="gains-card-logo" style="background:#000"><img src="assets/brand-logos/netflix.png" width="44" height="44" alt="Netflix"></div>
         <div class="gains-card-brand">Netflix</div>
-        <div class="gains-card-value">15 €</div>
-        <div class="gains-card-pts">12 000 pts</div>
+        <div class="gains-price-row">
+          <button class="gains-price-btn" onclick="redeemGift('pack_netflix_10')">10€<span>7k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_netflix_20')">20€<span>16k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_netflix_50')">50€<span>45k pts</span></button>
+        </div>
       </div>
-      <div class="gains-card" onclick="redeemGift('playstation','20')">
-        <div class="gains-card-logo" style="background:#003087;color:#fff;font-size:14px;font-weight:900">PS</div>
+      <div class="gains-card">
+        <div class="gains-card-logo" style="background:#003087"><img src="assets/brand-logos/playstation.png" width="44" height="44" alt="PlayStation"></div>
         <div class="gains-card-brand">PlayStation</div>
-        <div class="gains-card-value">20 €</div>
-        <div class="gains-card-pts">16 000 pts</div>
+        <div class="gains-price-row">
+          <button class="gains-price-btn" onclick="redeemGift('pack_playstation_10')">10€<span>7k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_playstation_20')">20€<span>16k pts</span></button>
+          <button class="gains-price-btn" onclick="redeemGift('pack_playstation_50')">50€<span>45k pts</span></button>
+        </div>
       </div>
     </div>
-    <div style="margin-top:16px;padding:12px;background:rgba(255,74,14,0.06);border:1px solid rgba(255,74,14,0.15);border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;color:var(--txt3);text-align:center;line-height:1.6">
-      Les récompenses arrivent bientôt — inscrivez-vous à la liste d'attente pour être notifié en premier.
+    <div style="margin-top:18px;padding:12px;background:rgba(255,74,14,0.05);border:1px solid rgba(255,74,14,0.15);border-radius:var(--rs);font-family:var(--fn-mono);font-size:10px;color:var(--txt3);text-align:center;line-height:1.6">
+      Le code te sera envoyé par email sous 24h après confirmation
     </div>
   </div>
 </div>
@@ -3528,6 +3651,16 @@ body{
       <div id="adminCreditMsg" style="display:none"></div>
     </div>
 
+    <div class="admin-section">
+      <div class="admin-section-title">Cartes cadeaux â€” traitement manuel</div>
+      <div style="overflow-x:auto">
+        <table class="admin-debates-table">
+          <thead><tr><th>Utilisateur</th><th>Carte</th><th>Statut</th><th>Code / note</th><th>Actions</th></tr></thead>
+          <tbody id="adminGiftOrdersBody"><tr><td colspan="5" style="color:var(--txt3);text-align:center;padding:20px">Chargementâ€¦</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -3549,9 +3682,9 @@ body{
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
       ADMIN
     </button>
-    <button class="gains-btn" onclick="openGains()" aria-label="Mes gains">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-      Gains
+    <button class="top-up-btn header-reminder-btn" onclick="openGains()" aria-label="Mes gains">
+      <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
+      <span class="top-up-label-full">Gains</span><span class="top-up-label-compact">Gains</span>
     </button>
     <button class="top-up-btn header-reminder-btn" onclick="openFunds()" aria-label="Acheter des points">
       <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-wallet"/></svg>
@@ -3580,7 +3713,6 @@ body{
           <svg class="ic" width="13" height="13" viewBox="0 0 24 24"><use href="#ic-flame"/></svg>
           TOP 5 TENDANCES
         </div>
-        <div class="tc-live-badge" id="tcLiveBadge">5 LIVE</div>
       </div>
       <div class="tc-scroll" id="tcScroll"><!-- injected by JS --></div>
     </section>
@@ -3667,7 +3799,7 @@ body{
       <div id="mpBetList"><div class="tab-empty-state">
         <div class="tab-empty-icon">🎯</div>
         <div class="tab-empty-title">Aucune prédiction pour l'instant</div>
-        <div class="tab-empty-sub">Entrez dans un débat live et prédisez le camp qui argumente le mieux.</div>
+        <div class="tab-empty-sub">Entrez dans un débat média et prédisez le camp qui argumente le mieux.</div>
       </div></div>
     </div>
   </div>
@@ -3691,35 +3823,131 @@ body{
       <div class="live-page-title" id="liveTopTitle"></div>
     </div>
 
-    <div class="live-layout">
-      <section class="live-main-column">
-        <div class="live-video-card">
-          <div class="video-container">
-            <div class="context-video-shell no-video" id="contextVideoShell">
-              <video id="contextVideo" class="context-video" muted playsinline preload="metadata"></video>
-              <iframe id="contextVideoFrame" class="context-video-frame" title="Live debate stream" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-              <div class="context-video-fallback" id="contextVideoFallback"></div>
-              <div class="video-fallback-card" id="videoFallbackCard">
-                <div class="video-fallback-label" id="videoFallbackSource">LIVE SOURCE</div>
-                <div class="video-fallback-title">Video unavailable</div>
-                <a id="videoFallbackLink" class="video-fallback-link" href="#" target="_blank" rel="noopener noreferrer">Open source</a>
-              </div>
-            </div>
-            <canvas id="liveCanvas"></canvas>
-            <div class="video-live-badge"><div class="live-dot"></div>LIVE</div>
-            <div class="video-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="videoViewers">0</span></div>
-            <div class="live-progress-wrap" id="liveProgressWrap">
-              <span class="live-progress-time" id="liveProgressCurrent">00:00</span>
-              <input type="range" id="liveProgressSlider" class="live-progress-slider" min="0" max="100" value="0" step="0.1" aria-label="Live progress">
-              <span class="live-progress-time" id="liveProgressTotal">00:00</span>
+    <section class="live-probability-chart-wrap" id="liveProbabilityChartWrap" hidden>
+      <div class="live-probability-chart-card">
+        <div class="live-probability-chart-head">
+          <div class="live-probability-chart-copy">
+            <div class="live-probability-chart-title">YES</div>
+            <div class="live-probability-chart-value-row">
+              <div class="live-probability-chart-value" id="liveProbabilityChartValue">50% chance</div>
+              <div class="live-probability-chart-delta" id="liveProbabilityChartDelta">0%</div>
             </div>
           </div>
+          <div class="live-probability-chart-note" id="liveProbabilityChartNote">Historique en direct</div>
         </div>
+        <div class="live-probability-chart-canvas-wrap">
+          <div class="live-probability-chart-surface" id="liveProbabilityChartSurface" aria-label="Graphique de probabilité YES"></div>
+          <div class="live-probability-chart-empty" id="liveProbabilityChartEmpty" hidden>Pas encore assez de données</div>
+        </div>
+        <div class="live-probability-chart-footer">
+          <div class="live-probability-chart-ranges" id="liveProbabilityChartRanges" role="tablist" aria-label="Période du graphique">
+            <button class="live-probability-range-btn is-active" type="button" data-range="1H">1H</button>
+            <button class="live-probability-range-btn" type="button" data-range="6H">6H</button>
+            <button class="live-probability-range-btn" type="button" data-range="1D">1D</button>
+            <button class="live-probability-range-btn" type="button" data-range="MAX">MAX</button>
+          </div>
+          <div class="live-probability-chart-volume" id="liveProbabilityChartVolume">Volume : 0 pts</div>
+        </div>
+      </div>
+    </section>
 
-        <article class="live-info-card">
+    <div class="live-layout">
+      <section class="live-main-column">
+        <section class="live-info-card live-data-card">
+          <div class="panel-title" id="liveDataLabel">Données live</div>
+
+          <div class="live-market-data" id="liveMarketData" hidden>
+            <div class="live-data-top">
+              <div class="live-data-main">
+                <div class="live-data-caption">Prix du contrat YES</div>
+                <div class="live-data-value-row">
+                  <div class="live-data-value" id="livePriceValue">50¢</div>
+                  <div class="live-data-change" id="livePriceChange">+0¢</div>
+                </div>
+              </div>
+              <div class="live-data-side">
+                <div class="live-data-side-label">Évolution</div>
+                <div class="live-data-side-value" id="livePriceTrend">Stable</div>
+              </div>
+            </div>
+
+            <div class="live-chart-card">
+              <svg class="live-chart-svg" id="liveChartSvg" viewBox="0 0 640 240" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="liveChartAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(48,209,88,0.24)"></stop>
+                    <stop offset="100%" stop-color="rgba(48,209,88,0.02)"></stop>
+                  </linearGradient>
+                </defs>
+                <path id="liveChartArea" fill="url(#liveChartAreaGradient)" d=""></path>
+                <path id="liveChartLine" fill="none" stroke="var(--elec)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d=""></path>
+              </svg>
+            </div>
+
+            <div class="live-data-foot">
+              <div class="live-data-metric">
+                <span>Prix NO</span>
+                <strong id="liveNoPrice">50¢</strong>
+              </div>
+              <div class="live-data-metric">
+                <span>Volume</span>
+                <strong id="liveDataVolume">0 pts</strong>
+              </div>
+              <div class="live-data-metric">
+                <span>Viewers</span>
+                <strong id="liveDataViewers">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="live-event-data" id="liveEventData">
+            <div class="live-data-top">
+              <div class="live-data-main">
+                <div class="live-data-caption" id="liveEventCaption">État du marché</div>
+                <div class="live-data-value-row">
+                  <div class="live-data-value" id="liveEventPrimary">—</div>
+                  <div class="live-data-change" id="liveEventTrend"></div>
+                </div>
+              </div>
+              <div class="live-data-side">
+                <div class="live-data-side-label">État</div>
+                <div class="live-data-side-value" id="liveEventState">LIVE</div>
+              </div>
+            </div>
+
+            <div class="live-event-grid">
+              <div class="live-bet-kpi">
+                <div class="live-bet-kpi-label">Volume</div>
+                <div class="live-bet-kpi-value" id="liveEventPool">0 pts</div>
+              </div>
+              <div class="live-bet-kpi">
+                <div class="live-bet-kpi-label">Odds YES</div>
+                <div class="live-bet-kpi-value" id="liveEventOddYes" style="color:var(--elec)">—</div>
+              </div>
+              <div class="live-bet-kpi">
+                <div class="live-bet-kpi-label">Odds NO</div>
+                <div class="live-bet-kpi-value" id="liveEventOddNo" style="color:var(--blood)">—</div>
+              </div>
+            </div>
+
+            <div class="live-event-note" id="liveEventInfo"></div>
+          </div>
+        </section>
+
+        <!-- canvas garde pour les animations de fond uniquement -->
+        <canvas id="liveCanvas" style="display:none"></canvas>
+
+        <article class="live-info-card live-context-card">
+          <div class="live-context-top">
+            <div class="live-context-status">
+              <div class="video-live-badge live-inline-badge" id="liveStatusBadge"><div class="live-dot"></div><span id="liveStatusText">LIVE</span></div>
+              <div class="live-countdown" id="liveCountdown">00:00</div>
+            </div>
+            <div class="video-viewers live-inline-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></div>
+          </div>
           <div class="live-info-title" id="liveTitle"></div>
-          <div class="live-info-description" id="liveInfoDescription">Live debate analysis and source context update in real time.</div>
-          <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Open source</a>
+          <div class="live-info-description" id="liveInfoDescription">Vidéo de contexte et source média liées au sujet du débat.</div>
+          <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Voir la source</a>
           <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()" style="display:none">PARTICIPATE</button>
         </article>
 
@@ -3727,7 +3955,7 @@ body{
           <h3>DEBATE ENDED</h3>
           <div class="winner-side" id="endedWinner"></div>
           <div id="endedPayoutInfo" style="font-size:13px;color:var(--elec);margin:6px 0;font-weight:700;font-family:var(--fn-disp);letter-spacing:0.5px"></div>
-          <p>AI moderation is finalizing the result.</p>
+          <p id="endedBannerSubtext">AI moderation is finalizing the result.</p>
           <div class="ai-thinking" id="aiThinkingIndicator">
             <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-ai"/></svg>&nbsp;AI MODERATION RUNNING
             <div class="ai-thinking-dots"><span></span><span></span><span></span></div>
@@ -3735,7 +3963,7 @@ body{
         </div>
 
         <section class="betting-panel">
-          <div class="panel-title">Prédictions live</div>
+          <div class="panel-title">Prédictions</div>
           <div class="big-bet-labels">
             <div class="big-label label-yes">
               <div class="big-label-name" id="sideLabelYes">YES</div>
@@ -3750,14 +3978,14 @@ body{
           </div>
           <div class="big-bet-bar"><div class="big-bet-fill" id="bigBarFill" style="width:50%"></div></div>
           <div class="pool-total">Total pool: <span id="poolTotal">0 pts</span></div>
-          <div class="bet-input-row">
+          <div class="bet-input-row legacy-bet-controls">
             <div class="bet-input-wrap">
-              <input class="bet-input" id="betAmount" type="number" value="50" min="1">
+              <input class="bet-input" id="betAmountLegacy" type="number" value="50" min="1">
             </div>
           </div>
-          <div class="bet-btns">
-            <button class="bet-btn bet-btn-yes" id="betYesBtn">Prédire YES</button>
-            <button class="bet-btn bet-btn-no" id="betNoBtn">Prédire NO</button>
+          <div class="bet-btns legacy-bet-controls">
+            <button class="bet-btn bet-btn-yes" id="betYesBtnLegacy">Prédire YES</button>
+            <button class="bet-btn bet-btn-no" id="betNoBtnLegacy">Prédire NO</button>
           </div>
           <div class="bets-feed">
             <div class="bets-feed-title">Prédictions récentes</div>
@@ -3768,8 +3996,8 @@ body{
 
       <aside class="live-chat-column live-right">
         <div class="chat-header">
-          LIVE CHAT
-          <div class="chat-live-indicator">LIVE</div>
+          CHAT
+          <div class="chat-live-indicator">MEDIA</div>
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-wrap">
@@ -3795,6 +4023,20 @@ body{
           </div>
         </div>
       </aside>
+    </div>
+
+    <div class="sticky-predict-bar">
+      <div class="sticky-predict-inner">
+        <div class="bet-input-row">
+          <div class="bet-input-wrap">
+            <input class="bet-input" id="betAmount" type="number" value="50" min="1">
+          </div>
+        </div>
+        <div class="bet-btns sticky-bet-btns">
+          <button class="bet-btn bet-btn-yes" id="betYesBtn">Prédire OUI</button>
+          <button class="bet-btn bet-btn-no" id="betNoBtn">Prédire NON</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -4014,7 +4256,7 @@ body{
     <button style="background:none;border:1px solid var(--line);border-radius:4px;padding:6px 14px;font-family:var(--fn-disp);font-size:11px;font-weight:800;color:var(--txt2);cursor:pointer;letter-spacing:0.5px;text-transform:uppercase" onclick="leaveParticipantRoom()">← QUITTER</button>
     <div class="proom-title" id="proomTitle">Débat en cours</div>
     <div class="proom-status">
-      <div class="live-badge-big"><div class="live-dot"></div>LIVE</div>
+      <div class="live-badge-big"><div class="live-dot"></div>EN COURS</div>
       <div class="live-countdown" id="proomMainTimer" style="font-size:13px">00:00</div>
     </div>
   </div>
@@ -4144,7 +4386,7 @@ let liveSocketDebateId = null;
 let activeFilter = 'all';
 let selectedPresetVal = 100;
 let debateTimers = {};
-const DEFAULT_BACKEND_URL = 'https://beeeef-production.up.railway.app';
+const DEFAULT_BACKEND_URL = 'https://beeeef.onrender.com';
 
 function trimTrailingSlash(value) {
   return String(value || '').replace(/\/+$/, '');
@@ -4319,6 +4561,7 @@ function setupFinish() {
   document.getElementById('setupOverlay').classList.remove('open');
   applyUserPrefs();
   renderGrid(activeFilter);
+  refreshDebatesFromServer();
   showToast('ok','Profil configuré','Langues enregistrées. Serveur détecté automatiquement');
 }
 function applyUserPrefs() {
@@ -4515,9 +4758,14 @@ let wasLiveSocketConnected = false;
 let liveProgressDragging = false;
 
 function seedFallbackDebate(seed, index) {
+  const preview = isRenderablePreviewImage(seed.photo)
+    ? seed.photo
+    : (buildContextualPreviewImage(seed) || generatedPreviewImage(seed));
   return {
     ...seed,
     id: String(seed.id),
+    photo: preview,
+    sourceImageUrl: preview,
     durationMs: getTimerDuration(seed.pool),
     openedAt: null,
     endsAt: null,
@@ -4564,12 +4812,20 @@ function upgradeMediaImageUrl(value){
     .replace('/ace/standard/320/','/ace/standard/976/')
     .replace('/ace/standard/480/','/ace/standard/976/');
 }
+function isRenderablePreviewImage(value){
+  const raw=String(value||'').trim();
+  return /^(https?:\/\/|data:image\/|blob:)/i.test(raw);
+}
 function generatedPreviewImage(debate){
   const colors=debate?.gradColors||catGradients[debate?.category]||['#ff6432','#0a84ff','#050506'];
-  const title=escapeHtml(String(debate?.title||'Live debate').slice(0,78));
+  const title=escapeHtml(String(debate?.title||'Media debate').slice(0,78));
   const category=escapeHtml(catLabel(debate?.category||'general'));
   const yes=escapeHtml(debate?.yesLabel||'YES');
   const no=escapeHtml(debate?.noLabel||'NO');
+  const seed=hashString(`${debate?.id||''}|${debate?.title||''}|${debate?.category||''}`);
+  const cx1=140+(seed%220), cy1=110+(seed%140), r1=120+(seed%90);
+  const cx2=980-(seed%180), cy2=520-(seed%110), r2=180+((seed>>3)%110);
+  const barW=240+((seed>>5)%220);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 624">
     <defs>
       <linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="${colors[0]}"/><stop offset=".52" stop-color="${colors[1]}"/><stop offset="1" stop-color="${colors[2]||'#050506'}"/></linearGradient>
@@ -4577,55 +4833,132 @@ function generatedPreviewImage(debate){
     </defs>
     <rect width="1200" height="624" fill="url(#g)"/>
     <rect width="1200" height="624" fill="url(#r)"/>
-    <circle cx="1030" cy="72" r="210" fill="#fff" opacity=".08"/>
-    <circle cx="104" cy="545" r="260" fill="#000" opacity=".18"/>
+    <circle cx="${cx1}" cy="${cy1}" r="${r1}" fill="#fff" opacity=".08"/>
+    <circle cx="${cx2}" cy="${cy2}" r="${r2}" fill="#000" opacity=".18"/>
+    <rect x="72" y="504" width="${barW}" height="12" rx="6" fill="rgba(255,255,255,.84)"/>
     <text x="72" y="92" fill="rgba(255,255,255,.78)" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="5">${category}</text>
     <text x="72" y="292" fill="#fff" font-family="Arial, sans-serif" font-size="70" font-weight="900">${title}</text>
     <text x="72" y="540" fill="rgba(255,255,255,.82)" font-family="Arial, sans-serif" font-size="32" font-weight="800">${yes} vs ${no}</text>
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
-const CONTEXTUAL_IMAGE_KEYWORDS={
-  politics:['politics','election','parliament'],
-  sports:['sports','stadium','football'],
-  crypto:['crypto','bitcoin','blockchain'],
-  geopolitics:['geopolitics','world','diplomacy'],
-  economy:['economy','finance','market'],
-  technology:['technology','ai','innovation'],
-  society:['society','people','city'],
-  general:['news','analysis','world']
+const CONTEXTUAL_IMAGE_LIBRARY=[
+  {
+    pattern:/\b(bitcoin|btc|crypto|ethereum|blockchain)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1621761191319-c6fb62004040?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(ai|artificial intelligence|openai|chatgpt|nvidia|robot|jobs)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(messi|football|soccer|stadium|premier league|ligue 1|uefa|champions league|arsenal|chelsea|real madrid|barcelona|psg|juventus|inter|benfica|porto)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(trump|election|vote|president|government|senate|congress|parliament|politics)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(china|war|geopolitics|diplomacy|nato|russia|ukraine|conflict|world)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1526778548025-fa2f459cd5ce?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(remote work|teletravail|office|bureau|school|schools|community|communities|society)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80'
+    ]
+  },
+  {
+    pattern:/\b(universal basic income|revenu universel|economy|finance|inflation|market|banks|regulation)\b/i,
+    images:[
+      'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80'
+    ]
+  }
+];
+const CATEGORY_CONTEXTUAL_IMAGES={
+  politics:[
+    'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80'
+  ],
+  sports:[
+    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1200&q=80'
+  ],
+  crypto:[
+    'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1621761191319-c6fb62004040?auto=format&fit=crop&w=1200&q=80'
+  ],
+  geopolitics:[
+    'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1526778548025-fa2f459cd5ce?auto=format&fit=crop&w=1200&q=80'
+  ],
+  economy:[
+    'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80'
+  ],
+  technology:[
+    'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80'
+  ],
+  society:[
+    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80'
+  ],
+  general:[
+    'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80'
+  ]
 };
 function hashString(value){
   return String(value||'').split('').reduce((acc,ch)=>((acc*31)+ch.charCodeAt(0))>>>0,7);
 }
-function normalizeKeyword(value){
-  return String(value||'')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g,' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0,2)
-    .join('-');
+function pickContextualImage(images,seed){
+  if(!Array.isArray(images)||!images.length)return'';
+  return images[Math.abs(Number(seed)||0)%images.length]||'';
 }
 function buildContextualPreviewImage(debate){
   const category=String(debate?.category||'general').toLowerCase();
-  const categoryKeywords=CONTEXTUAL_IMAGE_KEYWORDS[category]||CONTEXTUAL_IMAGE_KEYWORDS.general;
-  const titleKeywords=String(debate?.title||'')
-    .split(/\s+/)
-    .map(normalizeKeyword)
-    .filter(Boolean)
-    .slice(0,2);
-  const keywordList=[...new Set([...titleKeywords,...categoryKeywords])].slice(0,3);
-  if(!keywordList.length)return '';
-  const lock=hashString(`${debate?.id||''}|${debate?.title||''}|${category}`)%1000000;
-  return `https://loremflickr.com/1200/624/${keywordList.join(',')}?lock=${lock}`;
+  const seed=hashString(`${debate?.id||''}|${debate?.title||''}|${category}`);
+  const haystack=[
+    debate?.title,
+    debate?.sourceTitle,
+    debate?.sourceExcerpt,
+    debate?.sourceDescription,
+    category
+  ].filter(Boolean).join(' ');
+
+  for(const entry of CONTEXTUAL_IMAGE_LIBRARY){
+    if(entry.pattern.test(haystack)){
+      return pickContextualImage(entry.images,seed);
+    }
+  }
+
+  return pickContextualImage(CATEGORY_CONTEXTUAL_IMAGES[category]||CATEGORY_CONTEXTUAL_IMAGES.general,seed);
 }
 function getDebatePreviewImage(debate){
   const explicitImage=upgradeMediaImageUrl(debate?.sourceImageUrl||debate?.photo);
-  if(explicitImage)return explicitImage;
-  return buildContextualPreviewImage(debate) || generatedPreviewImage(debate);
+  if(isRenderablePreviewImage(explicitImage))return explicitImage;
+  const contextualImage=buildContextualPreviewImage(debate);
+  if(isRenderablePreviewImage(contextualImage))return contextualImage;
+  return generatedPreviewImage(debate);
 }
 function isDirectPlayableVideoUrl(value){
   const raw=String(value||'').trim();
@@ -4637,11 +4970,11 @@ function isYouTubeEmbedUrl(value){
 function safeDecode(value){
   try{return decodeURIComponent(String(value||''));}catch(_){return String(value||'');}
 }
-function buildBroadcastStreamQuery(debate){
+function buildContextMediaQuery(debate){
   const topic=String(debate?.sourceTitle||debate?.title||'').trim();
   const category=String(catLabel(debate?.category||'general')||'news').trim();
   const source=String(debate?.sourceFeedLabel||debate?.sourceDomain||'BBC News').trim();
-  return [topic, category, 'debate panel live discussion', source].filter(Boolean).join(' ');
+  return [topic, category, 'news analysis context report discussion', source].filter(Boolean).join(' ');
 }
 function buildYouTubeSearchEmbedUrl(query,{muted:forceMuted=true}={}){
   const q=String(query||'').trim();
@@ -4660,15 +4993,597 @@ function getDebateStreamUrl(debate,{muted:forceMuted=muted}={}){
     debate?.contextVideoUrl,
     debate?.previewVideoUrl,
     debate?.sourceVideoUrl,
-    DEFAULT_CONTEXT_VIDEO_URL,
   ].map(value=>String(value||'').trim()).filter(Boolean);
 
   for(const candidate of candidates){
     if(isDirectPlayableVideoUrl(candidate))return candidate;
-    if(isYouTubeEmbedUrl(candidate))return buildYouTubeSearchEmbedUrl(candidate.includes('list=') ? safeDecode((candidate.match(/[?&]list=([^&]+)/)||[])[1]||'') : buildBroadcastStreamQuery(debate),{muted:forceMuted});
+    if(isYouTubeEmbedUrl(candidate))return buildYouTubeSearchEmbedUrl(candidate.includes('list=') ? safeDecode((candidate.match(/[?&]list=([^&]+)/)||[])[1]||'') : buildContextMediaQuery(debate),{muted:forceMuted});
   }
 
-  return buildYouTubeSearchEmbedUrl(buildBroadcastStreamQuery(debate),{muted:forceMuted});
+  return '';
+}
+
+let cryptoHistoryPoints = [];
+let probabilityHistoryChart = null;
+let probabilityHistoryLineSeries = null;
+let probabilityHistoryPoints = [];
+let probabilityHistoryRange = '1H';
+let probabilityHistoryRequestId = 0;
+let probabilityHistoryResizeBound = false;
+const PROBABILITY_HISTORY_WINDOW_MS = 30 * 60 * 1000;
+const PROBABILITY_HISTORY_MAX_VISIBLE_POINTS = 1000;
+const PROBABILITY_HISTORY_REPLACE_WINDOW_MS = 5000;
+const PROBABILITY_HISTORY_RANGE_MS = {
+  '1H': 60 * 60 * 1000,
+  '6H': 6 * 60 * 60 * 1000,
+  '1D': 24 * 60 * 60 * 1000,
+  'MAX': Infinity,
+};
+const PROBABILITY_HISTORY_RANGE_LABELS = {
+  '1H': '1 heure',
+  '6H': '6 heures',
+  '1D': '24 heures',
+  'MAX': 'historique complet',
+};
+
+function isMarketDrivenDebate(debate){
+  const category=String(debate?.category||'').toLowerCase();
+  const text=[debate?.title,debate?.sourceTitle,debate?.sourceDescription,debate?.sourceExcerpt].filter(Boolean).join(' ');
+  return category==='crypto' || category==='economy' || /\b(bitcoin|btc|crypto|ethereum|market|finance|stock|nasdaq|dow|s&p|price|inflation|rates)\b/i.test(text);
+}
+
+function formatContractPrice(value){
+  return `${Math.round(Math.max(0,Math.min(100,Number(value)||0)))}¢`;
+}
+
+function normalizeProbabilityHistoryRange(value){
+  const key=String(value||'1H').trim().toUpperCase();
+  return PROBABILITY_HISTORY_RANGE_MS[key] ? key : '1H';
+}
+
+function trimCryptoHistory(){
+  const cutoff=Date.now()-PROBABILITY_HISTORY_WINDOW_MS;
+  cryptoHistoryPoints=cryptoHistoryPoints.filter(point=>Number(point?.ts||0)>=cutoff);
+}
+
+function seedCryptoHistory(debate=currentDebate){
+  const basePct=Math.max(5,Math.min(95,Number(debate?.yesPct||liveYesPct||50)));
+  const basePool=Math.max(0,Number(debate?.pool||livePool||0));
+  const steps=31;
+  const startTs=Date.now()-PROBABILITY_HISTORY_WINDOW_MS;
+  cryptoHistoryPoints=Array.from({length:steps},(_,index)=>{
+    const progress=steps===1?0:index/(steps-1);
+    const wave=Math.sin(progress*Math.PI*1.25)*1.6;
+    const drift=((index%5)-2)*0.18;
+    const yes=Math.max(5,Math.min(95,basePct+wave+drift));
+    return {
+      yes,
+      no:100-yes,
+      pool:Math.max(0,basePool+Math.round((index-15)*220)),
+      ts:startTs+Math.round(progress*PROBABILITY_HISTORY_WINDOW_MS),
+    };
+  });
+  trimCryptoHistory();
+}
+
+function buildBackendProbabilityPoint(debate=currentDebate,timestamp=Date.now()){
+  return {
+    predictionId:String(debate?.id||''),
+    timestamp:Math.max(0,Math.round(Number(timestamp)||Date.now())),
+    yesProbability:Math.max(0,Math.min(100,Number(debate?.yesPct??liveYesPct??50))),
+    volume:Math.max(0,Math.round(Number(debate?.pool??livePool??0))),
+  };
+}
+
+function buildChartPath(points,width,height,padding){
+  if(!Array.isArray(points)||!points.length)return{line:'',area:''};
+  const values=points.map(point=>Number(point?.yes ?? point?.value)||0);
+  const min=Math.min(...values)-2;
+  const max=Math.max(...values)+2;
+  const range=Math.max(1,max-min);
+  const coords=points.map((point,index)=>{
+    const x=padding+((width-padding*2)*(points.length===1?0:index/(points.length-1)));
+    const y=height-padding-(((Number(point?.yes ?? point?.value)||0)-min)/range)*(height-padding*2);
+    return [x,y];
+  });
+  const line=coords.map(([x,y],index)=>`${index===0?'M':'L'} ${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
+  const area=`${line} L ${coords[coords.length-1][0].toFixed(2)} ${(height-padding).toFixed(2)} L ${coords[0][0].toFixed(2)} ${(height-padding).toFixed(2)} Z`;
+  return { line, area };
+}
+
+function syncCryptoSvgChart(){
+  const svg=document.getElementById('liveChartSvg');
+  const area=document.getElementById('liveChartArea');
+  const line=document.getElementById('liveChartLine');
+  if(!svg||!area||!line)return;
+  if(!cryptoHistoryPoints.length)seedCryptoHistory(currentDebate);
+  const width=640;
+  const height=240;
+  const padding=18;
+  const pathData=buildChartPath(cryptoHistoryPoints,width,height,padding);
+  area.setAttribute('d',pathData.area||'');
+  line.setAttribute('d',pathData.line||'');
+}
+
+function formatProbabilityTick(ts){
+  try{
+    return new Date(Number(ts)||Date.now()).toLocaleTimeString('fr-FR',{
+      hour:'2-digit',
+      minute:'2-digit',
+      second:'2-digit',
+    });
+  }catch(_){
+    return '';
+  }
+}
+
+function normalizeProbabilityHistoryPointReal(point,predictionId=currentDebate?.id){
+  const timestamp=Math.max(0,Math.round(Number(point?.timestamp)||0));
+  const yesProbability=Math.max(0,Math.min(100,Number(point?.yesProbability ?? point?.yesPct ?? point?.value)));
+  const volume=Math.max(0,Math.round(Number(point?.volume ?? point?.pool ?? 0)));
+  if(!timestamp||!Number.isFinite(yesProbability))return null;
+  return {
+    predictionId:String(point?.predictionId||predictionId||''),
+    timestamp,
+    yesProbability:Math.round(yesProbability*100)/100,
+    volume,
+  };
+}
+
+function normalizeProbabilityHistoryPayloadReal(points,predictionId=currentDebate?.id){
+  const byTimestamp=new Map();
+  (Array.isArray(points)?points:[]).forEach(point=>{
+    const normalized=normalizeProbabilityHistoryPointReal(point,predictionId);
+    if(normalized)byTimestamp.set(normalized.timestamp,normalized);
+  });
+  return [...byTimestamp.values()]
+    .sort((left,right)=>left.timestamp-right.timestamp)
+    .slice(-PROBABILITY_HISTORY_MAX_VISIBLE_POINTS);
+}
+
+function buildProbabilitySeriesDataReal(points){
+  const normalized=normalizeProbabilityHistoryPayloadReal(points,currentDebate?.id);
+  if(!normalized.length&&currentDebate){
+    normalized.push(buildBackendProbabilityPoint(currentDebate));
+  }
+  if(!normalized.length)return [];
+  if(normalized.length===1){
+    const rangeMs=PROBABILITY_HISTORY_RANGE_MS[normalizeProbabilityHistoryRange(probabilityHistoryRange)];
+    const point=normalized[0];
+    const anchorTimestamp=Math.max(
+      0,
+      point.timestamp-(Number.isFinite(rangeMs)?Math.min(rangeMs,15*60*1000):15*60*1000)
+    );
+    return [
+      {time:Math.max(1,Math.floor(anchorTimestamp/1000)),value:Number(point.yesProbability)},
+      {time:Math.max(1,Math.floor(point.timestamp/1000)),value:Number(point.yesProbability)},
+    ];
+  }
+  return normalized.map(point=>({
+    time:Math.max(1,Math.floor(point.timestamp/1000)),
+    value:Number(point.yesProbability),
+  }));
+}
+
+function resizeProbabilityHistoryChartReal(){
+  const container=document.getElementById('liveProbabilityChartSurface');
+  if(!container||!probabilityHistoryChart)return;
+  probabilityHistoryChart.applyOptions({
+    width:container.clientWidth||640,
+    height:container.clientHeight||260,
+  });
+}
+
+function ensureProbabilityHistoryChart(){
+  const container=document.getElementById('liveProbabilityChartSurface');
+  if(!container||typeof LightweightCharts==='undefined')return null;
+  if(!probabilityHistoryChart){
+    probabilityHistoryChart=LightweightCharts.createChart(container,{
+      width:container.clientWidth||640,
+      height:container.clientHeight||260,
+      layout:{
+        background:{color:'#FFFFFF'},
+        textColor:'#6B7280',
+        fontFamily:'Inter, system-ui, sans-serif',
+      },
+      grid:{
+        vertLines:{color:'rgba(17,24,39,0.03)',visible:false},
+        horzLines:{color:'rgba(17,24,39,0.08)',style:LightweightCharts.LineStyle.Dotted,visible:true},
+      },
+      rightPriceScale:{
+        visible:true,
+        borderVisible:false,
+        scaleMargins:{top:0.18,bottom:0.14},
+      },
+      leftPriceScale:{visible:false},
+      timeScale:{
+        borderVisible:false,
+        timeVisible:true,
+        secondsVisible:false,
+        fixLeftEdge:true,
+        fixRightEdge:true,
+      },
+      crosshair:{
+        vertLine:{labelVisible:false,color:'rgba(37,99,235,0.14)'},
+        horzLine:{color:'rgba(37,99,235,0.14)'},
+      },
+      handleScroll:false,
+      handleScale:false,
+    });
+    probabilityHistoryLineSeries=probabilityHistoryChart.addLineSeries({
+      color:'#2563eb',
+      lineWidth:2,
+      crosshairMarkerVisible:true,
+      crosshairMarkerRadius:4,
+      crosshairMarkerBorderColor:'#2563eb',
+      crosshairMarkerBackgroundColor:'#FFFFFF',
+      lastValueVisible:false,
+      priceLineVisible:false,
+      lineType:LightweightCharts.LineType.Simple,
+      priceFormat:{
+        type:'custom',
+        minMove:1,
+        formatter:value=>`${Math.round(Number(value)||0)}%`,
+      },
+    });
+  }
+  if(!probabilityHistoryResizeBound){
+    probabilityHistoryResizeBound=true;
+    window.addEventListener('resize',resizeProbabilityHistoryChartReal);
+  }
+  resizeProbabilityHistoryChartReal();
+  return probabilityHistoryChart;
+}
+
+function updateProbabilityHistoryRangeButtonsReal(){
+  const root=document.getElementById('liveProbabilityChartRanges');
+  if(!root)return;
+  root.querySelectorAll('[data-range]').forEach(button=>{
+    button.classList.toggle('is-active',String(button.dataset.range||'').toUpperCase()===probabilityHistoryRange);
+  });
+}
+
+function updateProbabilityHistorySummaryReal(points){
+  const valueEl=document.getElementById('liveProbabilityChartValue');
+  const deltaEl=document.getElementById('liveProbabilityChartDelta');
+  const noteEl=document.getElementById('liveProbabilityChartNote');
+  const volumeEl=document.getElementById('liveProbabilityChartVolume');
+  const emptyEl=document.getElementById('liveProbabilityChartEmpty');
+  const normalized=normalizeProbabilityHistoryPayloadReal(points,currentDebate?.id);
+  const latest=normalized[normalized.length-1]||buildBackendProbabilityPoint(currentDebate);
+  const first=normalized[0]||latest;
+  const delta=Math.round(((Number(latest?.yesProbability||0)-Number(first?.yesProbability||0))*100))/100;
+
+  if(valueEl)valueEl.textContent=`${Math.round(Number(latest?.yesProbability||0))}% chance`;
+  if(deltaEl){
+    const isPositive=delta>0.01;
+    const isNegative=delta<-0.01;
+    deltaEl.classList.toggle('is-up',isPositive);
+    deltaEl.classList.toggle('is-down',isNegative);
+    if(isPositive){
+      deltaEl.textContent=`▲ ${Math.round(Math.abs(delta))}%`;
+    }else if(isNegative){
+      deltaEl.textContent=`▼ ${Math.round(Math.abs(delta))}%`;
+    }else{
+      deltaEl.textContent='0%';
+    }
+  }
+  if(noteEl){
+    noteEl.textContent=normalized.length>1
+      ? `${normalized.length} points • ${PROBABILITY_HISTORY_RANGE_LABELS[probabilityHistoryRange]||probabilityHistoryRange}`
+      : 'Pas encore assez de donnees';
+  }
+  if(volumeEl)volumeEl.textContent=`Volume : ${fmt(Number(latest?.volume||livePool||0))}`;
+  if(emptyEl)emptyEl.hidden=normalized.length>1;
+}
+
+function renderProbabilityHistoryChart({strategy='replace',point=null}={}){
+  const wrap=document.getElementById('liveProbabilityChartWrap');
+  const shouldShow=Boolean(currentDebate)&&String(currentDebate?.category||'').toLowerCase()!=='crypto';
+  if(wrap)wrap.hidden=!shouldShow;
+  if(!shouldShow)return;
+  const chart=ensureProbabilityHistoryChart();
+  if(!chart||!probabilityHistoryLineSeries)return;
+  const normalized=normalizeProbabilityHistoryPayloadReal(probabilityHistoryPoints,currentDebate?.id);
+  const seriesData=buildProbabilitySeriesDataReal(normalized.length?normalized:[buildBackendProbabilityPoint(currentDebate)]);
+  const nextPoint=point ? normalizeProbabilityHistoryPointReal(point,currentDebate?.id) : null;
+
+  if(strategy==='append'&&nextPoint&&normalized.length>1){
+    probabilityHistoryLineSeries.update({
+      time:Math.max(1,Math.floor(nextPoint.timestamp/1000)),
+      value:Number(nextPoint.yesProbability),
+    });
+  }else{
+    probabilityHistoryLineSeries.setData(seriesData);
+  }
+  if(seriesData.length){
+    chart.timeScale().fitContent();
+  }
+  updateProbabilityHistoryRangeButtonsReal();
+  updateProbabilityHistorySummaryReal(normalized.length?normalized:[buildBackendProbabilityPoint(currentDebate)]);
+}
+
+function clearProbabilityHistoryState(){
+  probabilityHistoryRequestId+=1;
+  probabilityHistoryPoints=[];
+  const wrap=document.getElementById('liveProbabilityChartWrap');
+  if(wrap)wrap.hidden=true;
+}
+
+async function loadPredictionHistory(range=probabilityHistoryRange,{debate=currentDebate}={}){
+  if(!debate){
+    clearProbabilityHistoryState();
+    return;
+  }
+
+  probabilityHistoryRange=normalizeProbabilityHistoryRange(range);
+  if(String(debate?.category||'').toLowerCase()==='crypto'){
+    renderProbabilityHistoryChart();
+    return;
+  }
+
+  const requestId=++probabilityHistoryRequestId;
+  const noteEl=document.getElementById('liveProbabilityChartNote');
+  if(noteEl)noteEl.textContent='Chargement...';
+
+  try{
+    const response=await fetch(`${BACKEND_URL}/api/predictions/${encodeURIComponent(String(debate.id||''))}/history?range=${encodeURIComponent(probabilityHistoryRange)}`,{
+      cache:'no-store',
+      headers:{
+        'Cache-Control':'no-cache',
+        Pragma:'no-cache',
+      }
+    });
+    if(!response.ok)throw new Error(`history ${response.status}`);
+    const payload=await response.json().catch(()=>[]);
+    if(requestId!==probabilityHistoryRequestId||String(currentDebate?.id||'')!==String(debate.id||''))return;
+    probabilityHistoryPoints=normalizeProbabilityHistoryPayloadReal(payload,debate.id);
+    if(!probabilityHistoryPoints.length){
+      probabilityHistoryPoints=[buildBackendProbabilityPoint(debate,Number(debate?.openedAt)||Date.now())];
+    }
+    renderProbabilityHistoryChart();
+  }catch(error){
+    console.warn('[prediction-history]',error?.message||error);
+    if(requestId!==probabilityHistoryRequestId||String(currentDebate?.id||'')!==String(debate.id||''))return;
+    probabilityHistoryPoints=[buildBackendProbabilityPoint(debate,Number(debate?.openedAt)||Date.now())];
+    renderProbabilityHistoryChart();
+  }
+}
+
+function mergePredictionHistoryPoint(payload){
+  if(!currentDebate)return;
+  if(String(payload?.predictionId||'')!==String(currentDebate.id))return;
+  if(String(currentDebate?.category||'').toLowerCase()==='crypto')return;
+
+  const normalized=normalizeProbabilityHistoryPointReal(payload,currentDebate.id);
+  if(!normalized)return;
+
+  if(!probabilityHistoryPoints.length){
+    probabilityHistoryPoints=[normalized];
+    renderProbabilityHistoryChart();
+    return;
+  }
+
+  const last=probabilityHistoryPoints[probabilityHistoryPoints.length-1];
+  const closeEnough=Math.abs(Number(last?.timestamp||0)-normalized.timestamp)<=PROBABILITY_HISTORY_REPLACE_WINDOW_MS;
+  let strategy='replace';
+
+  if(closeEnough){
+    probabilityHistoryPoints[probabilityHistoryPoints.length-1]=normalized;
+  }else if(normalized.timestamp>Number(last?.timestamp||0)){
+    probabilityHistoryPoints.push(normalized);
+    probabilityHistoryPoints=probabilityHistoryPoints.slice(-PROBABILITY_HISTORY_MAX_VISIBLE_POINTS);
+    strategy='append';
+  }else{
+    probabilityHistoryPoints=normalizeProbabilityHistoryPayloadReal([...probabilityHistoryPoints,normalized],currentDebate.id);
+  }
+
+  renderProbabilityHistoryChart({strategy,point:normalized});
+}
+
+function stopProbabilityHistoryUpdates(){
+  probabilityHistoryRequestId+=1;
+}
+
+function startProbabilityHistoryUpdates(){
+  if(!currentDebate)return;
+  loadPredictionHistory(probabilityHistoryRange,{debate:currentDebate});
+}
+
+function bindProbabilityHistoryControls(){
+  const root=document.getElementById('liveProbabilityChartRanges');
+  if(!root||root.dataset.bound==='1')return;
+  root.dataset.bound='1';
+  root.addEventListener('click',event=>{
+    const button=event.target.closest('[data-range]');
+    if(!button||!currentDebate)return;
+    const nextRange=normalizeProbabilityHistoryRange(button.dataset.range);
+    if(nextRange===probabilityHistoryRange&&probabilityHistoryPoints.length)return;
+    loadPredictionHistory(nextRange,{debate:currentDebate});
+  });
+}
+
+function updateLiveContextStatus(debate=currentDebate){
+  const badge=document.getElementById('liveStatusBadge');
+  const text=document.getElementById('liveStatusText');
+  if(text)text.textContent=debate&&!debate.closed?'LIVE':'ENDED';
+  if(badge)badge.classList.toggle('is-ended',Boolean(debate?.closed));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CoinGecko — prix crypto en temps réel
+// ─────────────────────────────────────────────────────────────
+const CRYPTO_COIN_IDS = {
+  bitcoin:'bitcoin',btc:'bitcoin',
+  ethereum:'ethereum',eth:'ethereum',
+  solana:'solana',sol:'solana',
+  cardano:'cardano',ada:'cardano',
+  ripple:'ripple',xrp:'ripple',
+  dogecoin:'dogecoin',doge:'dogecoin',
+  binance:'binancecoin',bnb:'binancecoin',
+  polkadot:'polkadot',dot:'polkadot',
+  avalanche:'avalanche-2',avax:'avalanche-2',
+  chainlink:'chainlink',link:'chainlink',
+  litecoin:'litecoin',ltc:'litecoin',
+  tron:'tron',trx:'tron',
+  shiba:'shiba-inu',shib:'shiba-inu',
+  polygon:'matic-network',matic:'matic-network',
+  uniswap:'uniswap',uni:'uniswap',
+  stellar:'stellar',xlm:'stellar',
+  monero:'monero',xmr:'monero',
+  cosmos:'cosmos',atom:'cosmos',
+};
+
+function detectCoinId(debate){
+  if(!debate||debate.category!=='crypto')return null;
+  const text=(debate.title+' '+(debate.sourceTitle||'')+' '+(debate.description||'')).toLowerCase();
+  for(const [keyword,coinId] of Object.entries(CRYPTO_COIN_IDS)){
+    if(text.includes(keyword))return coinId;
+  }
+  return null;
+}
+
+let _cryptoRefreshTimer=null;
+let _cryptoLivePrice=null;
+
+async function fetchCoinGeckoPrice(coinId){
+  try{
+    const url=`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=eur&include_24hr_vol=true&include_24hr_change=true`;
+    const r=await fetch(url,{headers:{'Accept':'application/json'}});
+    if(!r.ok)throw new Error('CoinGecko '+r.status);
+    const data=await r.json();
+    const coin=data[coinId];
+    if(!coin)return null;
+    return{
+      price:coin['eur'],
+      vol24h:coin['eur_24h_vol'],
+      change24h:coin['eur_24h_change'],
+    };
+  }catch(e){
+    console.warn('[coingecko]',e.message);
+    return null;
+  }
+}
+
+function fmtCryptoPrice(p){
+  if(p===null||p===undefined)return'—';
+  if(p>=1000)return'€'+p.toLocaleString('fr-FR',{maximumFractionDigits:0});
+  if(p>=1)return'€'+p.toLocaleString('fr-FR',{maximumFractionDigits:2});
+  return'€'+p.toLocaleString('fr-FR',{minimumSignificantDigits:3,maximumSignificantDigits:4});
+}
+
+function fmtCryptoVol(v){
+  if(!v)return'—';
+  if(v>=1e9)return'€'+(v/1e9).toFixed(1)+'Md';
+  if(v>=1e6)return'€'+(v/1e6).toFixed(1)+'M';
+  if(v>=1e3)return'€'+(v/1e3).toFixed(0)+'k';
+  return'€'+Math.round(v);
+}
+
+async function refreshCryptoData(coinId){
+  const data=await fetchCoinGeckoPrice(coinId);
+  if(!data)return;
+  _cryptoLivePrice=data;
+  // Mettre à jour l'affichage crypto dédié
+  const priceValue=document.getElementById('livePriceValue');
+  const priceChange=document.getElementById('livePriceChange');
+  const priceTrend=document.getElementById('livePriceTrend');
+  const noPrice=document.getElementById('liveNoPrice');
+  const volumeEl=document.getElementById('liveDataVolume');
+  const viewersEl=document.getElementById('liveDataViewers');
+  const primary=document.getElementById('liveEventPrimary');
+  const trend=document.getElementById('liveEventTrend');
+  const poolEl=document.getElementById('liveEventPool');
+  const infoEl=document.getElementById('liveEventInfo');
+  const contractNo=Math.max(0,100-Math.max(0,Math.min(100,Number(liveYesPct)||50)));
+  const pct=Number(data.change24h||0);
+  const sign=pct>=0?'+':'';
+  if(priceValue)priceValue.textContent=fmtCryptoPrice(data.price);
+  if(priceChange){
+    priceChange.textContent=`${sign}${pct.toFixed(2)}%`;
+    priceChange.style.color=pct>=0?'var(--elec)':'var(--blood)';
+  }
+  if(priceTrend)priceTrend.textContent=pct>0.15?'Hausse 24h':pct<-0.15?'Baisse 24h':'Stable';
+  if(noPrice)noPrice.textContent=formatContractPrice(contractNo);
+  if(volumeEl)volumeEl.textContent=fmtCryptoVol(data.vol24h);
+  if(viewersEl)viewersEl.textContent=fmtV(liveViewers);
+  if(primary)primary.textContent=fmtCryptoPrice(data.price);
+  if(trend){
+    trend.textContent=`${sign}${pct.toFixed(2)}% 24h`;
+    trend.style.color=pct>=0?'var(--elec)':'var(--blood)';
+  }
+  if(poolEl)poolEl.textContent=fmtCryptoVol(data.vol24h);
+  if(infoEl)infoEl.textContent=`Prix ${coinId} en temps réel — CoinGecko`;
+  syncCryptoSvgChart();
+}
+
+function startCryptoRefresh(debate){
+  stopCryptoRefresh();
+  _cryptoLivePrice=null;
+  const coinId=detectCoinId(debate);
+  if(!coinId)return;
+  // Première récupération immédiate
+  refreshCryptoData(coinId);
+  // Rafraîchissement toutes les 60 secondes
+  _cryptoRefreshTimer=setInterval(()=>refreshCryptoData(coinId),60000);
+}
+
+function stopCryptoRefresh(){
+  if(_cryptoRefreshTimer){clearInterval(_cryptoRefreshTimer);_cryptoRefreshTimer=null;}
+  _cryptoLivePrice=null;
+}
+
+function updateLiveDataCore(){
+  if(!currentDebate)return;
+  if(!cryptoHistoryPoints.length)seedCryptoHistory(currentDebate);
+  const isCryptoPrediction=String(currentDebate?.category||'').toLowerCase()==='crypto';
+
+  const marketCard=document.getElementById('liveMarketData');
+  const eventCard=document.getElementById('liveEventData');
+  const label=document.getElementById('liveDataLabel');
+  if(marketCard)marketCard.hidden=!isCryptoPrediction;
+  if(eventCard)eventCard.hidden=false;
+  if(label)label.textContent=isCryptoPrediction?'Données crypto':'État du marché';
+
+  const currentPct=Math.max(5,Math.min(95,Number(liveYesPct)||50));
+  const noPct=100-currentPct;
+
+  const caption=document.getElementById('liveEventCaption');
+  const primary=document.getElementById('liveEventPrimary');
+  const trend=document.getElementById('liveEventTrend');
+  const state=document.getElementById('liveEventState');
+  const poolEl=document.getElementById('liveEventPool');
+  const oddYesEl=document.getElementById('liveEventOddYes');
+  const oddNoEl=document.getElementById('liveEventOddNo');
+  const infoEl=document.getElementById('liveEventInfo');
+  const viewersEl=document.getElementById('liveDataViewers');
+
+  if(state){
+    const uiState=getPredictionUiState(currentDebate);
+    state.textContent=uiState==='active'?'LIVE':uiState==='validating'?'Validation':uiState==='cancelled'?'Annulé':'Terminé';
+  }
+  if(oddYesEl)oddYesEl.textContent=calcOdds(currentPct);
+  if(oddNoEl)oddNoEl.textContent=calcOdds(noPct);
+  if(viewersEl)viewersEl.textContent=fmtV(liveViewers);
+
+  const isCrypto=currentDebate?.category==='crypto'&&_cryptoLivePrice;
+
+  if(isCrypto){
+    if(caption)caption.textContent='Prix actuel';
+    syncCryptoSvgChart();
+  }else{
+    if(caption)caption.textContent=currentDebate?.category==='sports'?'État du match':'État du marché';
+    if(primary)primary.textContent=`${currentDebate?.yesLabel||'OUI'} ${currentPct}%`;
+    if(trend){
+      const margin=Math.abs(currentPct-noPct);
+      trend.textContent=`${Math.round(margin)} pts d'avance`;
+      trend.style.color=currentPct>=50?'var(--elec)':'var(--blood)';
+    }
+    if(poolEl)poolEl.textContent=fmt(livePool);
+    const note=String(currentDebate?.sourceExcerpt||currentDebate?.sourceDescription||'').trim();
+    if(infoEl)infoEl.textContent=note;
+  }
+  renderProbabilityHistoryChart();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4695,6 +5610,10 @@ function getDebateTimerLabel(debate, nowMs = getDebateNowMs()) {
 
 function buildClientVerdictFromDebate(debate) {
   if (!debate) return null;
+  const validationState = String(debate.validationState || '').toLowerCase();
+  if (!['validated', 'manual_admin'].includes(validationState) || !debate.winnerSide) {
+    return null;
+  }
 
   const winnerSide = debate.winnerSide || (Number(debate.yesPct) >= 50 ? 'yes' : 'no');
   const winner = debate.winnerLabel || (winnerSide === 'yes' ? (debate.yesLabel || 'OUI') : (debate.noLabel || 'NON'));
@@ -4714,8 +5633,94 @@ function buildClientVerdictFromDebate(debate) {
   };
 }
 
+function getPredictionUiState(debate) {
+  const validationState = String(debate?.validationState || '').toLowerCase();
+  if (validationState === 'cancelled') return 'cancelled';
+  if (validationState === 'validating') return 'validating';
+  if (debate?.closed) return 'resolved';
+  return 'active';
+}
+
+function syncPredictionActionState(debate) {
+  const yesBtn = document.getElementById('betYesBtn');
+  const noBtn = document.getElementById('betNoBtn');
+  const endedBanner = document.getElementById('endedBanner');
+  const endedWinner = document.getElementById('endedWinner');
+  const endedPayout = document.getElementById('endedPayoutInfo');
+  const endedSubtext = document.getElementById('endedBannerSubtext');
+  const aiThinking = document.getElementById('aiThinkingIndicator');
+  const joinBtn = document.getElementById('joinAsParticipantBtn');
+  const uiState = getPredictionUiState(debate);
+
+  if (!yesBtn || !noBtn || !endedBanner) return;
+
+  yesBtn.style.display = '';
+  noBtn.style.display = '';
+
+  if (uiState === 'active') {
+    yesBtn.textContent = 'Prédire OUI';
+    noBtn.textContent = 'Prédire NON';
+    yesBtn.disabled = false;
+    noBtn.disabled = false;
+    setMobileBetActionsDisabled(false);
+    if (joinBtn) joinBtn.disabled = false;
+    endedBanner.style.display = 'none';
+    if (endedWinner) endedWinner.textContent = '';
+    if (endedPayout) endedPayout.textContent = '';
+    if (endedSubtext) endedSubtext.textContent = 'AI moderation is finalizing the result.';
+    if (aiThinking) aiThinking.style.display = 'none';
+    return;
+  }
+
+  yesBtn.disabled = true;
+  noBtn.disabled = true;
+  setMobileBetActionsDisabled(true);
+  if (joinBtn) joinBtn.disabled = true;
+  endedBanner.style.display = 'block';
+
+  if (uiState === 'validating') {
+    yesBtn.textContent = 'Validation...';
+    noBtn.textContent = 'Validation...';
+    if (endedWinner) endedWinner.textContent = 'Résultat en validation';
+    if (endedPayout) {
+      endedPayout.textContent = 'Marché verrouillé — vérification source en cours';
+      endedPayout.style.color = 'var(--txt2)';
+    }
+    if (endedSubtext) endedSubtext.textContent = 'Le résultat est en cours de confirmation par la source officielle.';
+    if (aiThinking) aiThinking.style.display = 'flex';
+    return;
+  }
+
+  if (uiState === 'cancelled') {
+    yesBtn.textContent = 'Annulé';
+    noBtn.textContent = 'Remboursé';
+    if (endedWinner) endedWinner.textContent = 'Marché annulé';
+    if (endedPayout) {
+      endedPayout.textContent = 'Aucune donnée fiable — points remboursés';
+      endedPayout.style.color = 'var(--txt2)';
+    }
+    if (endedSubtext) endedSubtext.textContent = 'Le marché a été fermé sans résultat fiable.';
+    if (aiThinking) aiThinking.style.display = 'none';
+    return;
+  }
+
+  const winnerLabel = debate?.winnerLabel || (debate?.winnerSide === 'yes' ? (debate?.yesLabel || 'OUI') : (debate?.noLabel || 'NON'));
+  yesBtn.textContent = `Résultat : ${winnerLabel}`;
+  noBtn.textContent = 'Terminé';
+  if (endedWinner) endedWinner.textContent = `Résultat : ${winnerLabel}`;
+  if (endedPayout) {
+    endedPayout.textContent = debate?.settlementState === 'settled'
+      ? 'Gains distribués automatiquement'
+      : 'Résultat confirmé';
+    endedPayout.style.color = 'var(--elec)';
+  }
+  if (endedSubtext) endedSubtext.textContent = debate?.verdictReasoning || 'Résultat confirmé par la source officielle.';
+  if (aiThinking) aiThinking.style.display = 'none';
+}
+
 function updateLiveSourceCard(debate) {
   const card = document.getElementById('liveSourceCard');
+  const infoTitle = document.getElementById('liveTitle');
   const infoDescription = document.getElementById('liveInfoDescription');
   const infoSourceLink = document.getElementById('liveInfoSourceLink');
   const fallbackSource = document.getElementById('videoFallbackSource');
@@ -4738,13 +5743,16 @@ function updateLiveSourceCard(debate) {
   const label = debate?.sourceFeedLabel || 'BBC News';
   const linkText = sourceTitle || sourceUrl;
 
+  if (infoTitle) {
+    infoTitle.textContent = sourceTitle || 'Contexte live';
+  }
   if (infoDescription) {
-    infoDescription.textContent = excerpt || debate?.description || 'Live debate data is updating in real time.';
+    infoDescription.textContent = excerpt || debate?.description || 'Contexte média et source liée au débat.';
   }
   if (infoSourceLink) {
     if (sourceUrl) {
       infoSourceLink.href = sourceUrl;
-      infoSourceLink.textContent = `Source: ${linkText}`;
+      infoSourceLink.textContent = `Voir la source : ${linkText}`;
       infoSourceLink.style.display = 'inline-block';
     } else {
       infoSourceLink.removeAttribute('href');
@@ -4770,7 +5778,7 @@ function updateLiveSourceCard(debate) {
       <div class="live-source-body">
         <div class="live-source-kicker"><span>${escapeHtml(label)}</span><span>${escapeHtml(host)}</span>${date ? `<span>${escapeHtml(date)}</span>` : ''}</div>
         ${excerpt ? `<div class="live-source-excerpt">${escapeHtml(excerpt)}</div>` : ''}
-        ${sourceUrl ? `<a class="live-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Source: ${escapeHtml(linkText)}</a>` : ''}
+        ${sourceUrl ? `<a class="live-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Voir la source : ${escapeHtml(linkText)}</a>` : ''}
       </div>
     `;
     card.classList.add('is-visible');
@@ -4787,12 +5795,8 @@ function playMutedVideo(video) {
 }
 
 function prepareContextVideo(debate) {
-  const shell = document.getElementById('contextVideoShell');
-  const video = document.getElementById('contextVideo');
-  const frame = document.getElementById('contextVideoFrame');
-  const fallback = document.getElementById('contextVideoFallback');
-  const fallbackCard = document.getElementById('videoFallbackCard');
-  if (!shell || !video || !frame || !fallback) return;
+  // Vidéos supprimées — le contexte est désormais affiché en mode texte via updateLiveSourceCard
+  return;
 
   const image = getDebatePreviewImage(debate);
   fallback.style.backgroundImage = `linear-gradient(135deg,rgba(0,0,0,.1),rgba(0,0,0,.52)),url("${image}")`;
@@ -4806,8 +5810,15 @@ function prepareContextVideo(debate) {
   const hideFallbackCard = () => {
     if (fallbackCard) fallbackCard.classList.remove('show');
   };
+  const showVideoCard = () => {
+    if (videoCard) videoCard.hidden = false;
+  };
+  const hideVideoCard = () => {
+    if (videoCard) videoCard.hidden = true;
+  };
 
   if (useDirectVideo && streamUrl) {
+    showVideoCard();
     hideFallbackCard();
     if (video.dataset.src !== streamUrl) {
       video.dataset.src = streamUrl;
@@ -4820,7 +5831,7 @@ function prepareContextVideo(debate) {
       video.dataset.src = '';
       shell.classList.remove('has-video');
       shell.classList.add('no-video');
-      showFallbackCard();
+      hideVideoCard();
     };
     frame.src = 'about:blank';
     frame.dataset.src = '';
@@ -4833,18 +5844,22 @@ function prepareContextVideo(debate) {
     const pending = video.play();
     if (pending && typeof pending.catch === 'function') pending.catch(() => {});
   } else if (streamUrl) {
-    showFallbackCard();
+    showVideoCard();
+    hideFallbackCard();
     video.pause();
     video.removeAttribute('src');
     video.dataset.src = '';
-    frame.src = 'about:blank';
-    frame.dataset.src = '';
-    frame.dataset.mode = '';
+    if (frame.dataset.src !== streamUrl) {
+      frame.dataset.src = streamUrl;
+      frame.src = streamUrl;
+    }
+    frame.dataset.mode = 'embed';
     shell.classList.remove('has-video');
-    shell.classList.remove('has-frame');
+    shell.classList.add('has-frame');
     shell.classList.remove('no-video');
   } else {
-    showFallbackCard();
+    hideFallbackCard();
+    hideVideoCard();
     video.pause();
     video.removeAttribute('src');
     video.dataset.src = '';
@@ -4865,6 +5880,7 @@ function setContextVideoMode(mode = 'idle') {
 }
 
 function stopContextVideo() {
+  const videoCard = document.getElementById('liveVideoCard');
   const video = document.getElementById('contextVideo');
   const frame = document.getElementById('contextVideoFrame');
   if (video) video.pause();
@@ -4882,6 +5898,7 @@ function stopContextVideo() {
     shell.classList.remove('has-video','has-frame');
     shell.classList.add('no-video');
   }
+  if (videoCard) videoCard.hidden = true;
   setContextVideoMode('idle');
 }
 
@@ -4934,6 +5951,7 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
     liveViewers = Number(currentDebate.viewers || 0);
     updateBettingUI();
     updateLiveSourceCard(currentDebate);
+    prepareContextVideo(currentDebate);
   }
 
   if (rerender) {
@@ -4943,12 +5961,7 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
 
   closedTransition.forEach(debate => {
     if (!currentDebate || String(currentDebate.id) !== String(debate.id)) return;
-    document.getElementById('endedBanner').style.display = 'block';
-    document.getElementById('betYesBtn').disabled = true;
-    document.getElementById('betNoBtn').disabled = true;
-    setMobileBetActionsDisabled(true);
-    document.getElementById('joinAsParticipantBtn').disabled = true;
-    document.getElementById('aiThinkingIndicator').style.display = 'none';
+    syncPredictionActionState(debate);
     const verdict = buildClientVerdictFromDebate(debate);
     if (verdict && !debate._verdictApplied) {
       debate._verdictApplied = true;
@@ -4961,7 +5974,7 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
 
 async function refreshDebatesFromServer() {
   try {
-    const response = await fetch(BACKEND_URL + '/debates', {
+    const response = await fetch(BACKEND_URL + '/debates?region=' + encodeURIComponent(getServerRegion()), {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
@@ -5060,6 +6073,13 @@ function onDebateClosed(debate) {
 }
 
 async function callAIVerdict(debate) {
+  const backendVerdict = buildClientVerdictFromDebate(debate);
+  if (!backendVerdict) {
+    syncPredictionActionState(debate);
+    return;
+  }
+  applyVerdict(backendVerdict, debate);
+  return;
   const yL=debate.yesLabel||'OUI', nL=debate.noLabel||'NON';
   const yP=debate.yesPct, nP=100-yP;
   const prompt=`Tu es modérateur expert de débats live sur BEEEF.
@@ -5185,8 +6205,8 @@ function closeAIVerdict(){document.getElementById('aiVerdictOverlay').classList.
 
 function launchAIDebate(cat) {
   const topic = getNextTopic(cat); if(!topic) return;
-  const previewImage = topic.sourceImageUrl || topic.photo || '';
-  if(!previewImage) return;
+  const previewImage = getDebatePreviewImage(topic);
+  if(!isRenderablePreviewImage(previewImage)) return;
   const yL = LANG_YES[topic.lang]||'YES', nL = LANG_NO[topic.lang]||'NO';
   const nd = {
     id:makeId(),title:topic.title,category:cat,trending:Math.random()>0.7,ai:true,
@@ -5201,7 +6221,7 @@ function launchAIDebate(cat) {
   renderGrid(activeFilter);
   startTimer(nd);
   showToast('ai','Nouveau débat',nd.title.slice(0,48)+'…');
-  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' LIVE';
+  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' DÉBATS';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5213,7 +6233,10 @@ function buildCard(d) {
   card.className='debate-card'+(d.closed?' closed':'');
   card.setAttribute('data-id',d.id); card.setAttribute('data-cat',d.category);
   const timerStr=getDebateTimerLabel(d);
-  const closedLabel=d.winnerLabel?`${d.winnerLabel} gagne`:'Cloturee';
+  const closedLabel=
+    d.validationState==='validating' ? 'Validation...' :
+    d.validationState==='cancelled' ? 'Annulé' :
+    d.winnerLabel ? `${d.winnerLabel} gagne` : 'Cloturee';
   const previewImage=getDebatePreviewImage(d);
   const previewVideo=getDebatePreviewVideo(d);
   card.innerHTML=`
@@ -5299,7 +6322,7 @@ function renderGrid(cat='all') {
   let filtered = cat==='all'?debates:debates.filter(d=>d.category===cat);
   const live = filtered.filter(d=>!d.closed).length;
   document.getElementById('debateCount').textContent=live+' débats actifs';
-  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' LIVE';
+  const _ldc=document.getElementById('liveDebateCount');if(_ldc)_ldc.textContent=debates.filter(d=>!d.closed).length+' DÉBATS';
   filtered.forEach(d=>grid.appendChild(buildCard(d)));
   renderTrendingPredictionsStrip();
   renderTopCarousel();
@@ -5357,7 +6380,7 @@ function renderTopCarousel(){
   }
   const section=document.getElementById('top-carousel');
   if(section)section.style.display='';
-  if(badge)badge.textContent=top.filter(d=>!d.closed).length+' LIVE';
+  if(badge)badge.textContent=top.filter(d=>!d.closed).length+' MÉDIAS';
   scroll.innerHTML='';
   top.forEach((d,i)=>{
     const card=buildCard(d);
@@ -5409,31 +6432,35 @@ function openLive(d) {
   if(d.closed)return;
   disconnectLiveSocket();
   currentDebate=d; livePool=Number(d.pool||0); liveYesPct=Number(d.yesPct||50); liveViewers=Number(d.viewers||0);
+  seedCryptoHistory(d);
+  clearProbabilityHistoryState();
   document.getElementById('homepage').style.display='none';
   document.getElementById('live-view').style.display='block';
   document.getElementById('liveTopTitle').textContent=d.title;
-  document.getElementById('liveTitle').textContent=d.title;
   updateLiveSourceCard(d);
   document.getElementById('sideLabelYes').textContent=d.yesLabel||'OUI';
   document.getElementById('sideLabelNo').textContent=d.noLabel||'NON';
-  document.getElementById('betYesBtn').textContent='Prédire YES';
-  document.getElementById('betNoBtn').textContent='Prédire NO';
+  document.getElementById('betYesBtn').textContent='Prédire OUI';
+  document.getElementById('betNoBtn').textContent='Prédire NON';
   document.getElementById('betYesBtn').disabled=false;
   document.getElementById('betNoBtn').disabled=false;
   setMobileBetActionsDisabled(false);
   document.getElementById('endedBanner').style.display='none';
   document.getElementById('endedPayoutInfo').textContent='';
+  syncPredictionActionState(d);
   resetMobileTabs();
   document.getElementById('betsFeed').innerHTML='';
   setMobileCameraState(true);
   prepareContextVideo(d);
   setContextVideoMode('active');
   setMutedState(muted);
+  bindProbabilityHistoryControls();
+  renderProbabilityHistoryChart();
   updateBettingUI(); updateLiveTimer(d);
-  startCanvas(d.gradColors);
   wireLiveProgress();
   updateLiveProgressFromDebate(d);
   startSimulation();
+  startCryptoRefresh(d);
 }
 
 function goHome() {
@@ -5442,6 +6469,9 @@ function goHome() {
   document.getElementById('homepage').style.display='block';
   stopSimulation(); stopSpeakerAnim();
   stopContextVideo();
+  stopCryptoRefresh();
+  stopProbabilityHistoryUpdates();
+  clearProbabilityHistoryState();
   if(liveAnimFrame){cancelAnimationFrame(liveAnimFrame);liveAnimFrame=null;}
   currentDebate=null; renderGrid(activeFilter);
 }
@@ -5464,7 +6494,10 @@ function updateBettingUI() {
   const viewersKpi=document.getElementById('liveViewersKpi'); if(viewersKpi)viewersKpi.textContent=fmtV(liveViewers);
   const oddYesKpi=document.getElementById('liveOddYesKpi'); if(oddYesKpi)oddYesKpi.textContent=calcOdds(liveYesPct);
   const oddNoKpi=document.getElementById('liveOddNoKpi'); if(oddNoKpi)oddNoKpi.textContent=calcOdds(noPct);
+  updateLiveContextStatus(currentDebate);
+  updateLiveDataCore();
   updateMobileLiveScore();
+  syncPredictionActionState(currentDebate);
 }
 
 function updateMobileLiveScore() {
@@ -5531,28 +6564,70 @@ function placeBet(side) {
   document.getElementById('confirmSide').style.color=side==='yes'?'var(--elec)':'var(--blood)';
   document.getElementById('betConfirmModal').classList.add('open');
 }
-function confirmBet() {
+async function submitMarketBetToBackend(side,amount){
+  const token=typeof window.getAuthToken==='function' ? window.getAuthToken() : '';
+  if(!token){
+    if(typeof window.openAuthModal==='function'){
+      window.openAuthModal('login','Connecte-toi pour valider ta prediction.');
+    }
+    throw new Error('Connexion requise');
+  }
+
+  const response=await fetch(`${BACKEND_URL}/me/bets`,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      Authorization:`Bearer ${token}`,
+    },
+    body:JSON.stringify({
+      debateId:String(currentDebate?.id||''),
+      title:String(currentDebate?.title||'Prediction'),
+      category:String(currentDebate?.category||'general'),
+      side,
+      amount,
+      yesLabel:String(currentDebate?.yesLabel||'OUI'),
+      noLabel:String(currentDebate?.noLabel||'NON'),
+      kind:'market',
+    }),
+  });
+  const payload=await response.json().catch(()=>({}));
+  if(!response.ok){
+    throw new Error(payload?.error||`Erreur API (${response.status})`);
+  }
+  return payload;
+}
+async function confirmBet() {
   if(!pendingBetSide||!currentDebate)return;
   const side=pendingBetSide; pendingBetSide=null;
   closeModal('betConfirmModal');
   const amt=parseFloat(document.getElementById('betAmount').value)||50;
-  balance-=amt; updateBalanceUI();
-  // Track bets per side on the debate object
-  if(!currentDebate._userBetYes)currentDebate._userBetYes=0;
-  if(!currentDebate._userBetNo)currentDebate._userBetNo=0;
-  if(side==='yes'){
-    const nt=livePool+amt, ny=livePool*(liveYesPct/100)+amt;
-    liveYesPct=Math.min(95,Math.max(5,Math.round((ny/nt)*100)));
-    currentDebate._userBetYes+=amt;
-  } else {
-    const nt=livePool+amt;
-    liveYesPct=Math.min(95,Math.max(5,Math.round(((livePool*(liveYesPct/100))/nt)*100)));
-    currentDebate._userBetNo+=amt;
+  try{
+    const payload=await submitMarketBetToBackend(side,amt);
+    if(payload?.debate){
+      const debateIdx=debates.findIndex(item=>String(item.id)===String(payload.debate.id));
+      if(debateIdx>=0){
+        debates[debateIdx]={...debates[debateIdx],...payload.debate};
+        currentDebate=debates[debateIdx];
+      }else{
+        currentDebate={...currentDebate,...payload.debate};
+      }
+      if(Number.isFinite(Number(payload.debate.yesPct)))liveYesPct=Number(payload.debate.yesPct);
+      if(Number.isFinite(Number(payload.debate.pool)))livePool=Number(payload.debate.pool);
+      if(Number.isFinite(Number(payload.debate.viewers)))liveViewers=Number(payload.debate.viewers);
+    }
+    if(payload?.user&&Number.isFinite(Number(payload.user.balance))){
+      balance=Number(payload.user.balance);
+      updateBalanceUI();
+    }else if(typeof window.refreshBalanceFromServer==='function'){
+      await window.refreshBalanceFromServer().catch(()=>null);
+    }
+    updateBettingUI();
+    flashScreen(side);
+    addBetEntry('Vous',amt,side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON'),side);
+    showToast(side==='yes'?'yes':'no','Prediction enregistree',fmt(amt)+' sur '+(side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON')));
+  }catch(error){
+    showToast('err','Prediction refusee',error?.message||'Reessaie dans un instant');
   }
-  livePool+=amt; updateBettingUI();
-  flashScreen(side);
-  addBetEntry('Vous',amt,side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON'),side);
-  showToast(side==='yes'?'🟢':'🔴','Prédiction enregistrée !',fmt(amt)+' sur '+(side==='yes'?(currentDebate.yesLabel||'OUI'):(currentDebate.noLabel||'NON')));
 }
 document.getElementById('confirmBetBtn').addEventListener('click',confirmBet);
 document.getElementById('betYesBtn').addEventListener('click',()=>placeBet('yes'));
@@ -5738,6 +6813,13 @@ function ensureLiveSocket(){
     updateLiveSourceCard(currentDebate);
   });
   liveSocket.on('live_metrics',metrics=>{applyLiveMetrics(metrics);});
+  liveSocket.on('prediction:update',payload=>{
+    if(!currentDebate||String(payload?.predictionId||'')!==String(currentDebate.id))return;
+    if(Number.isFinite(Number(payload?.yesProbability)))liveYesPct=Math.max(5,Math.min(95,Number(payload.yesProbability)));
+    if(Number.isFinite(Number(payload?.volume)))livePool=Math.max(0,Math.round(Number(payload.volume)));
+    mergePredictionHistoryPoint(payload);
+    updateBettingUI();
+  });
   liveSocket.on('debate_chat_history',payload=>{
     if(!currentDebate||String(payload?.debateId||'')!==String(currentDebate.id))return;
     replaceChat(payload.messages||[]);
@@ -5758,17 +6840,7 @@ function stopLiveFallbackFeed(){
 
 function startLiveFallbackFeed(){
   stopLiveFallbackFeed();
-  liveFeedFallbackTimer=setInterval(()=>{
-    if(!currentDebate||currentDebate.closed)return;
-    const stale=Date.now()-lastLiveMetricsTs>7000;
-    const disconnected=!liveSocket||!liveSocket.connected;
-    if(!stale&&!disconnected)return;
-    liveViewers=Math.max(120,liveViewers+Math.round((Math.random()*60)-30));
-    livePool=Math.max(0,livePool+Math.round((Math.random()*260)-90));
-    liveYesPct=Math.max(5,Math.min(95,liveYesPct+Math.round((Math.random()*4)-2)));
-    updateBettingUI();
-    updateLiveProgressFromDebate(currentDebate);
-  },2200);
+  liveFeedFallbackTimer=null;
 }
 
 function connectLiveSocket(){
@@ -5798,6 +6870,7 @@ function startSimulation(){
   seedChat();
   connectLiveSocket();
   startLiveFallbackFeed();
+  startProbabilityHistoryUpdates();
   if(betInterval){clearInterval(betInterval);betInterval=null;}
   if(viewerPulseInterval){clearInterval(viewerPulseInterval);viewerPulseInterval=null;}
   viewerPulseInterval=setInterval(()=>{
@@ -5809,6 +6882,7 @@ function stopSimulation(){
   if(chatInterval){clearInterval(chatInterval);chatInterval=null;}
   if(betInterval){clearInterval(betInterval);betInterval=null;}
   if(viewerPulseInterval){clearInterval(viewerPulseInterval);viewerPulseInterval=null;}
+  stopProbabilityHistoryUpdates();
   stopLiveFallbackFeed();
 }
 
@@ -5863,6 +6937,10 @@ function setMutedState(nextMuted){
     if(nextSrc&&contextFrame.dataset.src!==nextSrc){
       contextFrame.dataset.src=nextSrc;
       contextFrame.src=nextSrc;
+    } else if(!nextSrc){
+      contextFrame.src='about:blank';
+      contextFrame.dataset.src='';
+      contextFrame.dataset.mode='';
     }
   }
 }
@@ -5884,7 +6962,7 @@ const mobileCamBtn=document.getElementById('mliveCamBtn');
 if(mobileCamBtn)mobileCamBtn.addEventListener('click',()=>setMobileCameraState(!mobileCameraOn));
 const mobileShareBtn=document.getElementById('mliveShareBtn');
 if(mobileShareBtn)mobileShareBtn.addEventListener('click',async()=>{
-  const shareTitle=currentDebate?.title||'BEEEF live debate';
+  const shareTitle=currentDebate?.title||'BEEEF débat média';
   const shareUrl=window.location.href;
   try{
     if(navigator.share){
@@ -5892,7 +6970,7 @@ if(mobileShareBtn)mobileShareBtn.addEventListener('click',async()=>{
       return;
     }
     if(navigator.clipboard)await navigator.clipboard.writeText(shareUrl);
-    showToast('ok','Lien copié','Le lien du live est prêt à partager.');
+    showToast('ok','Lien copié','Le lien du débat est prêt à partager.');
   }catch(_){
     showToast('err','Partage indisponible','Tu peux copier l’URL depuis la barre du navigateur.');
   }
@@ -6009,8 +7087,50 @@ function openGains(){
   const el=document.getElementById('gainsBalance');
   if(el&&typeof balance!=='undefined')el.textContent=(balance||0).toLocaleString('fr-FR')+' pts';
 }
-function redeemGift(brand,value){
-  showToast('info','Bientôt disponible','Les récompenses arrivent prochainement !');
+// ── Pack ID → brand + value (display only — server re-validates prices)
+const _PACK_MAP={
+  pack_apple_10:{b:'apple',v:10},pack_apple_20:{b:'apple',v:20},pack_apple_50:{b:'apple',v:50},
+  pack_amazon_10:{b:'amazon',v:10},pack_amazon_20:{b:'amazon',v:20},pack_amazon_50:{b:'amazon',v:50},
+  pack_spotify_10:{b:'spotify',v:10},pack_spotify_20:{b:'spotify',v:20},pack_spotify_50:{b:'spotify',v:50},
+  pack_epic_10:{b:'epic',v:10},pack_epic_20:{b:'epic',v:20},pack_epic_50:{b:'epic',v:50},
+  pack_netflix_10:{b:'netflix',v:10},pack_netflix_20:{b:'netflix',v:20},pack_netflix_50:{b:'netflix',v:50},
+  pack_playstation_10:{b:'playstation',v:10},pack_playstation_20:{b:'playstation',v:20},pack_playstation_50:{b:'playstation',v:50},
+};
+const _BRAND_NAMES={apple:'Apple',amazon:'Amazon',spotify:'Spotify',epic:'Epic Games',netflix:'Netflix',playstation:'PlayStation',xbox:'Xbox'};
+// Display pts (for confirm dialog only — server is the source of truth)
+const _DISPLAY_PTS={10:7000,20:16000,50:45000};
+let _redeemLock=false;
+async function redeemGift(packId){
+  if(!window.currentUser){showToast('warn','Connexion requise','Connectez-vous pour échanger vos points');return;}
+  const token=typeof window.getAuthToken==='function'?window.getAuthToken():'';
+  if(!token){showToast('warn','Connexion requise','');return;}
+  const pack=_PACK_MAP[packId];
+  if(!pack){showToast('err','Carte inconnue','');return;}
+  const brandName=_BRAND_NAMES[pack.b]||pack.b;
+  const displayPts=(_DISPLAY_PTS[pack.v]||0).toLocaleString('fr-FR');
+  if(!confirm(`Échanger ${displayPts} pts contre une carte ${brandName} ${pack.v}€ ?\n\nVous recevrez le code par email.`))return;
+  if(_redeemLock){showToast('warn','Patienter','Un échange est déjà en cours');return;}
+  _redeemLock=true;
+  try{
+    showToast('info','Traitement…','Échange en cours, ne fermez pas la page');
+    const r=await fetch(BACKEND_URL+'/api/gifts/redeem',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({giftCardBrand:pack.b,giftCardValue:pack.v}),
+    });
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Erreur serveur');
+    if(typeof balance!=='undefined')balance=data.newBalance;
+    if(typeof syncProfileDom==='function')syncProfileDom();
+    const gainsEl=document.getElementById('gainsBalance');
+    if(gainsEl)gainsEl.textContent=(data.newBalance||0).toLocaleString('fr-FR')+' pts';
+    showToast('coins','Échange confirmé !','Votre carte cadeau arrive par email 📧');
+    closeGains();
+  }catch(e){
+    showToast('err','Échec de l\'échange',e.message||'Erreur inconnue');
+  }finally{
+    _redeemLock=false;
+  }
 }
 function closeGains(){
   document.getElementById('gainsOverlay').classList.remove('open');
@@ -6023,6 +7143,7 @@ function openAdmin(){
   document.getElementById('adminOverlay').classList.add('open');
   adminLoadStats();
   adminLoadDebates();
+  adminLoadGiftOrders();
 }
 function closeAdmin(){document.getElementById('adminOverlay').classList.remove('open');}
 
@@ -6100,6 +7221,119 @@ async function adminCredit(){
   }catch(e){msgEl.className='admin-msg err';msgEl.textContent='Erreur: '+e.message;msgEl.style.display='block';}
 }
 
+const _GIFT_STATUS_LABELS={
+  pending_review:'En revue',
+  points_reserved:'Points réservés',
+  gift_ready:'Code prêt',
+  gift_sent:'Envoyé',
+  failed:'Échec',
+  points_refunded:'Remboursé'
+};
+
+function giftStatusLabel(status){
+  return _GIFT_STATUS_LABELS[status]||status||'—';
+}
+
+function getAdminGiftInputs(orderId){
+  return {
+    code:(document.getElementById('giftCode_'+orderId)?.value||'').trim(),
+    note:(document.getElementById('giftNote_'+orderId)?.value||'').trim(),
+  };
+}
+
+async function adminLoadGiftOrders(){
+  const tbody=document.getElementById('adminGiftOrdersBody');
+  if(!tbody)return;
+  try{
+    const d=await adminFetch('/api/admin/gift-orders');
+    const orders=(d.orders||[]);
+    if(!orders.length){tbody.innerHTML='<tr><td colspan="5" style="color:var(--txt3);text-align:center;padding:16px">Aucune commande cadeau</td></tr>';return;}
+    tbody.innerHTML=orders.map(order=>{
+      const brand=escapeHtml(_BRAND_NAMES[order.gift_card_brand]||order.gift_card_brand||'—');
+      const status=String(order.status||'pending_review');
+      const code=escapeHtml(order.gift_code||'');
+      const note=escapeHtml(order.admin_note||'');
+      const created=order.created_at?new Date(order.created_at).toLocaleString('fr-FR'):'—';
+      const disabled=status==='gift_sent'||status==='points_refunded';
+      return `
+      <tr>
+        <td style="min-width:180px">
+          <div style="font-weight:700;color:var(--txt)">${escapeHtml(order.email||'—')}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:4px">${created}</div>
+        </td>
+        <td style="min-width:120px">
+          <div style="font-weight:700;color:var(--txt)">${brand} ${Number(order.gift_card_value||0)}€</div>
+          <div style="font-size:11px;color:var(--fire);margin-top:4px">${Number(order.points_cost||0).toLocaleString('fr-FR')} pts</div>
+        </td>
+        <td style="min-width:120px">
+          <div style="font-weight:700;color:var(--txt)">${escapeHtml(giftStatusLabel(status))}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:4px">${escapeHtml(status)}</div>
+        </td>
+        <td style="min-width:220px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <input class="admin-input" id="giftCode_${order.id}" placeholder="Code cadeau" value="${code}" ${disabled?'disabled':''} style="min-width:0">
+            <input class="admin-input" id="giftNote_${order.id}" placeholder="Note admin (optionnel)" value="${note}" ${disabled?'disabled':''} style="min-width:0">
+          </div>
+        </td>
+        <td style="min-width:220px">
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <button class="admin-submit-btn" onclick="adminGiftReady('${order.id}',this)" ${disabled?'disabled':''} style="padding:8px 10px">Prêt</button>
+            <button class="admin-submit-btn" onclick="adminGiftSend('${order.id}',this)" ${disabled?'disabled':''} style="padding:8px 10px">Envoyer</button>
+            <button class="admin-close-btn" onclick="adminGiftRefund('${order.id}',this)" ${status==='points_refunded'?'disabled':''} style="padding:8px 10px">Rembourser</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="5" style="color:var(--blood)">${escapeHtml(e.message||'Erreur')}</td></tr>`;
+  }
+}
+
+async function adminGiftReady(orderId,btn){
+  const {code,note}=getAdminGiftInputs(orderId);
+  if(!code){showToast('warn','Code requis','Saisissez le code cadeau avant validation');return;}
+  btn.disabled=true;
+  try{
+    await adminFetch('/api/admin/gift-orders/'+orderId+'/ready',{method:'POST',body:{giftCode:code,adminNote:note}});
+    showToast('coins','Code enregistré','La carte est marquée comme prête');
+    adminLoadGiftOrders();
+  }catch(e){
+    showToast('err','Validation impossible',e.message||'Erreur');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+async function adminGiftSend(orderId,btn){
+  const {code,note}=getAdminGiftInputs(orderId);
+  if(!code){showToast('warn','Code requis','Saisissez le code cadeau avant envoi');return;}
+  btn.disabled=true;
+  try{
+    await adminFetch('/api/admin/gift-orders/'+orderId+'/send',{method:'POST',body:{giftCode:code,adminNote:note}});
+    showToast('coins','Code envoyé','L’utilisateur a reçu son code par email');
+    adminLoadGiftOrders();
+  }catch(e){
+    showToast('err','Envoi impossible',e.message||'Erreur');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+async function adminGiftRefund(orderId,btn){
+  if(!confirm('Rembourser les points de cette commande ?'))return;
+  const {note}=getAdminGiftInputs(orderId);
+  btn.disabled=true;
+  try{
+    await adminFetch('/api/admin/gift-orders/'+orderId+'/refund',{method:'POST',body:{adminNote:note}});
+    showToast('coins','Points remboursés','La commande a été remboursée');
+    adminLoadGiftOrders();
+  }catch(e){
+    showToast('err','Remboursement impossible',e.message||'Erreur');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
 function closeModal(id){
   document.getElementById(id).classList.remove('open');
   if(id==='fundsModal'){document.getElementById('fundsForm').style.display='block';document.getElementById('fundsSuccess').style.display='none';}
@@ -6147,7 +7381,7 @@ function confirmDeposit(){
 // ═══════════════════════════════════════════════════════════
 //  WebRTC — Perfect Negotiation  (webrtc.github.io/samples)
 //  Signaling : SSE GET /signal?room=X&peer=Y  (push)
-//  WebRTC signaling via Socket.IO (Railway backend)
+//  WebRTC signaling via Socket.IO
 // ═══════════════════════════════════════════════════════════
 const RTC_CFG = { iceServers: [] };
 
@@ -6339,7 +7573,7 @@ async function rtcStart(localStream) {
     if (st === 'connected') {
       _rtcConnected = true;
       addModerationEntry('✅ Flux P2P actif — connexion directe entre les deux orateurs', 'ok');
-      showToast('🔴', 'LIVE réel', 'Flux WebRTC établi');
+      showToast('ok', 'Débat connecté', 'Le flux de contexte est prêt.');
       // Show green border on remote video slot
       const s2 = document.getElementById('proomSide2');
       if (s2) s2.style.boxShadow = 'inset 0 0 0 2px var(--elec)';
@@ -7064,8 +8298,8 @@ function endParticipantRoom(natural){
       .filter(d=>!d.closed)
       .slice()
       .sort((a,b)=>{
-        const aHasImage = !!String(a?.sourceImageUrl || a?.photo || '').trim();
-        const bHasImage = !!String(b?.sourceImageUrl || b?.photo || '').trim();
+        const aHasImage = isRenderablePreviewImage(upgradeMediaImageUrl(a?.sourceImageUrl || a?.photo || ''));
+        const bHasImage = isRenderablePreviewImage(upgradeMediaImageUrl(b?.sourceImageUrl || b?.photo || ''));
         if (aHasImage !== bHasImage) return aHasImage ? -1 : 1;
         const score = (debate)=>
           (debate?.trending ? 2000000 : 0) +
@@ -7167,7 +8401,7 @@ function renderMyBets() {
     list.innerHTML = `<div class="tab-empty-state">
       <div class="tab-empty-icon">🎯</div>
       <div class="tab-empty-title">Aucune prédiction pour l'instant</div>
-      <div class="tab-empty-sub">Entrez dans un débat live et prédisez le camp qui argumente le mieux.</div>
+      <div class="tab-empty-sub">Entrez dans un débat média et prédisez le camp qui argumente le mieux.</div>
     </div>`;
     return;
   }

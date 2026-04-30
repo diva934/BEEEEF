@@ -5,15 +5,27 @@ const cors = require('cors');
 const supabaseApi = require('./supabase');
 const {
   bootstrapState,
+  buildGiftStatusHistoryEntry,
   cancelParticipantBet,
+  checkDuplicateGiftOrder,
+  createGiftOrder,
   createError,
   creditBalanceAsAdmin,
   depositBalance,
+  findOpenGiftOrder,
   forfeitParticipantBet,
+  getGiftOrderById,
+  getProfileBalance,
   getPublicConfig,
+  getRuntimeConfigStatus,
   isAdminUser,
+  listGiftOrders,
   placeBet,
+  redeemGiftCard,
+  refundGiftPoints,
   settleDebateBets,
+  transitionGiftOrder,
+  updateGiftOrder,
   updateProfile,
   verifyAccessToken,
 } = supabaseApi;
@@ -26,12 +38,13 @@ const {
   closeDebateLive,
   countActiveDebates,
   getDebateById,
+  getLatestPredictionHistoryPoint,
+  getPredictionHistory,
   listDebates,
   removeBetFromDebate,
   reconcileDebates,
 } = require('./debates');
 const { startBotsForDebate, stopBotsForDebate } = require('./debate-bots');
-const { startLiveMonitor } = require('./live-monitor');
 const {
   getNewsPipelineStatus,
   runNewsMaintenance,
@@ -39,37 +52,54 @@ const {
 } = require('./news-pipeline');
 const stripeLib = require('./stripe');
 const { listTokenTransactions } = supabaseApi;
-const { resolveNewsLiveStream } = require('./youtube-live');
 
 const PORT = process.env.PORT || 3001;
+const IS_PRODUCTION = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+const ALLOW_VERCEL_PREVIEWS = String(process.env.ALLOW_VERCEL_PREVIEWS || '').toLowerCase() === 'true';
+const RENDER_EXTERNAL_URL = String(process.env.RENDER_EXTERNAL_URL || '').trim().replace(/\/+$/, '');
 const DEBATE_CHAT_HISTORY_LIMIT = 120;
 const DEBATE_CHAT_MESSAGE_LIMIT = 260;
 
 const debateChatByRoom = new Map();
+const debateLifecycleFingerprints = new Map();
 
 // Allowed origins: local dev + Vercel frontend + optional custom domains.
-const DEFAULT_ALLOWED_ORIGINS = [
-  'http://localhost:5501',
-  'http://localhost:3000',
-  'https://beeeef.vercel.app',
-];
+const DEFAULT_ALLOWED_ORIGINS = IS_PRODUCTION
+  ? ['https://beeeef.vercel.app']
+  : [
+      'http://localhost:5501',
+      'http://127.0.0.1:5501',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://beeeef.vercel.app',
+    ];
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
   : DEFAULT_ALLOWED_ORIGINS;
 
+function isLoopbackHost(hostname) {
+  return ['localhost', '127.0.0.1', '::1'].includes(String(hostname || '').toLowerCase());
+}
+
 function isAllowedOrigin(origin) {
   if (!origin) return true;
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
 
   try {
     const url = new URL(origin);
-    if (url.hostname.endsWith('.vercel.app')) return true;
+    const normalizedOrigin = `${url.protocol}//${url.host}`;
+    if (ALLOWED_ORIGINS.includes(normalizedOrigin)) return true;
+    if (!IS_PRODUCTION && isLoopbackHost(url.hostname)) return true;
+    if (ALLOW_VERCEL_PREVIEWS && url.hostname.endsWith('.vercel.app')) return true;
   } catch (_) {
     return false;
   }
 
   return false;
+}
+
+function corsOriginDelegate(origin, callback) {
+  callback(null, isAllowedOrigin(origin));
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -79,30 +109,29 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin(origin, callback) {
-      if (isAllowedOrigin(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error(`Origin not allowed: ${origin}`));
-    },
+    origin: corsOriginDelegate,
     methods: ['GET', 'POST'],
     credentials: true,
+  },
+  allowRequest: (req, callback) => {
+    callback(null, isAllowedOrigin(req.headers.origin));
   },
   transports: ['websocket', 'polling'],
 });
 
 app.use(cors({
-  origin(origin, callback) {
-    if (isAllowedOrigin(origin)) {
-      callback(null, true);
-      return;
-    }
-    callback(new Error(`Origin not allowed: ${origin}`));
-  },
+  origin: corsOriginDelegate,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  if (origin && !isAllowedOrigin(origin)) {
+    res.status(403).json({ error: 'Origin not allowed' });
+    return;
+  }
+  next();
+});
 // Stripe webhook MUST receive raw body (before express.json()).
 app.post('/payment/stripe/webhook',
   express.raw({ type: 'application/json' }),
@@ -163,6 +192,8 @@ app.use((req, res, next) => {
     req.path === '/public/config' ||
     req.path.startsWith('/news') ||
     req.path.startsWith('/debates') ||
+    req.path.startsWith('/api/news') ||
+    req.path.startsWith('/api/predictions') ||
     req.path.startsWith('/auth') ||
     req.path.startsWith('/me/')
   ) {
@@ -182,10 +213,16 @@ function buildDebatePayload(debateId) {
   return {
     ...debate,
     id: String(debate.id),
-    status: debate.closed ? 'closed' : 'live',
-    streamMode: 'broadcast',
+    status: debate.validationState === 'cancelled'
+      ? 'cancelled'
+      : debate.closed
+        ? (debate.validationState === 'validating' ? 'validating' : 'closed')
+        : 'active',
+    bettingClosed: Boolean(debate.closed),
+    resultPendingValidation: debate.validationState === 'validating',
+    streamMode: 'context',
     startedAt: debate.openedAt || debate.createdAt || null,
-    liveStartedAt: debate.openedAt || debate.createdAt || null,
+    liveStartedAt: null,
     currentSpeaker: null,
     turnEndsAt: null,
     turnDurationMs: null,
@@ -194,8 +231,8 @@ function buildDebatePayload(debateId) {
   };
 }
 
-function listDebatePayloads() {
-  return listDebates().map(debate => buildDebatePayload(debate.id));
+function listDebatePayloads(region = null) {
+  return listDebates({ region }).map(debate => buildDebatePayload(debate.id));
 }
 
 function broadcastDebate(debateId) {
@@ -206,6 +243,54 @@ function broadcastDebate(debateId) {
     ...payload,
     serverNow: Date.now(),
   });
+}
+
+function emitPredictionUpdate(debateId, point = null) {
+  const latestPoint = point || getLatestPredictionHistoryPoint(debateId);
+  if (!latestPoint) return;
+
+  io.to(String(debateId)).emit('prediction:update', {
+    predictionId: String(debateId),
+    yesProbability: Number(latestPoint.yesProbability || 0),
+    volume: Number(latestPoint.volume || 0),
+    timestamp: Number(latestPoint.timestamp || Date.now()),
+  });
+}
+
+function getDebateLifecycleFingerprint(debate) {
+  return [
+    debate?.closed ? '1' : '0',
+    String(debate?.validationState || ''),
+    String(debate?.winnerSide || ''),
+    String(debate?.settlementState || ''),
+    String(debate?.updatedAt || ''),
+  ].join('|');
+}
+
+function collectDebateLifecycleTransitions() {
+  const transitions = [];
+  const activeIds = new Set();
+  const debates = listDebates({ includeUnlisted: true });
+
+  debates.forEach(debate => {
+    const id = String(debate.id);
+    const fingerprint = getDebateLifecycleFingerprint(debate);
+    const previous = debateLifecycleFingerprints.get(id);
+    activeIds.add(id);
+    if (previous !== fingerprint) {
+      transitions.push({
+        debate,
+        becameClosed: previous ? previous.startsWith('0|') && fingerprint.startsWith('1|') : false,
+      });
+      debateLifecycleFingerprints.set(id, fingerprint);
+    }
+  });
+
+  [...debateLifecycleFingerprints.keys()].forEach(id => {
+    if (!activeIds.has(id)) debateLifecycleFingerprints.delete(id);
+  });
+
+  return transitions;
 }
 
 function clamp(value, min, max) {
@@ -221,12 +306,9 @@ function calcLiveMetrics(debateId, now = Date.now()) {
   if (!debate) return null;
 
   const id = String(debateId);
-  const hash = roomHash(id);
-  const waveA = Math.sin(now / 5000 + hash * 0.13);
-  const waveB = Math.cos(now / 3500 + hash * 0.07);
-  const yesPct = clamp(Math.round(Number(debate.yesPct || 50) + waveA * 1.6), 5, 95);
-  const pool = Math.max(0, Math.round(Number(debate.pool || 0) + waveB * 180));
-  const viewers = Math.max(120, Math.round(Number(debate.viewers || 0) + waveA * 55 + waveB * 25));
+  const yesPct = clamp(Math.round(Number(debate.yesPct || 50)), 5, 95);
+  const pool = Math.max(0, Math.round(Number(debate.pool || 0)));
+  const viewers = Math.max(0, Math.round(Number(debate.viewers || 0)));
   const durationMs = Math.max(1, Number(debate.durationMs || 1));
   const openedAt = Number(debate.openedAt || now);
   const progressPct = debate.closed
@@ -339,7 +421,12 @@ async function buildBootstrapPayload(accessToken, authUser) {
     .filter(bet => bet.status === 'pending')
     .map(bet => {
       const debate = getDebateById(bet.debateId);
-      if (!debate || !debate.closed || !debate.winnerSide) return null;
+      if (
+        !debate ||
+        !debate.closed ||
+        !debate.winnerSide ||
+        !['validated', 'manual_admin'].includes(String(debate.validationState || '').toLowerCase())
+      ) return null;
       return {
         debateId: debate.id,
         winnerSide: debate.winnerSide,
@@ -407,18 +494,28 @@ app.get('/', (_req, res) => {
   });
 });
 
-app.get('/public/config', withApi(async () => {
-  return getPublicConfig();
+const getPublicConfigHandler = withApi(async () => getPublicConfig());
+const getNewsStatusHandler = withApi(async () => ({
+  serverNow: Date.now(),
+  ...getNewsPipelineStatus(),
 }));
-
-app.get('/debates', (_req, res) => {
-  res.json({
+const getBalanceHandler = withApi(async req => {
+  const profile = await supabaseApi.bootstrapState(req.accessToken, req.authUser);
+  return {
+    balance: profile.user.balance,
+    userId: req.authUser.id,
     serverNow: Date.now(),
-    debates: listDebatePayloads(),
-  });
+  };
 });
 
-app.get('/debates/:id', (req, res) => {
+function sendDebatesPayload(req, res) {
+  res.json({
+    serverNow: Date.now(),
+    debates: listDebatePayloads(req.query.region ? String(req.query.region) : null),
+  });
+}
+
+function sendDebatePayload(req, res) {
   const debate = buildDebatePayload(req.params.id);
   if (!debate) {
     res.status(404).json({ error: 'Debate not found' });
@@ -429,14 +526,37 @@ app.get('/debates/:id', (req, res) => {
     ...debate,
     serverNow: Date.now(),
   });
+}
+
+app.get('/public/config', getPublicConfigHandler);
+app.get('/api/public/config', getPublicConfigHandler);
+
+app.get('/debates', sendDebatesPayload);
+app.get('/api/predictions', sendDebatesPayload);
+
+app.get('/debates/:id', sendDebatePayload);
+app.get('/api/predictions/:id', sendDebatePayload);
+app.get('/debates/:id/history', (req, res) => {
+  const debate = getDebateById(req.params.id);
+  if (!debate) {
+    res.status(404).json({ error: 'Debate not found' });
+    return;
+  }
+
+  res.json(getPredictionHistory(req.params.id, req.query.range));
+});
+app.get('/api/predictions/:id/history', (req, res) => {
+  const debate = getDebateById(req.params.id);
+  if (!debate) {
+    res.status(404).json({ error: 'Prediction not found' });
+    return;
+  }
+
+  res.json(getPredictionHistory(req.params.id, req.query.range));
 });
 
-app.get('/news/status', withApi(async () => {
-  return {
-    serverNow: Date.now(),
-    ...getNewsPipelineStatus(),
-  };
-}));
+app.get('/news/status', getNewsStatusHandler);
+app.get('/api/news/status', getNewsStatusHandler);
 
 // Compatibility endpoints kept so the frontend can hydrate and sign out cleanly.
 app.post('/auth/session', withApi(async () => {
@@ -477,8 +597,11 @@ app.post('/me/bets', requireAuth, withApi(async req => {
   }
 
   const payload = await placeBet(req.accessToken, req.authUser, req.body || {});
-  applyBetToDebate(req.body?.debateId, req.body?.side, req.body?.amount);
+  const updatedDebate = applyBetToDebate(req.body?.debateId, req.body?.side, req.body?.amount);
   broadcastDebate(req.body?.debateId);
+  if (updatedDebate) {
+    emitPredictionUpdate(req.body?.debateId);
+  }
   return {
     ...payload,
     debate: buildDebatePayload(req.body?.debateId),
@@ -501,7 +624,10 @@ app.post('/me/bets/participant/cancel', requireAuth, withApi(async req => {
 
   const payload = await cancelParticipantBet(req.accessToken, req.authUser, debateId);
   if (participantBet) {
-    removeBetFromDebate(participantBet.debateId, participantBet.side, participantBet.amt);
+    const updatedDebate = removeBetFromDebate(participantBet.debateId, participantBet.side, participantBet.amt);
+    if (updatedDebate) {
+      emitPredictionUpdate(debateId);
+    }
   }
   broadcastDebate(debateId);
 
@@ -528,14 +654,8 @@ app.post('/me/bets/participant/forfeit', requireAuth, withApi(async req => {
 // ─────────────────────────────────────────────────────────────
 
 // Quick balance check without full bootstrap
-app.get('/me/balance', requireAuth, withApi(async req => {
-  const profile = await supabaseApi.bootstrapState(req.accessToken, req.authUser);
-  return {
-    balance: profile.user.balance,
-    userId: req.authUser.id,
-    serverNow: Date.now(),
-  };
-}));
+app.get('/me/balance', requireAuth, getBalanceHandler);
+app.get('/api/me/balance', requireAuth, getBalanceHandler);
 
 // Transaction history
 app.get('/me/transactions', requireAuth, withApi(async req => {
@@ -616,50 +736,30 @@ app.get('/api/tokens/packs', (_req, res) => {
 });
 
 // ── YouTube Live Stream Search ─────────────────────────────
-function buildLiveStreamQuery(debate) {
-  const title  = String(debate?.title || debate?.sourceTitle || '').trim();
-  const cat    = String(debate?.category || '').trim();
+function buildContextMediaQuery(debate) {
+  const title = String(debate?.title || debate?.sourceTitle || '').trim();
+  const cat = String(debate?.category || '').trim();
   const source = String(debate?.sourceDomain || debate?.sourceFeedLabel || '').trim();
-  const parts  = [title, cat !== 'general' ? cat : '', source].filter(Boolean);
+  const parts = [title, cat !== 'general' ? cat : '', 'news analysis context video', source].filter(Boolean);
   return parts.join(' ').slice(0, 120);
 }
 
-app.get('/api/debates/:id/livestream', async (req, res) => {
+function sendContextMediaPayload(req, res) {
   const debate = buildDebatePayload(req.params.id);
   if (!debate) return res.status(404).json({ error: 'Debate not found' });
 
-  const query = buildLiveStreamQuery(debate);
+  return res.json({
+    isLive: false,
+    contextUrl: debate.contextVideoUrl || debate.previewVideoUrl || null,
+    previewUrl: debate.previewVideoUrl || null,
+    sourceUrl: debate.sourceUrl || null,
+    sourceLabel: debate.sourceFeedLabel || debate.sourceDomain || '',
+    query: buildContextMediaQuery(debate),
+  });
+}
 
-  // 1. Debate already has a live embed attached at creation time
-  if (debate.liveVideoId && debate.liveEmbedUrl) {
-    return res.json({
-      isLive  : true,
-      liveUrl : debate.liveEmbedUrl,
-      videoId : debate.liveVideoId,
-      channel : debate.liveChannel || '',
-      query,
-    });
-  }
-
-  // 2. Resolve from verified live stream pool
-  try {
-    const liveStream = await resolveNewsLiveStream(debate.category);
-    if (liveStream && liveStream.embedUrl) {
-      return res.json({
-        isLive  : true,
-        liveUrl : liveStream.embedUrl,
-        videoId : liveStream.videoId,
-        channel : liveStream.handle,
-        query,
-      });
-    }
-  } catch (e) {
-    console.warn('[livestream] resolveNewsLiveStream error:', e.message);
-  }
-
-  // No verified live stream for this debate
-  return res.json({ isLive: false, liveUrl: null, query });
-});
+app.get('/api/debates/:id/context-media', sendContextMediaPayload);
+app.get('/api/debates/:id/livestream', sendContextMediaPayload);
 
 app.post('/payment/checkout', requireAuth, withApi(async req => {
   const packId = String(req.body?.packId || '');
@@ -672,6 +772,390 @@ app.post('/payment/checkout', requireAuth, withApi(async req => {
     cancelUrl,
   });
   return session;
+}));
+
+// ─────────────────────────────────────────────────────────────
+//  Gift cards — points redemption
+//  Price table is ONLY on the server — never trust the frontend
+// ─────────────────────────────────────────────────────────────
+
+// 500 pts = 2.99€  /  reference scale
+const GIFT_CARD_PRICES = {
+  5:  3000,
+  10: 7000,
+  15: 11000,
+  20: 16000,
+  25: 21000,
+  50: 45000,
+};
+
+const ALLOWED_BRANDS = new Set([
+  'apple', 'amazon', 'spotify', 'epic', 'netflix', 'playstation', 'xbox',
+]);
+
+const BRAND_NAMES = {
+  apple: 'Apple', amazon: 'Amazon', spotify: 'Spotify',
+  epic: 'Epic Games', netflix: 'Netflix', playstation: 'PlayStation', xbox: 'Xbox',
+};
+
+const GIFT_OPEN_STATUSES = new Set(['pending_review', 'points_reserved', 'gift_ready']);
+
+async function sendResendEmail({ to, subject, html, throwOnMissingKey = true }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    if (throwOnMissingKey) throw createError('RESEND_API_KEY manquante', 500);
+    console.warn('[gifts] RESEND_API_KEY manquante — email non envoyé');
+    return false;
+  }
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: 'BEEEF Rewards <rewards@beeeef.vercel.app>',
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw createError(`Email Resend refusé: ${response.status} ${text}`, 502);
+  }
+
+  return true;
+}
+
+async function notifyAdminGiftReview(order) {
+  const adminEmail = String(process.env.GIFT_ORDERS_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').trim();
+  if (!adminEmail) {
+    console.warn(`[gifts] notification admin ignorée — GIFT_ORDERS_ADMIN_EMAIL manquant (order=${order?.id || 'n/a'})`);
+    return false;
+  }
+
+  const brandName = BRAND_NAMES[order.gift_card_brand] || order.gift_card_brand;
+  return sendResendEmail({
+    to: adminEmail,
+    throwOnMissingKey: false,
+    subject: `Nouvelle demande carte cadeau ${brandName} ${order.gift_card_value}€`,
+    html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#fff">
+      <div style="font-size:28px;font-weight:900;color:#ff4a0e;margin-bottom:24px">BEEEF</div>
+      <h2 style="margin:0 0 16px;color:#111">Commande cadeau à traiter</h2>
+      <p style="color:#444;line-height:1.6">Une nouvelle demande a été créée et les points sont réservés.</p>
+      <div style="background:#fff7f4;border:2px solid #ff4a0e;border-radius:12px;padding:18px 20px;margin:24px 0">
+        <div style="font-size:15px;font-weight:800;color:#111">${brandName} — ${order.gift_card_value}€</div>
+        <div style="font-size:13px;color:#666;margin-top:8px">Utilisateur : ${order.email}<br>Points réservés : ${Number(order.points_cost || 0).toLocaleString('fr-FR')} pts<br>Commande : ${order.id}</div>
+      </div>
+      <p style="color:#444;line-height:1.6">Ouvre le panneau admin BEEEF pour saisir le code et l’envoyer.</p>
+    </div>`,
+  });
+}
+
+async function sendGiftCodeEmail(toEmail, { brand, valueEur, orderId, giftCode, adminNote }) {
+  const brandName = BRAND_NAMES[brand] || brand;
+  const safeCode = String(giftCode || '').replace(/[<>&]/g, '');
+  const safeNote = String(adminNote || '').replace(/[<>&]/g, '');
+
+  return sendResendEmail({
+    to: toEmail,
+    subject: `Votre carte cadeau ${brandName} ${valueEur}€ — BEEEF`,
+    html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#fff">
+      <div style="font-size:28px;font-weight:900;color:#ff4a0e;margin-bottom:24px">BEEEF</div>
+      <h2 style="margin:0 0 16px;color:#111">Votre carte cadeau est prête</h2>
+      <p style="color:#444;line-height:1.6">Bonjour,<br><br>Voici votre code cadeau ${brandName} ${valueEur}€.</p>
+      <div style="background:#fff7f4;border:2px solid #ff4a0e;border-radius:12px;padding:20px;margin:24px 0;text-align:center">
+        <div style="font-size:14px;color:#ff4a0e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Code cadeau</div>
+        <div style="font-size:30px;font-weight:900;color:#111;letter-spacing:0.08em">${safeCode}</div>
+      </div>
+      ${safeNote ? `<p style="color:#444;line-height:1.6"><strong>Message :</strong> ${safeNote}</p>` : ''}
+      <p style="color:#999;font-size:12px;margin-top:32px;border-top:1px solid #eee;padding-top:16px">Référence commande : ${orderId}<br>L'équipe BEEEF</p>
+    </div>`,
+  });
+}
+
+// ── Confirmation email via Resend (fallback when Tremendous sends the card itself)
+async function sendGiftConfirmationEmail(toEmail, { brand, valueEur, orderId }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) { console.warn('[gifts] RESEND_API_KEY manquante — email de confirmation non envoyé'); return; }
+  const brandName = BRAND_NAMES[brand] || brand;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'BEEEF Rewards <rewards@beeeef.vercel.app>',
+        to: [toEmail],
+        subject: `Votre carte cadeau ${brandName} ${valueEur}€ est en route — BEEEF`,
+        html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:32px;background:#fff">
+          <div style="font-size:28px;font-weight:900;color:#ff4a0e;margin-bottom:24px">BEEEF</div>
+          <h2 style="margin:0 0 16px;color:#111">Carte cadeau confirmée 🎉</h2>
+          <p style="color:#444;line-height:1.6">Bonjour,<br><br>Vos points ont été débités et votre carte cadeau est en cours d'envoi.</p>
+          <div style="background:#fff7f4;border:2px solid #ff4a0e;border-radius:12px;padding:20px;margin:24px 0;text-align:center">
+            <div style="font-size:14px;color:#ff4a0e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Carte cadeau</div>
+            <div style="font-size:32px;font-weight:900;color:#111">${brandName} — ${valueEur}€</div>
+          </div>
+          <p style="color:#444;line-height:1.6">Vous allez recevoir un <strong>email séparé de Tremendous</strong> avec le lien pour récupérer votre carte cadeau.</p>
+          <p style="color:#999;font-size:12px;margin-top:32px;border-top:1px solid #eee;padding-top:16px">Référence commande : ${orderId}<br>L'équipe BEEEF — beeeef.vercel.app</p>
+        </div>`,
+      }),
+    });
+  } catch (e) {
+    console.warn('[gifts] échec email de confirmation:', e.message);
+  }
+}
+
+// ── In-flight guard: block concurrent identical requests (30-second window)
+app.get('/api/admin/gift-orders', requireAdmin, withApi(async req => {
+  const status = String(req.query.status || '').trim() || undefined;
+  const orders = await listGiftOrders({ limit: Number(req.query.limit) || 80, status });
+  const counts = orders.reduce((acc, order) => {
+    const key = String(order.status || 'pending_review');
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  return { orders, counts, serverNow: Date.now() };
+}));
+
+app.post('/api/admin/gift-orders/:id/ready', requireAdmin, withApi(async req => {
+  const orderId = String(req.params.id || '').trim();
+  const giftCode = String(req.body?.giftCode || '').trim();
+  const adminNote = String(req.body?.adminNote || '').trim();
+  if (!giftCode) throw createError('Code cadeau requis', 400);
+
+  const order = await getGiftOrderById(orderId);
+  if (!order) throw createError('Commande cadeau introuvable', 404);
+  if (['gift_sent', 'points_refunded'].includes(order.status)) {
+    throw createError('Cette commande est déjà finalisée', 400);
+  }
+
+  const updated = await transitionGiftOrder(orderId, {
+    status: 'gift_ready',
+    giftCode,
+    adminNote,
+    adminId: req.authUser.id,
+    historyMeta: { source: 'admin' },
+  });
+
+  return { ok: true, order: updated };
+}));
+
+app.post('/api/admin/gift-orders/:id/send', requireAdmin, withApi(async req => {
+  const orderId = String(req.params.id || '').trim();
+  const adminNote = String(req.body?.adminNote || '').trim();
+  const providedCode = String(req.body?.giftCode || '').trim();
+
+  let order = await getGiftOrderById(orderId);
+  if (!order) throw createError('Commande cadeau introuvable', 404);
+  if (order.status === 'points_refunded') throw createError('Commande déjà remboursée', 400);
+  if (order.status === 'gift_sent') throw createError('Code déjà envoyé', 400);
+
+  const finalCode = providedCode || String(order.gift_code || '').trim();
+  if (!finalCode) throw createError('Code cadeau requis avant envoi', 400);
+
+  if (order.status !== 'gift_ready') {
+    order = await transitionGiftOrder(orderId, {
+      status: 'gift_ready',
+      giftCode: finalCode,
+      adminNote,
+      adminId: req.authUser.id,
+      historyMeta: { source: 'admin_auto_prepare' },
+    });
+  }
+
+  await sendGiftCodeEmail(order.email, {
+    brand: order.gift_card_brand,
+    valueEur: order.gift_card_value,
+    orderId,
+    giftCode: finalCode,
+    adminNote,
+  });
+
+  const updated = await transitionGiftOrder(orderId, {
+    status: 'gift_sent',
+    giftCode: finalCode,
+    adminNote,
+    adminId: req.authUser.id,
+    historyMeta: { source: 'admin_email' },
+  });
+
+  return { ok: true, order: updated };
+}));
+
+app.post('/api/admin/gift-orders/:id/fail', requireAdmin, withApi(async req => {
+  const orderId = String(req.params.id || '').trim();
+  const adminNote = String(req.body?.adminNote || '').trim();
+  const order = await getGiftOrderById(orderId);
+  if (!order) throw createError('Commande cadeau introuvable', 404);
+  if (['gift_sent', 'points_refunded'].includes(order.status)) {
+    throw createError('Cette commande ne peut plus être marquée en échec', 400);
+  }
+
+  const updated = await transitionGiftOrder(orderId, {
+    status: 'failed',
+    adminNote,
+    adminId: req.authUser.id,
+    errorMessage: adminNote || 'Commande marquée en échec',
+    historyMeta: { source: 'admin' },
+  });
+
+  return { ok: true, order: updated };
+}));
+
+app.post('/api/admin/gift-orders/:id/refund', requireAdmin, withApi(async req => {
+  const orderId = String(req.params.id || '').trim();
+  const adminNote = String(req.body?.adminNote || '').trim();
+  const order = await getGiftOrderById(orderId);
+  if (!order) throw createError('Commande cadeau introuvable', 404);
+  if (order.status === 'points_refunded') throw createError('Points déjà remboursés', 400);
+  if (order.status === 'gift_sent') throw createError('Carte déjà envoyée — remboursement manuel requis hors MVP', 400);
+
+  if (order.status !== 'failed') {
+    await transitionGiftOrder(orderId, {
+      status: 'failed',
+      adminNote,
+      adminId: req.authUser.id,
+      errorMessage: adminNote || 'Carte indisponible',
+      historyMeta: { source: 'admin_before_refund' },
+    });
+  }
+
+  const refund = await refundGiftPoints(order.user_id, orderId, Number(order.points_cost || 0), {
+    reason: 'gift_unavailable',
+    brand: order.gift_card_brand,
+    valueEur: order.gift_card_value,
+  });
+
+  const updated = await transitionGiftOrder(orderId, {
+    status: 'points_refunded',
+    adminNote,
+    adminId: req.authUser.id,
+    historyMeta: { source: 'admin_refund', refundedPoints: Number(order.points_cost || 0) },
+  });
+
+  return { ok: true, order: updated, refund };
+}));
+
+const _pendingRedeems = new Set();
+
+app.post('/api/gifts/redeem', requireAuth, withApi(async req => {
+  const userId    = req.authUser.id;
+  const userEmail = req.authUser.email;
+  if (!userEmail) throw createError('Email utilisateur introuvable', 400);
+
+  // ── 1. Validate input (brand + value only — price comes from server table)
+  const rawBrand = String(req.body?.giftCardBrand || '').toLowerCase().trim();
+  const rawValue = Number(req.body?.giftCardValue);
+  if (!ALLOWED_BRANDS.has(rawBrand)) throw createError('Marque inconnue', 400);
+  const pointsCost = GIFT_CARD_PRICES[rawValue];
+  if (!pointsCost) throw createError('Valeur de carte cadeau non disponible', 400);
+
+  // ── 2. Idempotency key — 30-second window prevents double-clicks
+  const windowSlot     = Math.floor(Date.now() / 30000);
+  const idempotencyKey = `redeem_${userId}_${rawBrand}_${rawValue}_${windowSlot}`;
+
+  // In-memory guard (same process)
+  if (_pendingRedeems.has(idempotencyKey)) {
+    throw createError('Échange en cours, veuillez patienter', 429);
+  }
+
+  // DB-level duplicate check
+  const existing = await checkDuplicateGiftOrder(userId, idempotencyKey);
+  if (existing && ['pending_review', 'points_reserved', 'gift_ready', 'gift_sent'].includes(existing.status)) {
+    throw createError('Échange déjà en cours ou traité, veuillez patienter', 429);
+  }
+
+  const balance = await getProfileBalance(userId);
+  if (Number(balance.balance || 0) < pointsCost) {
+    throw createError(`Solde insuffisant â€” il te faut ${pointsCost} pts, tu as ${balance.balance} pts`, 400);
+  }
+
+  const openOrder = await findOpenGiftOrder(userId, rawBrand, rawValue);
+  if (openOrder && GIFT_OPEN_STATUSES.has(openOrder.status)) {
+    throw createError('Une demande similaire est dÃ©jÃ  en cours de traitement', 409);
+  }
+
+  _pendingRedeems.add(idempotencyKey);
+  let order = null;
+
+  try {
+    // ── 3. Deduct points (existing helper — checks balance, writes token_transaction)
+    order = await createGiftOrder({
+      userId,
+      email: userEmail,
+      brand: rawBrand,
+      valueEur: rawValue,
+      pointsCost,
+      idempotencyKey,
+      status: 'pending_review',
+      provider: 'manual_admin',
+      statusHistory: [buildGiftStatusHistoryEntry('pending_review', {
+        source: 'user_request',
+        email: userEmail,
+      })],
+    });
+
+    // ── 4. Create order row (status: points_deducted)
+    const reserveResult = await redeemGiftCard(userId, pointsCost, {
+      brand: rawBrand,
+      valueEur: rawValue,
+      email: userEmail,
+      orderId: order.id,
+      reason: 'gift_points_reserved',
+    });
+    await transitionGiftOrder(order.id, {
+      status: 'points_reserved',
+      historyMeta: { source: 'system', pointsCost },
+    });
+
+    // ── 5. Call Tremendous to deliver the gift card
+    await notifyAdminGiftReview({
+      ...order,
+      points_cost: pointsCost,
+    });
+
+    // ── 6. Mark order sent
+    console.log(`[gifts] manual order queued ${order.id} â€” ${userId} â€” ${rawBrand} ${rawValue}â‚¬ (${pointsCost}pts)`);
+
+    // ── 7. Send our own confirmation email (Tremendous also sends one)
+    return {
+      ok: true,
+      status: 'points_reserved',
+      newBalance: reserveResult.newBalance,
+      brand: rawBrand,
+      valueEur: rawValue,
+      orderId: order.id,
+    };
+
+    console.log(`[gifts] ✅ ${userId} — ${rawBrand} ${rawValue}€ (${pointsCost}pts) order=${tr.orderId}`);
+  } catch (err) {
+    // ── Auto-refund if points were already deducted but provider failed
+    if (order?.id) {
+      const isProviderError = err.message?.startsWith('Tremendous');
+      if (isProviderError) {
+        try {
+          await refundGiftPoints(userId, order.id, pointsCost);
+          console.warn(`[gifts] ⚠️ provider failed — refunded ${pointsCost}pts to ${userId}`);
+        } catch (refundErr) {
+          console.error('[gifts] refund failed:', refundErr.message);
+          await updateGiftOrder(order.id, { status: 'failed', error_message: err.message });
+        }
+        throw createError(
+          'Le fournisseur de cartes cadeaux est temporairement indisponible. Vos points ont été remboursés.',
+          503
+        );
+      }
+      // Non-provider error (e.g. DB issue after order created)
+      await transitionGiftOrder(order.id, {
+        status: 'failed',
+        errorMessage: err.message?.slice(0, 500),
+        historyMeta: { source: 'system' },
+      });
+    }
+    throw err;
+  } finally {
+    _pendingRedeems.delete(idempotencyKey);
+  }
 }));
 
 // ─────────────────────────────────────────────────────────────
@@ -707,6 +1191,7 @@ io.on('connection', socket => {
     if (liveMetrics) {
       socket.emit('live_metrics', liveMetrics);
     }
+    emitPredictionUpdate(debateId);
 
     socket.emit('debate_chat_history', {
       debateId,
@@ -795,84 +1280,124 @@ setInterval(() => {
 // ─────────────────────────────────────────────────────────────
 //  Start
 // ─────────────────────────────────────────────────────────────
-reconcileDebates();
-startNewsScheduler();
+(async () => {
+  reconcileDebates();
+  try {
+    await runNewsMaintenance({ reason: 'startup_bootstrap' });
+  } catch (error) {
+    console.warn('[predictions] startup bootstrap failed:', error.message);
+  }
+  startNewsScheduler();
+})();
 
 // ─────────────────────────────────────────────────────────────
 //  Bot spawner — detects new live debates and starts bots
 // ─────────────────────────────────────────────────────────────
 const _debatesWithBots = new Set();
 
-function spawnBotsForNewLiveDebates() {
+function spawnBotsForNewContextDebates() {
   try {
-    const liveDebates = listDebates({ includeUnlisted: true })
-      .filter(d => d.liveVideoId && !d.closed && !_debatesWithBots.has(String(d.id)));
+    const contextDebates = listDebates({ includeUnlisted: true })
+      .filter(d =>
+        !d.closed &&
+        !_debatesWithBots.has(String(d.id)) &&
+        (d.createdFromNews || d.contextVideoUrl || d.previewVideoUrl || d.sourceUrl)
+      );
 
-    liveDebates.forEach(debate => {
+    contextDebates.forEach(debate => {
       _debatesWithBots.add(String(debate.id));
       startBotsForDebate(debate.id, debate, io, pushDebateChatMessage);
     });
   } catch (e) {
-    console.warn('[bots] spawnBotsForNewLiveDebates error:', e.message);
+    console.warn('[bots] spawnBotsForNewContextDebates error:', e.message);
   }
 }
 
-// Check for new live debates every 30s
-setInterval(spawnBotsForNewLiveDebates, 30000);
+// Check for new context/media debates every 30s
+setInterval(spawnBotsForNewContextDebates, 30000);
 // Also run once immediately after startup delay
-setTimeout(spawnBotsForNewLiveDebates, 5000);
+setTimeout(spawnBotsForNewContextDebates, 5000);
 
 // ─────────────────────────────────────────────────────────────
 //  Live-stream monitor — closes debates when stream ends
 // ─────────────────────────────────────────────────────────────
-startLiveMonitor(io, {
-  listDebates: (opts) => listDebates(opts),
-  closeDebate: (debateId, verdict) => {
-    const closed = closeDebateLive(debateId, verdict);
-    if (closed) broadcastDebate(debateId);
-  },
-  getChat: (debateId) => debateChatByRoom.get(String(debateId)) || [],
-  stopBots: (debateId) => {
-    stopBotsForDebate(debateId);
-    _debatesWithBots.delete(String(debateId));
-  },
-  onDebateEnded: (debateId) => {
-    broadcastDebate(debateId);
-    runNewsMaintenance({ reason: 'live_ended' }).catch(e => {
-      console.warn('[news] live_ended run failed:', e.message);
-    });
-  },
-});
-
 setInterval(() => {
   const summary = reconcileDebates();
+  const transitions = collectDebateLifecycleTransitions();
+  const shouldRefill = summary.closedIds.length > 0 || transitions.some(entry => entry.becameClosed);
 
   if (summary.closedIds.length) {
     summary.closedIds.forEach(debateId => {
-      broadcastDebate(debateId);
+      stopBotsForDebate(debateId);
+      _debatesWithBots.delete(String(debateId));
     });
+  }
 
-    // Trigger news maintenance whenever any debate closes
+  transitions.forEach(({ debate, becameClosed }) => {
+    if (becameClosed) {
+      stopBotsForDebate(debate.id);
+      _debatesWithBots.delete(String(debate.id));
+    }
+    broadcastDebate(debate.id);
+  });
+
+  if (shouldRefill) {
     runNewsMaintenance({ reason: 'debate_closed' }).catch(error => {
       console.warn('[news] debate_closed run failed', error);
     });
   }
 
   // Emergency refill: if active debates drop very low, force immediate maintenance
-  if (countActiveDebates() < 3) {
-    console.warn('[debates] emergency refill — fewer than 3 active debates');
+  if (countActiveDebates() < 30) {
+    console.warn('[predictions] emergency refill — fewer than 30 active predictions globally');
     runNewsMaintenance({ reason: 'emergency_refill' }).catch(error => {
-      console.warn('[news] emergency_refill run failed', error);
+      console.warn('[predictions] emergency_refill run failed', error);
     });
   }
 }, 5000);
 
-server.listen(PORT, () => {
-  console.log(`\nBEEEF backend running on http://localhost:${PORT}`);
-  console.log('REST : GET /public/config | GET /debates | GET /debates/:id | GET /news/status');
+// ─────────────────────────────────────────────────────────────
+//  Health check — required by Render (and any load-balancer)
+// ─────────────────────────────────────────────────────────────
+app.get('/health', (req, res) => {
+  const runtimeConfig = getRuntimeConfigStatus();
+  const healthy = runtimeConfig.supabasePublicConfigured && runtimeConfig.supabaseServiceRoleConfigured;
+
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'ok' : 'degraded',
+    uptime: Math.round(process.uptime()),
+    ts: new Date().toISOString(),
+    debates: countActiveDebates(),
+    socketPath: '/socket.io',
+    render: {
+      detected: String(process.env.RENDER || '').toLowerCase() === 'true',
+      service: process.env.RENDER_SERVICE_NAME || null,
+      url: RENDER_EXTERNAL_URL || null,
+    },
+    config: {
+      supabasePublicConfigured: runtimeConfig.supabasePublicConfigured,
+      supabaseServiceRoleConfigured: runtimeConfig.supabaseServiceRoleConfigured,
+      stripeConfigured: stripeLib.isConfigured(),
+      resendConfigured: Boolean(String(process.env.RESEND_API_KEY || '').trim()),
+      tremendousConfigured: Boolean(String(process.env.TREMENDOUS_API_KEY || '').trim()),
+    },
+    cors: {
+      allowedOrigins: ALLOWED_ORIGINS,
+      allowVercelPreviews: ALLOW_VERCEL_PREVIEWS,
+    },
+    errors: runtimeConfig.errors,
+  });
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`\nBEEEF backend running on port ${PORT}`);
+  console.log(`ENV  : ${IS_PRODUCTION ? 'production' : 'development'}${RENDER_EXTERNAL_URL ? ` | ${RENDER_EXTERNAL_URL}` : ''}`);
+  console.log(`CORS : ${ALLOWED_ORIGINS.join(', ')}${ALLOW_VERCEL_PREVIEWS ? ' | vercel previews enabled' : ''}`);
+  console.log('REST : GET /health | GET /public/config | GET /debates | GET /debates/:id');
+  console.log('ALIAS: GET /api/public/config | GET /api/predictions | GET /api/predictions/:id | GET /api/predictions/:id/history | GET /api/news/status | GET /api/me/balance');
   console.log('SYNC : GET /me/bootstrap | PUT /me/profile | POST /me/bets');
   console.log('AUTH : Bearer token Supabase requis sur les routes /me/*');
   console.log('NEWS : BBC + Guardian + NPR + AlJazeera + France24 + LeMonde + GDELT');
-  console.log(`STRIPE: ${stripeLib.isConfigured() ? 'configured' : 'NOT configured — set STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET'}`);
-  console.log('WS   : subscribe_stats | debate_state\n');
+  console.log(`STRIPE: ${stripeLib.isConfigured() ? 'configured ✓' : 'NOT configured - set STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET'}`);
+  console.log('WS   : subscribe_stats | debate_state | prediction:update\n');
 });

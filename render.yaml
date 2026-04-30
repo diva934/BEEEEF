@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: beeeef-backend
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: https://beeeef.vercel.app
+      - key: ALLOW_VERCEL_PREVIEWS
+        value: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_SUCCESS_URL
+        value: https://beeeef.vercel.app/?paid=ok&session={CHECKOUT_SESSION_ID}
+      - key: STRIPE_CANCEL_URL
+        value: https://beeeef.vercel.app/?paid=cancel
+      - key: RESEND_API_KEY
+        sync: false
+      - key: GIFT_ORDERS_ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: TREMENDOUS_API_KEY
+        sync: false
+      - key: TREMENDOUS_ENV
+        value: sandbox
+      - key: TREMENDOUS_FUNDING_ID
+        sync: false
+      - key: DEBATE_TARGET_ACTIVE_PER_REGION
+        value: 30
+      - key: PREPARED_PREDICTIONS_PER_REGION
+        value: 8
+      - key: PREDICTION_POLL_INTERVAL_MS
+        value: 10000
