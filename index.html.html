@@ -5615,10 +5615,21 @@ function getDebateRemainingMs(debate, nowMs = getDebateNowMs()) {
 
 function getDebateTimerLabel(debate, nowMs = getDebateNowMs()) {
   if (!debate) return '--:--';
-  if (!debate.closed && typeof debate.endsAt !== 'number' && !Number.isFinite(Number(debate.timerRemaining))) {
-    return 'SYNC...';
+  if (debate.closed) return '00:00';
+  // Real endsAt from server
+  if (typeof debate.endsAt === 'number' && debate.endsAt > 0) {
+    return fmtTime(Math.max(0, debate.endsAt - nowMs));
   }
-  return fmtTime(getDebateRemainingMs(debate, nowMs));
+  // Explicit timerRemaining (legacy field)
+  if (Number.isFinite(Number(debate.timerRemaining)) && Number(debate.timerRemaining) > 0) {
+    return fmtTime(Number(debate.timerRemaining));
+  }
+  // Estimate from openedAt + durationMs
+  if (Number(debate.durationMs) > 0) {
+    const openedAt = Number(debate.openedAt) > 0 ? Number(debate.openedAt) : nowMs;
+    return fmtTime(Math.max(0, (openedAt + Number(debate.durationMs)) - nowMs));
+  }
+  return '--:--';
 }
 
 function buildClientVerdictFromDebate(debate) {
@@ -6771,6 +6782,16 @@ function ensureLiveSocket(){
     if(Number.isFinite(Number(payload?.volume)))livePool=Math.max(0,Math.round(Number(payload.volume)));
     mergePredictionHistoryPoint(payload);
     updateBettingUI();
+  });
+  liveSocket.on('prediction:settled',payload=>{
+    if(!currentDebate||String(payload?.debateId||'')!==String(currentDebate.id))return;
+    const side=payload.winnerSide;
+    const label=payload.winnerLabel||(side==='yes'?(currentDebate?.yesLabel||'OUI'):(currentDebate?.noLabel||'NON'));
+    const winners=Number(payload.winners||0);
+    const gain=Number(payload.totalGain||0);
+    const gainStr=gain>0?` · +${gain.toLocaleString('fr-FR')} pts distribués`:'';
+    const winnersStr=winners>0?`${winners} gagnant${winners>1?'s':''} récompensé${winners>1?'s':''}`:'Aucun parieur';
+    showToast(side==='yes'?'yes':'no',`${label} l'emporte`,`${winnersStr}${gainStr}`);
   });
   liveSocket.on('debate_chat_history',payload=>{
     if(!currentDebate||String(payload?.debateId||'')!==String(currentDebate.id))return;

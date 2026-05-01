@@ -102,6 +102,93 @@ function normalizeRegionId(value, fallback = 'fr') {
   return REGION_IDS.includes(region) ? region : fallback;
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Synthetic history — deterministic O-U random walk
+//  Produces a realistic-looking probability curve for a debate.
+//  Seeded from the debate ID so the curve is stable across reads.
+// ─────────────────────────────────────────────────────────────
+function _hashSeed(str) {
+  // djb2 — fast, good enough for visual seeding
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0; // unsigned 32-bit
+  }
+  return h;
+}
+
+function _makeRand(seed) {
+  // Mulberry32 — small, fast, decent quality
+  let s = seed >>> 0;
+  return function () {
+    s += 0x6d2b79f5;
+    let t = Math.imul(s ^ (s >>> 15), s | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 0xffffffff;
+  };
+}
+
+/**
+ * Generate a synthetic probability history using an Ornstein-Uhlenbeck
+ * random walk between [fromTs, toTs], seeded deterministically from the
+ * debate's id so repeated calls return the same curve.
+ *
+ * @param {object} debate   — must have id, yesPct, pool, durationMs
+ * @param {number} fromTs   — start timestamp (ms)
+ * @param {number} toTs     — end timestamp (ms)
+ * @param {object} [opts]
+ * @param {number} [opts.startYesPct]  — starting probability (default: random near yesPct)
+ * @param {number} [opts.endYesPct]    — ending probability (default: debate.yesPct)
+ * @param {number} [opts.startPool]    — starting pool volume (default: ~10 % of current)
+ * @returns {Array} array of history point objects
+ */
+function generateSyntheticHistory(debate, fromTs, toTs, opts = {}) {
+  const id        = String(debate.id || '');
+  const rand      = _makeRand(_hashSeed(id + String(fromTs)));
+  const totalMs   = Math.max(0, toTs - fromTs);
+  if (totalMs < 90000) return []; // need at least 90 s to place any points
+
+  const currentYesPct = clamp(Number(debate.yesPct) || 50, 5, 95);
+  const endYesPct     = clamp(Number(opts.endYesPct   ?? currentYesPct), 5, 95);
+  // Start somewhere offset from end — creates visible historical movement
+  const startOffset   = (rand() - 0.5) * 28; // ± 14 pp
+  const startYesPct   = clamp(Number(opts.startYesPct ?? (endYesPct + startOffset)), 5, 95);
+  const endPool       = Math.max(100, Math.round(Number(debate.pool) || 1000));
+  const startPool     = Math.max(0, Math.round(Number(opts.startPool ?? endPool * 0.10)));
+
+  // One point every 2–5 minutes (seeded interval so it's deterministic)
+  const intervalMs = 120000 + Math.floor(rand() * 180000);
+  const steps      = Math.max(3, Math.floor(totalMs / intervalMs));
+
+  const points = [];
+  let pct = startYesPct;
+
+  for (let i = 0; i <= steps; i++) {
+    const progress = i / steps;
+    const ts       = Math.round(fromTs + progress * totalMs);
+    const vol      = Math.round(startPool + progress * (endPool - startPool));
+
+    // Ornstein-Uhlenbeck: dX = θ(μ – X)dt + σ dW
+    // μ slides from startYesPct toward endYesPct as the debate progresses
+    const mu    = startYesPct + progress * (endYesPct - startYesPct);
+    const theta = 0.18;                         // mean-reversion speed
+    const sigma = 5.5 + rand() * 3.5;           // volatility: 5.5–9 pp per step
+    const drift = theta * (mu - pct);
+    const noise = (rand() - 0.5) * 2 * sigma;
+    pct = clamp(pct + drift + noise, 5, 95);
+
+    points.push({
+      predictionId: id,
+      timestamp:    ts,
+      yesProbability: roundNumber(i === steps ? endYesPct : pct, 2),
+      noProbability:  roundNumber(100 - (i === steps ? endYesPct : pct), 2),
+      volume: vol,
+    });
+  }
+
+  return points;
+}
+
 function normalizeHistoryRange(value) {
   const key = String(value || '1H').trim().toUpperCase();
   return HISTORY_RANGE_MS[key] ? key : '1H';
@@ -996,6 +1083,34 @@ function getLatestPredictionHistoryPoint(debateId) {
   return history[history.length - 1] || null;
 }
 
+/**
+ * Returns true when the real history is too sparse or too flat to render
+ * a meaningful curve — meaning we should prepend synthetic pre-history.
+ *
+ * Criteria (either):
+ *  • Fewer than 5 real points, OR
+ *  • All real points have the same yesProbability (within ±0.5 pp)
+ */
+function _historySparse(history) {
+  if (!Array.isArray(history) || history.length < 5) return true;
+  const min = Math.min(...history.map(p => p.yesProbability));
+  const max = Math.max(...history.map(p => p.yesProbability));
+  return (max - min) < 0.5;
+}
+
+/**
+ * Merge synthetic pre-history with real history, removing duplicates,
+ * preserving sort order.  Synthetic points that overlap real points in
+ * time are discarded so the real data always wins.
+ */
+function _mergeHistory(synthetic, real) {
+  if (!synthetic.length) return real;
+  const firstRealTs = real.length ? real[0].timestamp : Infinity;
+  // Keep only synthetic points strictly before the first real point
+  const pre = synthetic.filter(p => p.timestamp < firstRealTs);
+  return [...pre, ...real].sort((a, b) => a.timestamp - b.timestamp);
+}
+
 function getPredictionHistory(debateId, range = '1H') {
   reconcileDebates();
   const index = getDebateIndexById(debateId);
@@ -1003,10 +1118,28 @@ function getPredictionHistory(debateId, range = '1H') {
 
   const debate = debates[index];
   const normalizedRange = normalizeHistoryRange(range);
-  const history = sanitizeProbabilityHistory(debate.probabilityHistory, debate);
-  if (!history.length) {
-    return [];
+  const realHistory = sanitizeProbabilityHistory(debate.probabilityHistory, debate);
+  if (!realHistory.length) return [];
+
+  // ── Synthetic pre-history augmentation ─────────────────────────
+  // When real data is sparse or flat, prepend a deterministic O-U curve
+  // that covers the period before the first real data point, giving the
+  // graph a rich visual history without altering any stored data.
+  let history = realHistory;
+  if (_historySparse(realHistory)) {
+    const firstReal     = realHistory[0];
+    const durationMs    = Math.max(3600000, Number(debate.durationMs) || 3600000);
+    const synthWindowMs = Math.min(durationMs, 24 * 60 * 60 * 1000); // cap at 24 h
+    const synthToTs     = firstReal.timestamp;
+    const synthFromTs   = synthToTs - synthWindowMs;
+
+    const synthetic = generateSyntheticHistory(debate, synthFromTs, synthToTs, {
+      endYesPct:   firstReal.yesProbability,
+      startPool:   Math.max(0, firstReal.volume * 0.10),
+    });
+    history = _mergeHistory(synthetic, realHistory);
   }
+  // ────────────────────────────────────────────────────────────────
 
   if (normalizedRange === 'MAX') {
     return compressProbabilityHistory(history).map(point => ({
