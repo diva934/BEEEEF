@@ -3946,75 +3946,13 @@ body{
             </div>
           </div>
 
-          <div class="live-event-data" id="liveEventData">
-            <div class="live-data-top">
-              <div class="live-data-main">
-                <div class="live-data-caption" id="liveEventCaption">État du marché</div>
-                <div class="live-data-value-row">
-                  <div class="live-data-value" id="liveEventPrimary">—</div>
-                  <div class="live-data-change" id="liveEventTrend"></div>
-                </div>
-              </div>
-              <div class="live-data-side">
-                <div class="live-data-side-label">État</div>
-                <div class="live-data-side-value" id="liveEventState">LIVE</div>
-              </div>
-            </div>
-
-            <div class="live-event-grid">
-              <div class="live-bet-kpi">
-                <div class="live-bet-kpi-label">Volume</div>
-                <div class="live-bet-kpi-value" id="liveEventPool">0 pts</div>
-              </div>
-              <div class="live-bet-kpi">
-                <div class="live-bet-kpi-label">Odds YES</div>
-                <div class="live-bet-kpi-value" id="liveEventOddYes" style="color:var(--elec)">—</div>
-              </div>
-              <div class="live-bet-kpi">
-                <div class="live-bet-kpi-label">Odds NO</div>
-                <div class="live-bet-kpi-value" id="liveEventOddNo" style="color:var(--blood)">—</div>
-              </div>
-            </div>
-
-            <div class="live-event-note" id="liveEventInfo"></div>
-          </div>
+          <!-- État du marché supprimé -->
         </section>
 
         <!-- canvas garde pour les animations de fond uniquement -->
         <canvas id="liveCanvas" style="display:none"></canvas>
 
-        <article class="live-info-card live-context-card">
-          <!-- ── Image hero article ────────────────────────── -->
-          <div class="live-context-hero" id="liveContextHero">
-            <div class="live-context-hero-placeholder" id="liveContextHeroPlaceholder">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            </div>
-            <img id="liveContextHeroImg" src="" alt="" loading="lazy" style="display:none">
-            <div class="live-context-hero-overlay"></div>
-            <div class="live-context-hero-badge" id="liveContextHeroBadge">
-              <span class="src-dot"></span>
-              <span class="live-context-hero-source-label" id="liveContextHeroLabel">SOURCE</span>
-            </div>
-            <a class="live-context-hero-link" id="liveContextHeroLink" href="#" target="_blank" rel="noopener noreferrer">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              Voir la source
-            </a>
-          </div>
-          <!-- ── Context text body ──────────────────────────── -->
-          <div class="live-context-body">
-            <div class="live-context-top">
-              <div class="live-context-status">
-                <div class="video-live-badge live-inline-badge" id="liveStatusBadge"><div class="live-dot"></div><span id="liveStatusText">LIVE</span></div>
-                <div class="live-countdown" id="liveCountdown">00:00</div>
-              </div>
-              <div class="video-viewers live-inline-viewers"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-eye"/></svg> <span id="topViewers">0</span></div>
-            </div>
-            <div class="live-info-title" id="liveTitle"></div>
-            <div class="live-info-description" id="liveInfoDescription"></div>
-            <a class="live-info-link" id="liveInfoSourceLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Voir la source</a>
-            <button id="joinAsParticipantBtn" onclick="openJoinParticipantModal()" style="display:none">PARTICIPATE</button>
-          </div>
-        </article>
+        <!-- case source supprimée -->
 
         <div class="ended-banner" id="endedBanner">
           <h3>DEBATE ENDED</h3>
@@ -5616,11 +5554,9 @@ function updateLiveDataCore(){
   const isCryptoPrediction=String(currentDebate?.category||'').toLowerCase()==='crypto';
 
   const marketCard=document.getElementById('liveMarketData');
-  const eventCard=document.getElementById('liveEventData');
   const label=document.getElementById('liveDataLabel');
   if(marketCard)marketCard.hidden=!isCryptoPrediction;
-  if(eventCard)eventCard.hidden=false;
-  if(label)label.textContent=isCryptoPrediction?'Données crypto':'État du marché';
+  if(label)label.textContent=isCryptoPrediction?'Données crypto':'';
 
   const currentPct=Math.max(5,Math.min(95,Number(liveYesPct)||50));
   const noPct=100-currentPct;
@@ -5795,111 +5731,8 @@ function syncPredictionActionState(debate) {
   if (aiThinking) aiThinking.style.display = 'none';
 }
 
-// Category fallback images (Unsplash, stable)
-const CONTEXT_HERO_FALLBACKS = {
-  crypto:      'https://images.unsplash.com/photo-1621504450181-5d356f61d307?w=900&q=75&auto=format&fit=crop',
-  technology:  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&q=75&auto=format&fit=crop',
-  economy:     'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=900&q=75&auto=format&fit=crop',
-  politics:    'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=900&q=75&auto=format&fit=crop',
-  sports:      'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900&q=75&auto=format&fit=crop',
-  geopolitics: 'https://images.unsplash.com/photo-1576485375217-d6a95e34d043?w=900&q=75&auto=format&fit=crop',
-  society:     'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=900&q=75&auto=format&fit=crop',
-  culture:     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=75&auto=format&fit=crop',
-  general:     'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=900&q=75&auto=format&fit=crop',
-};
-
-function getContextHeroFallback(debate){
-  const cat=String(debate?.category||'general').toLowerCase();
-  return CONTEXT_HERO_FALLBACKS[cat]||CONTEXT_HERO_FALLBACKS.general;
-}
-
-function updateLiveSourceCard(debate) {
-  // ── Text elements (title, description, source link) ─────────
-  const infoTitle       = document.getElementById('liveTitle');
-  const infoDescription = document.getElementById('liveInfoDescription');
-  const infoSourceLink  = document.getElementById('liveInfoSourceLink');
-
-  const excerpt    = debate?.sourceExcerpt || debate?.sourceDescription || '';
-  const sourceUrl  = debate?.sourceUrl || '';
-  const sourceTitle= debate?.sourceTitle || '';
-
-  if(infoTitle)infoTitle.textContent=sourceTitle||debate?.title||'';
-  if(infoDescription)infoDescription.textContent=excerpt||debate?.description||'';
-  if(infoSourceLink){
-    if(sourceUrl){
-      infoSourceLink.href=sourceUrl;
-      infoSourceLink.textContent=`Voir la source${sourceTitle?' : '+sourceTitle:''}`;
-      infoSourceLink.style.display='inline-block';
-    }else{
-      infoSourceLink.removeAttribute('href');
-      infoSourceLink.style.display='none';
-    }
-  }
-
-  // ── Article hero image ───────────────────────────────────────
-  const heroImg       = document.getElementById('liveContextHeroImg');
-  const heroPlaceholder = document.getElementById('liveContextHeroPlaceholder');
-  const heroLabel     = document.getElementById('liveContextHeroLabel');
-  const heroLink      = document.getElementById('liveContextHeroLink');
-
-  if(!heroImg)return;
-
-  // Resolve image: use debate image or category fallback (never empty)
-  const rawImage = String(debate?.sourceImageUrl||debate?.photo||'').trim();
-  const imageUrl = rawImage && !rawImage.startsWith('data:image/svg') ? rawImage : getContextHeroFallback(debate);
-
-  // Source badge label
-  const host  = sourceHost(sourceUrl)||debate?.sourceDomain||'';
-  const label = debate?.sourceFeedLabel||debate?.sourceDomain||'Source';
-  const badgeText = [label, host].filter(Boolean).join(' · ').slice(0, 40);
-  if(heroLabel)heroLabel.textContent=badgeText||'SOURCE';
-
-  // External link button
-  if(heroLink){
-    if(sourceUrl){
-      heroLink.href=sourceUrl;
-      heroLink.classList.add('visible');
-    }else{
-      heroLink.removeAttribute('href');
-      heroLink.classList.remove('visible');
-    }
-  }
-
-  // Load image with graceful fallback
-  if(heroImg.dataset.loadedSrc===imageUrl){
-    // Already displaying the correct image — nothing to do
-    return;
-  }
-
-  heroImg.classList.remove('loaded','error');
-  heroImg.style.display='none';
-  if(heroPlaceholder)heroPlaceholder.style.display='flex';
-
-  const tmpImg=new Image();
-  tmpImg.onload=()=>{
-    heroImg.src=imageUrl;
-    heroImg.alt=escapeHtml(sourceTitle||debate?.title||'');
-    heroImg.style.display='block';
-    heroImg.dataset.loadedSrc=imageUrl;
-    requestAnimationFrame(()=>heroImg.classList.add('loaded'));
-    if(heroPlaceholder)heroPlaceholder.style.display='none';
-  };
-  tmpImg.onerror=()=>{
-    // Try category fallback if article image failed
-    const fallback=getContextHeroFallback(debate);
-    if(imageUrl!==fallback){
-      heroImg.src=fallback;
-      heroImg.style.display='block';
-      heroImg.dataset.loadedSrc=fallback;
-      requestAnimationFrame(()=>heroImg.classList.add('loaded'));
-      if(heroPlaceholder)heroPlaceholder.style.display='none';
-    }else{
-      // Fallback also failed — keep placeholder
-      heroImg.classList.add('error');
-    }
-  };
-  tmpImg.src=imageUrl;
-}
+// Source card supprimée — fonction conservée comme no-op pour compatibilité
+function updateLiveSourceCard(debate) { /* no-op */ }
 
 function playMutedVideo(video) {
   if (!video) return;
