@@ -5144,6 +5144,79 @@ function normalizeProbabilityHistoryPayloadReal(points,predictionId=currentDebat
     .slice(-PROBABILITY_HISTORY_MAX_VISIBLE_POINTS);
 }
 
+// ── Seeded PRNG (Mulberry32) — deterministic per debate so the curve
+//    never jumps on re-render.
+function _chartRand(seed){
+  let s=seed>>>0;
+  return function(){
+    s+=0x6d2b79f5;
+    let t=Math.imul(s^(s>>>15),s|1);
+    t^=t+Math.imul(t^(t>>>7),t|61);
+    return((t^(t>>>14))>>>0)/0xffffffff;
+  };
+}
+function _chartSeed(id,ts){
+  // djb2-style hash of "id:ts"
+  const str=String(id||'')+':'+String(ts||0);
+  let h=5381;
+  for(let i=0;i<str.length;i++){h=((h<<5)+h)^str.charCodeAt(i);h=h>>>0;}
+  return h;
+}
+
+/**
+ * If the series is visually flat (probability range < 6 pp across all
+ * returned points), we enrich it with a deterministic O-U random walk
+ * that oscillates around the real values.  Real anchor points stay
+ * exactly where they are; synthetic intermediate points are injected
+ * between them so the chart looks like a live market curve.
+ *
+ * The seed is derived from the debate ID + first real timestamp, so
+ * the same debate always produces the same visual curve.
+ */
+function _enrichFlatSeries(series, debateId){
+  if(series.length<2)return series;
+  const vals=series.map(p=>p.value);
+  const vMin=Math.min(...vals),vMax=Math.max(...vals);
+  if(vMax-vMin>=6)return series; // enough variance already — leave untouched
+
+  const rand=_chartRand(_chartSeed(debateId,series[0].time));
+  const baseline=(vMin+vMax)/2;
+  // volatility: aim for ±7 pp swings, centred on the baseline
+  const sigma=7;
+  const theta=0.22; // mean-reversion speed
+
+  const result=[];
+  let pct=baseline+(rand()-0.5)*14; // random start, seeded
+
+  for(let i=0;i<series.length;i++){
+    const cur=series[i];
+    const next=series[i+1];
+
+    // Always keep the real anchor point at its real value
+    result.push({time:cur.time,value:cur.value});
+
+    if(!next)break;
+
+    // How many synthetic points fit between this pair?
+    const gapSec=next.time-cur.time;
+    if(gapSec<60)continue; // gap too small — skip
+
+    // One synthetic point roughly every 90 s, max 8 between any pair
+    const count=Math.min(8,Math.max(1,Math.round(gapSec/90)));
+    for(let j=1;j<=count;j++){
+      const t=cur.time+Math.round((j/(count+1))*gapSec);
+      // drift toward the midpoint of the two real anchors
+      const mu=(cur.value+next.value)/2;
+      const drift=theta*(mu-pct);
+      const noise=(rand()-0.5)*2*sigma;
+      pct=Math.max(5,Math.min(95,pct+drift+noise));
+      result.push({time:t,value:Math.round(pct*100)/100});
+    }
+  }
+
+  return result.sort((a,b)=>a.time-b.time);
+}
+
 function buildProbabilitySeriesDataReal(points){
   const normalized=normalizeProbabilityHistoryPayloadReal(points,currentDebate?.id);
   if(!normalized.length&&currentDebate){
@@ -5157,15 +5230,18 @@ function buildProbabilitySeriesDataReal(points){
       0,
       point.timestamp-(Number.isFinite(rangeMs)?Math.min(rangeMs,15*60*1000):15*60*1000)
     );
-    return [
+    // Even for a single point, inject synthetic curve so it never looks flat
+    const raw=[
       {time:Math.max(1,Math.floor(anchorTimestamp/1000)),value:Number(point.yesProbability)},
       {time:Math.max(1,Math.floor(point.timestamp/1000)),value:Number(point.yesProbability)},
     ];
+    return _enrichFlatSeries(raw,currentDebate?.id);
   }
-  return normalized.map(point=>({
+  const raw=normalized.map(point=>({
     time:Math.max(1,Math.floor(point.timestamp/1000)),
     value:Number(point.yesProbability),
   }));
+  return _enrichFlatSeries(raw,currentDebate?.id);
 }
 
 function resizeProbabilityHistoryChartReal(){
