@@ -10,6 +10,14 @@ const {
   resolvePredictionDurationMs,
   nowIso,
 } = require('./prediction-engine');
+// Supabase history persistence (lazy — non-fatal if env vars missing)
+let _pushHistoryBatch = null;
+let _pullHistory = null;
+try {
+  const sb = require('./supabase');
+  _pushHistoryBatch = sb.pushDebateHistoryBatch;
+  _pullHistory      = sb.pullDebateHistory;
+} catch (_) { /* Supabase not configured — in-memory only */ }
 
 const DATA_FILE = process.env.DEBATES_FILE || path.join(__dirname, 'data', 'debates.json');
 const REGION_IDS = ['fr', 'de', 'gb', 'es', 'it', 'be', 'ch', 'nl', 'pt', 'pl', 'se', 'at'];
@@ -1072,6 +1080,16 @@ function recordProbabilityHistoryAtIndex(index, { force = false, timestamp = now
     probabilityHistory: appended.history,
   };
 
+  // Persist to Supabase so history survives server restarts (fire-and-forget)
+  if (appended.changed && appended.point && typeof _pushHistoryBatch === 'function') {
+    _pushHistoryBatch([{
+      debate_id:   String(debate.id),
+      recorded_at: Number(appended.point.timestamp),
+      yes_prob:    Number(appended.point.yesProbability),
+      volume:      Number(appended.point.volume || 0),
+    }]).catch(function() { /* non-fatal */ });
+  }
+
   return appended.point;
 }
 
@@ -1111,25 +1129,55 @@ function _mergeHistory(synthetic, real) {
   return [...pre, ...real].sort((a, b) => a.timestamp - b.timestamp);
 }
 
-function getPredictionHistory(debateId, range = '1H') {
+async function getPredictionHistory(debateId, range) {
+  if (range === undefined) range = '1H';
   reconcileDebates();
   const index = getDebateIndexById(debateId);
   if (index === -1) return [];
 
   const debate = debates[index];
   const normalizedRange = normalizeHistoryRange(range);
-  const realHistory = sanitizeProbabilityHistory(debate.probabilityHistory, debate);
+  let realHistory = sanitizeProbabilityHistory(debate.probabilityHistory, debate);
+
+  // ── Supabase history recovery ───────────────────────────────────
+  // If in-memory is empty or sparse (server just restarted), pull stored
+  // points from Supabase and merge them back so the graph has real memory.
+  if (_historySparse(realHistory) && typeof _pullHistory === 'function') {
+    try {
+      const cutoffTs = nowMs() - 48 * 60 * 60 * 1000; // pull up to 48 h back
+      const rows = await _pullHistory(String(debateId), cutoffTs);
+      if (rows.length > 0) {
+        const recovered = rows.map(function(r) {
+          return {
+            timestamp:      Number(r.recorded_at),
+            yesProbability: Number(r.yes_prob),
+            volume:         Number(r.volume || 0),
+          };
+        });
+        const memTs = new Set(realHistory.map(function(p) { return p.timestamp; }));
+        const merged = recovered
+          .filter(function(p) { return !memTs.has(p.timestamp); })
+          .concat(realHistory)
+          .sort(function(a, b) { return a.timestamp - b.timestamp; });
+        debates[index] = Object.assign({}, debates[index], {
+          probabilityHistory: merged.slice(-PROBABILITY_HISTORY_MAX_POINTS),
+        });
+        realHistory = sanitizeProbabilityHistory(debates[index].probabilityHistory, debate);
+      }
+    } catch (_) { /* non-fatal — fall through to synthetic */ }
+  }
+  // ────────────────────────────────────────────────────────────────
+
   if (!realHistory.length) return [];
 
   // ── Synthetic pre-history augmentation ─────────────────────────
-  // When real data is sparse or flat, prepend a deterministic O-U curve
-  // that covers the period before the first real data point, giving the
-  // graph a rich visual history without altering any stored data.
+  // When real data is still sparse after Supabase recovery, prepend a
+  // deterministic O-U curve to give the graph a rich visual history.
   let history = realHistory;
   if (_historySparse(realHistory)) {
     const firstReal     = realHistory[0];
     const durationMs    = Math.max(3600000, Number(debate.durationMs) || 3600000);
-    const synthWindowMs = Math.min(durationMs, 24 * 60 * 60 * 1000); // cap at 24 h
+    const synthWindowMs = Math.min(durationMs, 24 * 60 * 60 * 1000);
     const synthToTs     = firstReal.timestamp;
     const synthFromTs   = synthToTs - synthWindowMs;
 
@@ -1142,17 +1190,19 @@ function getPredictionHistory(debateId, range = '1H') {
   // ────────────────────────────────────────────────────────────────
 
   if (normalizedRange === 'MAX') {
-    return compressProbabilityHistory(history).map(point => ({
-      predictionId: String(debate.id),
-      timestamp: point.timestamp,
-      yesProbability: point.yesProbability,
-      volume: point.volume,
-    }));
+    return compressProbabilityHistory(history).map(function(point) {
+      return {
+        predictionId: String(debate.id),
+        timestamp: point.timestamp,
+        yesProbability: point.yesProbability,
+        volume: point.volume,
+      };
+    });
   }
 
   const cutoff = nowMs() - HISTORY_RANGE_MS[normalizedRange];
-  const visible = history.filter(point => point.timestamp >= cutoff);
-  const anchor = [...history].reverse().find(point => point.timestamp < cutoff) || null;
+  const visible = history.filter(function(point) { return point.timestamp >= cutoff; });
+  const anchor = history.slice().reverse().find(function(point) { return point.timestamp < cutoff; }) || null;
   const points = visible.slice();
 
   if (anchor && (!points.length || points[0].timestamp !== anchor.timestamp)) {
@@ -1160,12 +1210,14 @@ function getPredictionHistory(debateId, range = '1H') {
   }
 
   const compacted = compressProbabilityHistory(points.length ? points : [history[history.length - 1]]);
-  return compacted.map(point => ({
-    predictionId: String(debate.id),
-    timestamp: point.timestamp,
-    yesProbability: point.yesProbability,
-    volume: point.volume,
-  }));
+  return compacted.map(function(point) {
+    return {
+      predictionId: String(debate.id),
+      timestamp: point.timestamp,
+      yesProbability: point.yesProbability,
+      volume: point.volume,
+    };
+  });
 }
 
 function countActiveDebates(options = {}) {

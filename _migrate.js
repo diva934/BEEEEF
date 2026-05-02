@@ -138,6 +138,41 @@ BEGIN
   UPDATE public.bets SET status = 'lost', payout = -v_bet.amt, settled_at = now() WHERE id = v_bet.id;
 END;
 $$;
+
+-- ── debate_history : historique persistant des probabilites ──────────────
+-- Conserve la courbe du graphique entre les redemarrages Render.
+CREATE TABLE IF NOT EXISTS public.debate_history (
+  id           BIGSERIAL   PRIMARY KEY,
+  debate_id    TEXT        NOT NULL,
+  recorded_at  BIGINT      NOT NULL,
+  yes_prob     REAL        NOT NULL,
+  volume       REAL        NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX  IF NOT EXISTS idx_debate_history_lookup
+  ON public.debate_history (debate_id, recorded_at ASC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_debate_history_unique
+  ON public.debate_history (debate_id, recorded_at);
+ALTER TABLE public.debate_history ENABLE ROW LEVEL SECURITY;
+DO $$debate_hist$$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'debate_history' AND policyname = 'service role full access'
+  ) THEN
+    CREATE POLICY "service role full access"
+      ON public.debate_history FOR ALL TO service_role
+      USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'debate_history' AND policyname = 'anon read only'
+  ) THEN
+    CREATE POLICY "anon read only"
+      ON public.debate_history FOR SELECT TO anon
+      USING (true);
+  END IF;
+END $$debate_hist$$;
 `;
 
 function request(options, body) {

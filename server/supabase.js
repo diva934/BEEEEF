@@ -1115,6 +1115,55 @@ async function refundGiftPoints(userId, orderId, pointsCost, meta = {}) {
   return { userId, refunded: pointsCost, newBalance };
 }
 
+// ──────────────────────────────────────────────────────────────────
+//  Debate history — persistent storage in Supabase
+//  Table: debate_history (debate_id, recorded_at, yes_prob, volume)
+// ──────────────────────────────────────────────────────────────────
+
+/**
+ * Push one or more history points to Supabase (fire-and-forget friendly).
+ * ON CONFLICT DO NOTHING via "resolution=ignore-duplicates" so duplicate
+ * (debate_id, recorded_at) rows are silently skipped.
+ */
+async function pushDebateHistoryBatch(points) {
+  if (!Array.isArray(points) || !points.length) return;
+  try {
+    const target = getServiceRestUrl('/rest/v1/debate_history');
+    await serviceRoleFetchJson(target, {
+      method: 'POST',
+      headers: {
+        ...getServiceHeaders(),
+        Prefer: 'resolution=ignore-duplicates,return=minimal',
+      },
+      body: JSON.stringify(points),
+    });
+  } catch (err) {
+    console.warn('[debate-history] push failed (non-fatal):', err.message);
+  }
+}
+
+/**
+ * Fetch stored history points for a debate from Supabase.
+ * Returns array sorted asc by recorded_at.
+ */
+async function pullDebateHistory(debateId, fromTs = 0, limit = 600) {
+  if (!debateId) return [];
+  try {
+    const target = getServiceRestUrl('/rest/v1/debate_history', {
+      debate_id:   `eq.${debateId}`,
+      recorded_at: `gte.${Math.max(0, Number(fromTs) || 0)}`,
+      select:      'recorded_at,yes_prob,volume',
+      order:       'recorded_at.asc',
+      limit:       String(Math.min(600, Math.max(1, Number(limit) || 600))),
+    });
+    const rows = await serviceRoleFetchJson(target);
+    return Array.isArray(rows) ? rows : [];
+  } catch (err) {
+    console.warn('[debate-history] pull failed (non-fatal):', err.message);
+    return [];
+  }
+}
+
 module.exports = {
   autoSettleDebates,
   bootstrapState,
@@ -1135,6 +1184,8 @@ module.exports = {
   listGiftOrders,
   listTokenTransactions,
   placeBet,
+  pullDebateHistory,
+  pushDebateHistoryBatch,
   redeemGiftCard,
   refundDebateBetsAsAdmin,
   refundGiftPoints,

@@ -539,23 +539,29 @@ app.get('/api/predictions', sendDebatesPayload);
 
 app.get('/debates/:id', sendDebatePayload);
 app.get('/api/predictions/:id', sendDebatePayload);
-app.get('/debates/:id/history', (req, res) => {
+app.get('/debates/:id/history', async (req, res) => {
   const debate = getDebateById(req.params.id);
   if (!debate) {
     res.status(404).json({ error: 'Debate not found' });
     return;
   }
-
-  res.json(getPredictionHistory(req.params.id, req.query.range));
+  try {
+    res.json(await getPredictionHistory(req.params.id, req.query.range));
+  } catch (err) {
+    res.status(500).json({ error: 'history_error' });
+  }
 });
-app.get('/api/predictions/:id/history', (req, res) => {
+app.get('/api/predictions/:id/history', async (req, res) => {
   const debate = getDebateById(req.params.id);
   if (!debate) {
     res.status(404).json({ error: 'Prediction not found' });
     return;
   }
-
-  res.json(getPredictionHistory(req.params.id, req.query.range));
+  try {
+    res.json(await getPredictionHistory(req.params.id, req.query.range));
+  } catch (err) {
+    res.status(500).json({ error: 'history_error' });
+  }
 });
 
 app.get('/news/status', getNewsStatusHandler);
@@ -1300,12 +1306,9 @@ const _debatesWithBots = new Set();
 
 function spawnBotsForNewContextDebates() {
   try {
+    // All open debates get market bots — no source filter.
     const contextDebates = listDebates({ includeUnlisted: true })
-      .filter(d =>
-        !d.closed &&
-        !_debatesWithBots.has(String(d.id)) &&
-        (d.createdFromNews || d.contextVideoUrl || d.previewVideoUrl || d.sourceUrl)
-      );
+      .filter(d => !d.closed && !_debatesWithBots.has(String(d.id)));
 
     contextDebates.forEach(debate => {
       _debatesWithBots.add(String(debate.id));

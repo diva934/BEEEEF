@@ -259,6 +259,62 @@ function sendBotMessage(debateId, bot, io, pushMsg) {
   }
 }
 
+// ── Sentiment wave ────────────────────────────────────────────────────────
+// Each debate gets a deterministic narrative arc seeded from its ID.
+// The arc defines a YES-bias curve over the debate lifetime so bots
+// naturally push the probability in visible waves rather than a flat line.
+//
+// Returns a value in [0, 1] representing the probability of choosing YES
+// at the given elapsed fraction (0 = start, 1 = end of debate).
+function _debateSentimentSeed(debateId) {
+  var s = 5381;
+  var str = String(debateId || '');
+  for (var i = 0; i < str.length; i++) {
+    s = ((s << 5) + s) ^ str.charCodeAt(i);
+    s = s >>> 0;
+  }
+  return s;
+}
+
+function _getYesBiasFraction(debateId, debate, nowMs) {
+  var seed   = _debateSentimentSeed(debateId);
+  var r32    = seed / 0xffffffff; // 0-1 stable per debate
+
+  // Determine elapsed fraction through debate lifetime
+  var openedAt   = Number(debate && debate.openedAt) || nowMs;
+  var durationMs = Math.max(60000, Number(debate && debate.durationMs) || 3600000);
+  var elapsed    = Math.min(1, Math.max(0, (nowMs - openedAt) / durationMs));
+
+  // Build a 3-phase arc using the seed:
+  //   phase 1 (0-35 %): initial rush — bias toward the seeded favourite
+  //   phase 2 (35-70 %): contested — moves toward 0.50
+  //   phase 3 (70-100 %): late conviction — swings the other way
+  var favoured   = r32 > 0.5 ? 'yes' : 'no'; // seeded favourite side
+  var peakBias   = 0.62 + (r32 % 0.18);       // peak bias: 62-80 % for favoured side
+  var swing      = 0.55 + ((seed % 1000) / 1000) * 0.20; // late swing: 55-75 % opposite
+
+  var yesFrac;
+  if (elapsed < 0.35) {
+    // Ramp up bias toward seeded favourite
+    var t = elapsed / 0.35;
+    var centre = favoured === 'yes' ? peakBias : (1 - peakBias);
+    yesFrac = 0.50 + (centre - 0.50) * t;
+  } else if (elapsed < 0.70) {
+    // Pull back toward 0.50
+    var t2 = (elapsed - 0.35) / 0.35;
+    var centre2 = favoured === 'yes' ? peakBias : (1 - peakBias);
+    yesFrac = centre2 + (0.50 - centre2) * t2;
+  } else {
+    // Late swing the other way
+    var t3 = (elapsed - 0.70) / 0.30;
+    var latecentre = favoured === 'yes' ? (1 - swing) : swing;
+    yesFrac = 0.50 + (latecentre - 0.50) * t3;
+  }
+
+  return Math.min(0.85, Math.max(0.15, yesFrac));
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Start bots for a debate. Target: 25-30 bots per debate.
 // onBotBet(debateId, side, amount) — optional callback that updates the real pool.
 function startBotsForDebate(debateId, debate, io, pushMsg, onBotBet) {
@@ -300,34 +356,61 @@ function startBotsForDebate(debateId, debate, io, pushMsg, onBotBet) {
   });
 
   // ── Market activity: bots place real bets to move the pool ────
-  // First bet arrives 20-60 s after debate opens, then every 90-240 s.
+  // Phase 1 — seeding (first 4 min): bets every 8-18 s to build an
+  //   initial visible direction from the sentiment wave.
+  // Phase 2 — active (4-20 min): bets every 25-55 s for ongoing movement.
+  // Phase 3 — late (20 min+): bets every 50-90 s.
   if (typeof onBotBet === 'function') {
-    (function scheduleBotBet(delay) {
-      var t = setTimeout(function () {
-        if (!_botTimers.has(id)) return;
+    var _betCount = 0;
 
-        // Pick a random bot and determine which side it bets on
-        var betBot = assigned[Math.floor(Math.random() * assigned.length)];
-        var side;
-        if (betBot.side) {
-          // 70 % on the bot's natural side, 30 % on the opposite
-          side = Math.random() < 0.70 ? betBot.side : (betBot.side === 'yes' ? 'no' : 'yes');
-        } else {
-          side = Math.random() < 0.5 ? 'yes' : 'no';
-        }
+    function placeBotBet() {
+      if (!_botTimers.has(id)) return;
 
-        // Realistic bet amounts: 30-250 pts, occasionally larger (5 % chance of 500-1500 pts)
-        var amount = Math.random() < 0.05
-          ? 500 + Math.floor(Math.random() * 1001)
-          : 30  + Math.floor(Math.random() * 221);
+      var betBot  = assigned[Math.floor(Math.random() * assigned.length)];
+      var yesBias = _getYesBiasFraction(id, debate, Date.now());
+      var side;
+      if (betBot.side) {
+        var botYesFrac = betBot.side === 'yes' ? 0.72 : 0.28;
+        var blended    = 0.65 * yesBias + 0.35 * botYesFrac;
+        side = Math.random() < blended ? 'yes' : 'no';
+      } else {
+        side = Math.random() < yesBias ? 'yes' : 'no';
+      }
 
-        try { onBotBet(id, side, amount); } catch (e) { /* ignore */ }
+      // Seed phase: larger bets to visibly move the line quickly.
+      // Active phase: medium. Late: realistic small bets.
+      var amount;
+      if (_betCount < 12) {
+        // Seed phase — 200-800 pts, 10 % chance of 1000-2500 pts
+        amount = Math.random() < 0.10
+          ? 1000 + Math.floor(Math.random() * 1501)
+          : 200  + Math.floor(Math.random() * 601);
+      } else {
+        // Normal phase — 80-400 pts, 8 % chance of 500-1500 pts
+        amount = Math.random() < 0.08
+          ? 500  + Math.floor(Math.random() * 1001)
+          : 80   + Math.floor(Math.random() * 321);
+      }
 
-        // Schedule the next bet: 90-240 s
-        scheduleBotBet(90000 + Math.floor(Math.random() * 150001));
-      }, delay);
+      try { onBotBet(id, side, amount); } catch (e) { /* ignore */ }
+      _betCount++;
+
+      // Dynamic interval depending on phase
+      var nextDelay;
+      if (_betCount < 12) {
+        nextDelay = 8000  + Math.floor(Math.random() * 10001); // 8-18 s (seed)
+      } else if (_betCount < 40) {
+        nextDelay = 25000 + Math.floor(Math.random() * 30001); // 25-55 s (active)
+      } else {
+        nextDelay = 50000 + Math.floor(Math.random() * 40001); // 50-90 s (late)
+      }
+      var t = setTimeout(placeBotBet, nextDelay);
       timers.push(t);
-    })(20000 + Math.floor(Math.random() * 40001)); // first bet: 20-60 s
+    }
+
+    // First bet: 5-15 s after debate opens (near-instant seeding)
+    var firstT = setTimeout(placeBotBet, 5000 + Math.floor(Math.random() * 10001));
+    timers.push(firstT);
   }
 
   console.log('[debate-bots] started ' + assigned.length + ' bots for debate ' + id + (onBotBet ? ' (market-active)' : ''));

@@ -1,6 +1,6 @@
 'use strict';
 
-const { fetchLatestNews } = require('./news-sources');
+const { fetchLatestNews, scoreEventSignal } = require('./news-sources');
 
 const REQUEST_TIMEOUT_MS = Math.max(5000, Number(process.env.PREDICTION_REQUEST_TIMEOUT_MS) || 15000);
 const MAX_FETCH_RETRIES = Math.max(0, Number(process.env.PREDICTION_FETCH_RETRIES) || 1);
@@ -572,7 +572,11 @@ async function fetchPredictionInputsByRegion() {
   Object.keys(REGION_CONTEXTS).forEach(region => {
     const sportsEvents = getRegionSportsContext(region, sportsUniverse);
     const cryptoAssets = getRegionCryptoContext(region, cryptoUniverse);
+    // Keep only event-driven articles (scoreEventSignal >= 2) so debates focus on
+    // real upcoming events (matches, meetings, summits, earnings, verdicts…)
+    const eventThreshold = Number(process.env.NEWS_EVENT_SIGNAL_THRESHOLD) || 2;
     const newsItems = (Array.isArray(latestNews?.items) ? latestNews.items : [])
+      .filter(item => scoreEventSignal(item) >= eventThreshold)
       .map(item => ({ ...item, regionalScore: scoreNewsItemForRegion(item, region) }))
       .sort((left, right) => right.regionalScore - left.regionalScore)
       .slice(0, 24);

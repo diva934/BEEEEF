@@ -22,35 +22,60 @@ async function fetchWithRetry(url, options, retries = MAX_FETCH_RETRIES) {
   throw lastErr;
 }
 
-// Multi-source RSS feeds (no API key required)
+// ─── Event-focused RSS feeds ────────────────────────────────────────────────
+// Priority: feeds that publish SCHEDULED / UPCOMING events with specific dates
+// (elections, summits, matches, hearings, earnings, launches, votes, etc.)
 const RSS_TOPICS = [
-  { id: 'bbc-tech', category: 'technology', label: 'BBC Technology', feedUrl: 'https://feeds.bbci.co.uk/news/technology/rss.xml' },
-  { id: 'bbc-business', category: 'economy', label: 'BBC Business', feedUrl: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
-  { id: 'bbc-politics', category: 'politics', label: 'BBC Politics', feedUrl: 'https://feeds.bbci.co.uk/news/politics/rss.xml' },
-  { id: 'bbc-world', category: 'society', label: 'BBC World', feedUrl: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
-  { id: 'bbc-sport', category: 'sports', label: 'BBC Sport', feedUrl: 'https://feeds.bbci.co.uk/sport/rss.xml?edition=uk' },
-  { id: 'guardian-world', category: 'society', label: 'The Guardian — World', feedUrl: 'https://www.theguardian.com/world/rss' },
-  { id: 'guardian-tech', category: 'technology', label: 'The Guardian — Tech', feedUrl: 'https://www.theguardian.com/uk/technology/rss' },
-  { id: 'guardian-business', category: 'economy', label: 'The Guardian — Business', feedUrl: 'https://www.theguardian.com/uk/business/rss' },
-  { id: 'npr-news', category: 'society', label: 'NPR — Top stories', feedUrl: 'https://feeds.npr.org/1001/rss.xml' },
-  { id: 'npr-business', category: 'economy', label: 'NPR — Business', feedUrl: 'https://feeds.npr.org/1006/rss.xml' },
-  { id: 'aljazeera-all', category: 'society', label: 'Al Jazeera', feedUrl: 'https://www.aljazeera.com/xml/rss/all.xml' },
-  { id: 'france24-en', category: 'society', label: 'France 24', feedUrl: 'https://www.france24.com/en/rss' },
-  { id: 'lemonde-une', category: 'society', label: 'Le Monde', feedUrl: 'https://www.lemonde.fr/rss/une.xml' },
-  { id: 'lemonde-eco', category: 'economy', label: 'Le Monde — Économie', feedUrl: 'https://www.lemonde.fr/economie/rss_full.xml' },
-  { id: 'coindesk', category: 'crypto', label: 'CoinDesk', feedUrl: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
-  { id: 'hn-front', category: 'technology', label: 'Hacker News', feedUrl: 'https://hnrss.org/frontpage' },
+  // ── Politics & geopolitics (high event density) ─────────────────────────
+  { id: 'politico-eu',     category: 'politics',    label: 'Politico EU',         feedUrl: 'https://www.politico.eu/feed/' },
+  { id: 'politico-us',     category: 'politics',    label: 'Politico US',         feedUrl: 'https://rss.politico.com/politics-news.xml' },
+  { id: 'bbc-politics',    category: 'politics',    label: 'BBC Politics',        feedUrl: 'https://feeds.bbci.co.uk/news/politics/rss.xml' },
+  { id: 'guardian-world',  category: 'politics',    label: 'The Guardian — World', feedUrl: 'https://www.theguardian.com/world/rss' },
+  { id: 'aljazeera-all',   category: 'politics',    label: 'Al Jazeera',          feedUrl: 'https://www.aljazeera.com/xml/rss/all.xml' },
+  { id: 'france24-en',     category: 'politics',    label: 'France 24',           feedUrl: 'https://www.france24.com/en/rss' },
+  { id: 'lemonde-une',     category: 'politics',    label: 'Le Monde',            feedUrl: 'https://www.lemonde.fr/rss/une.xml' },
+
+  // ── Economy & finance (scheduled reports, meetings, earnings) ────────────
+  { id: 'bbc-business',    category: 'economy',     label: 'BBC Business',        feedUrl: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
+  { id: 'guardian-biz',    category: 'economy',     label: 'Guardian Business',   feedUrl: 'https://www.theguardian.com/uk/business/rss' },
+  { id: 'lemonde-eco',     category: 'economy',     label: 'Le Monde Économie',   feedUrl: 'https://www.lemonde.fr/economie/rss_full.xml' },
+  { id: 'cnbc-economy',    category: 'economy',     label: 'CNBC Economy',        feedUrl: 'https://www.cnbc.com/id/20910258/device/rss/rss.html' },
+  { id: 'cnbc-finance',    category: 'economy',     label: 'CNBC Finance',        feedUrl: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+  { id: 'npr-business',    category: 'economy',     label: 'NPR Business',        feedUrl: 'https://feeds.npr.org/1006/rss.xml' },
+
+  // ── Technology & product launches ───────────────────────────────────────
+  { id: 'bbc-tech',        category: 'technology',  label: 'BBC Technology',      feedUrl: 'https://feeds.bbci.co.uk/news/technology/rss.xml' },
+  { id: 'guardian-tech',   category: 'technology',  label: 'Guardian Tech',       feedUrl: 'https://www.theguardian.com/uk/technology/rss' },
+  { id: 'techcrunch',      category: 'technology',  label: 'TechCrunch',          feedUrl: 'https://techcrunch.com/feed/' },
+  { id: 'theverge',        category: 'technology',  label: 'The Verge',           feedUrl: 'https://www.theverge.com/rss/index.xml' },
+  { id: 'ars-tech',        category: 'technology',  label: 'Ars Technica',        feedUrl: 'https://feeds.arstechnica.com/arstechnica/index' },
+
+  // ── Sports (match previews, fixtures, upcoming events) ──────────────────
+  { id: 'bbc-sport',       category: 'sports',      label: 'BBC Sport',           feedUrl: 'https://feeds.bbci.co.uk/sport/rss.xml?edition=uk' },
+  { id: 'bbc-football',    category: 'sports',      label: 'BBC Football',        feedUrl: 'https://feeds.bbci.co.uk/sport/football/rss.xml?edition=uk' },
+  { id: 'skysports-fl',    category: 'sports',      label: 'Sky Sports Football', feedUrl: 'https://www.skysports.com/rss/12040' },
+  { id: 'espn-news',       category: 'sports',      label: 'ESPN Top Headlines',  feedUrl: 'https://www.espn.com/espn/rss/news' },
+  { id: 'eurosport-en',    category: 'sports',      label: 'Eurosport',           feedUrl: 'https://www.eurosport.com/rss.xml' },
+  { id: 'lequipe-une',     category: 'sports',      label: "L'Équipe",            feedUrl: 'https://www.lequipe.fr/rss/actu_rss_Une.xml' },
+  { id: 'lequipe-foot',    category: 'sports',      label: "L'Équipe Football",   feedUrl: 'https://www.lequipe.fr/rss/actu_rss_Football.xml' },
+
+  // ── Crypto ──────────────────────────────────────────────────────────────
+  { id: 'coindesk',        category: 'crypto',      label: 'CoinDesk',            feedUrl: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
+  { id: 'cointelegraph',   category: 'crypto',      label: 'CoinTelegraph',       feedUrl: 'https://cointelegraph.com/rss' },
+
+  // ── Society & global events ──────────────────────────────────────────────
+  { id: 'bbc-world',       category: 'society',     label: 'BBC World',           feedUrl: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  { id: 'npr-news',        category: 'society',     label: 'NPR Top Stories',     feedUrl: 'https://feeds.npr.org/1001/rss.xml' },
 ];
 
 const TRUSTED_NEWS_DOMAINS = new Set([
+  // General news
   'bbc.co.uk', 'bbc.com',
   'theguardian.com', 'guardian.co.uk',
   'npr.org',
   'aljazeera.com',
   'france24.com',
   'lemonde.fr',
-  'coindesk.com',
-  'news.ycombinator.com', 'ycombinator.com',
   'reuters.com',
   'apnews.com',
   'nytimes.com',
@@ -63,20 +88,86 @@ const TRUSTED_NEWS_DOMAINS = new Set([
   'economist.com',
   'politico.com', 'politico.eu',
   'axios.com',
+  // Tech
   'techcrunch.com',
   'theverge.com',
   'arstechnica.com',
   'wired.com',
+  // Crypto
+  'coindesk.com',
+  'cointelegraph.com',
+  'decrypt.co',
+  // Sports
+  'skysports.com',
+  'espn.com',
+  'eurosport.com',
+  'lequipe.fr',
+  'bbc.co.uk',
+  // HN
+  'news.ycombinator.com', 'ycombinator.com',
 ]);
 
+// Event-signalling phrases — articles with these phrases describe
+// UPCOMING, TIME-BOUNDED events and are strongly preferred over
+// generic commentary / analysis.
+const EVENT_SIGNAL_PHRASES = [
+  'tonight', 'today', 'this evening', 'this morning',
+  'tomorrow', 'this week', 'next week', 'this weekend',
+  'on monday', 'on tuesday', 'on wednesday', 'on thursday',
+  'on friday', 'on saturday', 'on sunday',
+  'set to', 'scheduled to', 'expected to', 'due to',
+  'will face', 'will meet', 'will vote', 'will announce',
+  'will host', 'will hold', 'will open', 'will close',
+  'kick off', 'kicks off', 'tip off', 'tips off',
+  'final', 'semi-final', 'quarter-final',
+  'election day', 'vote day', 'summit', 'rally', 'conference',
+  'hearing', 'meeting', 'session', 'debate', 'press conference',
+  'earnings', 'results', 'report', 'announcement',
+  'launch', 'premiere', 'opening',
+  'grand prix', 'race day', 'match day', 'game day',
+];
+
 const CATEGORY_KEYWORDS = {
-  politics: ['election', 'parliament', 'senate', 'president', 'minister', 'government', 'vote', 'political', 'democrat', 'republican', 'trump', 'biden', 'macron', 'starmer'],
-  economy: ['inflation', 'gdp', 'market', 'stock', 'fed', 'interest rate', 'recession', 'economy', 'bank', 'ipo', 'earnings', 'trade', 'tariff', 'unemployment'],
-  technology: ['ai', 'apple', 'google', 'microsoft', 'meta', 'openai', 'chatgpt', 'nvidia', 'chip', 'tech', 'software', 'startup', 'silicon valley', 'quantum'],
-  crypto: ['bitcoin', 'ethereum', 'crypto', 'blockchain', 'btc', 'eth', 'stablecoin', 'sec lawsuit', 'coinbase', 'binance'],
-  sports: ['nba', 'nfl', 'fifa', 'world cup', 'olympics', 'ligue 1', 'premier league', 'champions league', 'tennis', 'f1', 'formula 1'],
-  society: ['climate', 'protest', 'strike', 'migration', 'court', 'supreme court', 'ruling', 'war', 'conflict', 'peace', 'treaty'],
+  politics: ['election', 'parliament', 'senate', 'president', 'minister', 'government', 'vote', 'political', 'democrat', 'republican', 'trump', 'biden', 'macron', 'starmer', 'summit', 'treaty', 'sanctions', 'referendum', 'inauguration', 'rally', 'campaign'],
+  economy: ['inflation', 'gdp', 'market', 'stock', 'fed', 'interest rate', 'recession', 'economy', 'bank', 'ipo', 'earnings', 'trade', 'tariff', 'unemployment', 'rate decision', 'fomc', 'ecb', 'rate cut', 'rate hike', 'quarterly results', 'jobs report'],
+  technology: ['ai', 'apple', 'google', 'microsoft', 'meta', 'openai', 'chatgpt', 'nvidia', 'chip', 'tech', 'software', 'startup', 'silicon valley', 'quantum', 'wwdc', 'product launch', 'keynote', 'announcement', 'release'],
+  crypto: ['bitcoin', 'ethereum', 'crypto', 'blockchain', 'btc', 'eth', 'stablecoin', 'sec lawsuit', 'coinbase', 'binance', 'halving', 'defi', 'etf'],
+  sports: ['nba', 'nfl', 'fifa', 'world cup', 'olympics', 'ligue 1', 'premier league', 'champions league', 'tennis', 'f1', 'formula 1', 'final', 'semi-final', 'match', 'game', 'grand prix', 'tournament', 'championship', 'vs', 'face off', 'fixture', 'kick off'],
+  society: ['climate', 'protest', 'strike', 'migration', 'court', 'supreme court', 'ruling', 'war', 'conflict', 'peace', 'treaty', 'hearing', 'verdict', 'trial', 'ceasefire', 'agreement'],
 };
+
+/**
+ * Score an article for how "event-like" it is.
+ * Articles describing upcoming, time-bounded, verifiable events score higher.
+ * Returns a number 0–10; ≥ 3 is good enough for a prediction.
+ */
+function scoreEventSignal(item) {
+  const text = [item.sourceTitle, item.sourceDescription].join(' ').toLowerCase();
+  let score = 0;
+
+  // Strong signals — imminent / scheduled event
+  if (/\b(tonight|today|this evening|this morning|this afternoon)\b/.test(text)) score += 4;
+  if (/\b(tomorrow|this weekend|this week)\b/.test(text)) score += 3;
+  if (/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/.test(text)) score += 2;
+  if (/\b(on (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2})\b/.test(text)) score += 3;
+
+  // Future-tense event verbs
+  if (/\bwill (face|play|host|meet|vote|announce|launch|open|sign|hold|address|testify|rule|decide|release)\b/.test(text)) score += 3;
+  if (/\b(set|due|scheduled|expected|poised)\s+to\b/.test(text)) score += 3;
+  if (/\bkicks? off\b/.test(text)) score += 3;
+
+  // Event nouns
+  if (/\b(final|semi-final|quarter-final|championship|tournament|grand prix|race)\b/.test(text)) score += 3;
+  if (/\b(summit|conference|rally|hearing|session|press conference|keynote|debate)\b/.test(text)) score += 2;
+  if (/\b(earnings|results|ipo|vote|election day|referendum|ruling|verdict)\b/.test(text)) score += 2;
+  if (/\bvs\.?\b/.test(text)) score += 2; // match preview
+
+  // Penalty for pure retrospective / opinion / analysis
+  if (/\b(analysis|opinion|review|explainer|how|why|what to know|everything you need)\b/.test(text)) score -= 2;
+  if (/\b(years? ago|last (week|month|year)|in \d{4})\b/.test(text)) score -= 2;
+
+  return score;
+}
 
 function inferCategoryFromText(text) {
   const lower = String(text || '').toLowerCase();
@@ -298,7 +389,12 @@ async function fetchLatestNews() {
     result.value.forEach(push);
   });
   gdeltItems.forEach(push);
+  // Sort: event-signal score DESC first, then recency DESC
+  // so articles describing upcoming scheduled events bubble to the top.
+  items.forEach(item => { item._eventScore = scoreEventSignal(item); });
   items.sort((left, right) => {
+    const scoreDiff = (right._eventScore || 0) - (left._eventScore || 0);
+    if (scoreDiff !== 0) return scoreDiff;
     const leftTime = left.publishedAt ? Date.parse(left.publishedAt) : 0;
     const rightTime = right.publishedAt ? Date.parse(right.publishedAt) : 0;
     return rightTime - leftTime;
@@ -315,6 +411,8 @@ async function fetchLatestNews() {
 module.exports = {
   RSS_TOPICS,
   TRUSTED_NEWS_DOMAINS,
+  EVENT_SIGNAL_PHRASES,
   fetchLatestNews,
   inferCategoryFromText,
+  scoreEventSignal,
 };
