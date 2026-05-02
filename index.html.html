@@ -3867,6 +3867,7 @@ body{
     <div class="live-page-header">
       <button class="back-btn" id="backBtn" type="button"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><use href="#ic-back"/></svg> BACK</button>
       <div class="live-page-title" id="liveTopTitle"></div>
+      <div class="live-countdown" id="liveCountdown">--:--</div>
     </div>
 
     <section class="live-probability-chart-wrap" id="liveProbabilityChartWrap" hidden>
@@ -4793,7 +4794,7 @@ function fmt(n){const v=Number(n)||0;if(Math.abs(v)>=1e6)return(v/1e6).toFixed(1
 function fmtV(n){return n>=1000?(n/1000).toFixed(1)+'K':String(n)}
 function calcOdds(pct){if(pct<=0||pct>=100)return'—';return(100/pct).toFixed(2)+'x'}
 function timeStr(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
-function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;if(h>0)return h+'h'+m.toString().padStart(2,'0')+'m';return m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0')}
+function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;if(h>0)return h+':'+m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');return m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0')}
 function fmtClockHms(ms){
   const totalSec=Math.max(0,Math.floor((Number(ms)||0)/1000));
   const h=Math.floor(totalSec/3600),m=Math.floor((totalSec%3600)/60),s=totalSec%60;
@@ -8227,8 +8228,9 @@ function endParticipantRoom(natural){
 
   /* ── Format timer ── */
   function fmtIntroTimer(secs){
-    const m=Math.floor(secs/60), s=secs%60;
-    return m+'h '+String(s).padStart(2,'0')+'m';
+    const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+    if(h>0)return h+':'+m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');
+    return m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');
   }
 
   /* ── Build one slide element ── */
@@ -8238,7 +8240,7 @@ function endParticipantRoom(natural){
     const nPct = 100 - yPct;
     const pool = d.pool ? Math.round(d.pool/1000)+'K pts' : '12K pts';
     const participants = d.viewers || d.participants || Math.floor(Math.random()*800+200);
-    const timerSecs = d.timeLeft || (Math.floor(Math.random()*3600)+900);
+    const timerSecs = Math.floor((typeof getDebateRemainingMs==='function'?getDebateRemainingMs(d):(d.timeLeft||0))/1000)||900;
     const mulY = (100/yPct).toFixed(2);
     const mulN = (100/nPct).toFixed(2);
     const visual = buildVisual(d, clr);
