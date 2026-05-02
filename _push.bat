@@ -22,10 +22,10 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: flush historique Supabase depuis server.js toutes les 5 min avec logs"
+git commit -m "fix: switch backend URL from Render to Railway"
 git push origin main --force
 echo.
 git log --oneline -3
 echo.
-echo Deploiement lance sur Render. Attends ~2 min puis recharge le site.
+echo Deploiement lance sur Railway. Attends ~2 min puis recharge le site.
 pause
