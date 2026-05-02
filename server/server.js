@@ -1345,35 +1345,42 @@ async function flushHistoryToSupabase() {
       return;
     }
     var allDebates = listDebates({ includeUnlisted: true });
-    var sinceTs = Date.now() - 6 * 60 * 1000;
+    // Push the full in-memory history (not just recent points).
+    // pushDebateHistoryBatch uses ON CONFLICT DO NOTHING so duplicates are free.
+    // This guarantees every point survives even if the per-point push failed.
     var points = [];
     for (var i = 0; i < allDebates.length; i++) {
       var d = allDebates[i];
       if (!d || !d.id || !Array.isArray(d.probabilityHistory)) continue;
       for (var j = 0; j < d.probabilityHistory.length; j++) {
         var p = d.probabilityHistory[j];
-        if (Number(p.timestamp) >= sinceTs) {
-          points.push({
-            debate_id:   String(d.id),
-            recorded_at: Number(p.timestamp),
-            yes_prob:    Number(p.yesProbability),
-            volume:      Number(p.volume || 0),
-          });
-        }
+        if (!p || !p.timestamp || !Number.isFinite(p.yesProbability)) continue;
+        points.push({
+          debate_id:   String(d.id),
+          recorded_at: Number(p.timestamp),
+          yes_prob:    Number(p.yesProbability),
+          volume:      Number(p.volume || 0),
+        });
       }
     }
     if (!points.length) {
-      console.log('[history-flush] no recent points to push');
+      console.log('[history-flush] nothing to push');
       return;
     }
-    await pushFn(points);
-    console.log('[history-flush] pushed ' + points.length + ' points to Supabase');
+    // Split into chunks of 500 to stay within PostgREST limits
+    var CHUNK = 500;
+    var pushed = 0;
+    for (var k = 0; k < points.length; k += CHUNK) {
+      await pushFn(points.slice(k, k + CHUNK));
+      pushed += Math.min(CHUNK, points.length - k);
+    }
+    console.log('[history-flush] pushed ' + pushed + ' points to Supabase');
   } catch (err) {
     console.error('[history-flush] error:', err.message);
   }
 }
 setInterval(flushHistoryToSupabase, 5 * 60 * 1000);
-setTimeout(flushHistoryToSupabase, 60 * 1000); // first flush 60s after startup
+setTimeout(flushHistoryToSupabase, 30 * 1000); // first flush 30s after startup
 
 // ─────────────────────────────────────────────────────────────
 //  Live-stream monitor — closes debates when stream ends

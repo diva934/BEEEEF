@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: switch backend URL from Render to Railway"
+git commit -m "fix: shared graph memory — always pull+merge Supabase history, flush full in-memory batch"
 git push origin main --force
 echo.
 git log --oneline -3

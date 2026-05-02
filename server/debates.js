@@ -19,6 +19,12 @@ try {
   _pullHistory      = sb.pullDebateHistory;
 } catch (_) { /* Supabase not configured — in-memory only */ }
 
+// Per-debate Supabase pull cache — avoids hammering the DB on every request
+// while still ensuring every user sees the same full history.
+// TTL: 60 s (in-memory live points are always merged on top regardless).
+const _historyPullCache = new Map(); // debateId → { ts: number, rows: array }
+const HISTORY_PULL_CACHE_TTL_MS = 60 * 1000;
+
 const DATA_FILE = process.env.DEBATES_FILE || path.join(__dirname, 'data', 'debates.json');
 const REGION_IDS = ['fr', 'de', 'gb', 'es', 'it', 'be', 'ch', 'nl', 'pt', 'pl', 'se', 'at'];
 const TARGET_ACTIVE_DEBATES_PER_REGION = Math.max(12, Math.min(30, Number(process.env.DEBATE_TARGET_ACTIVE_PER_REGION) || 30));
@@ -1139,14 +1145,32 @@ async function getPredictionHistory(debateId, range) {
   const normalizedRange = normalizeHistoryRange(range);
   let realHistory = sanitizeProbabilityHistory(debate.probabilityHistory, debate);
 
-  // ── Supabase history recovery ───────────────────────────────────
-  // If in-memory is empty or sparse (server just restarted), pull stored
-  // points from Supabase and merge them back so the graph has real memory.
-  if (_historySparse(realHistory) && typeof _pullHistory === 'function') {
+  // ── Always pull from Supabase and merge (cached 60 s per debate) ───────────
+  //
+  // KEY INVARIANT: every user must see the same history — the real record of
+  // what happened — regardless of when the server restarted or when they
+  // opened the page.  The old approach (pull only when _historySparse) broke
+  // this: once the server accumulated ≥5 bot points with variance, Supabase
+  // was never queried again and pre-restart history was permanently invisible.
+  //
+  // Fix: unconditionally pull from Supabase on every history request, but
+  // cache the raw rows per debate for 60 s so we don't hammer the DB.
+  // In-memory live points are always merged on top so they stay current.
+  // ───────────────────────────────────────────────────────────────────────────
+  if (typeof _pullHistory === 'function') {
     try {
-      const cutoffTs = nowMs() - 48 * 60 * 60 * 1000; // pull up to 48 h back
-      const rows = await _pullHistory(String(debateId), cutoffTs);
-      if (rows.length > 0) {
+      const now = nowMs();
+      const cacheKey = String(debateId);
+      const cached = _historyPullCache.get(cacheKey);
+      let rows;
+      if (cached && (now - cached.ts) < HISTORY_PULL_CACHE_TTL_MS) {
+        rows = cached.rows;
+      } else {
+        const cutoffTs = now - 48 * 60 * 60 * 1000; // 48 h back
+        rows = await _pullHistory(cacheKey, cutoffTs);
+        _historyPullCache.set(cacheKey, { ts: now, rows: rows });
+      }
+      if (Array.isArray(rows) && rows.length > 0) {
         const recovered = rows.map(function(r) {
           return {
             timestamp:      Number(r.recorded_at),
@@ -1154,25 +1178,31 @@ async function getPredictionHistory(debateId, range) {
             volume:         Number(r.volume || 0),
           };
         });
+        // Supabase fills the past; in-memory (realHistory) has the latest live pts.
+        // Deduplicate by timestamp — in-memory wins on conflict.
         const memTs = new Set(realHistory.map(function(p) { return p.timestamp; }));
         const merged = recovered
           .filter(function(p) { return !memTs.has(p.timestamp); })
           .concat(realHistory)
           .sort(function(a, b) { return a.timestamp - b.timestamp; });
-        debates[index] = Object.assign({}, debates[index], {
-          probabilityHistory: merged.slice(-PROBABILITY_HISTORY_MAX_POINTS),
-        });
-        realHistory = sanitizeProbabilityHistory(debates[index].probabilityHistory, debate);
+        if (merged.length > realHistory.length) {
+          // Back-fill in-memory so subsequent calls benefit immediately.
+          debates[index] = Object.assign({}, debates[index], {
+            probabilityHistory: merged.slice(-PROBABILITY_HISTORY_MAX_POINTS),
+          });
+          realHistory = sanitizeProbabilityHistory(debates[index].probabilityHistory, debate);
+        }
       }
-    } catch (_) { /* non-fatal — fall through to synthetic */ }
+    } catch (_) { /* non-fatal — degrade to in-memory only */ }
   }
-  // ────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (!realHistory.length) return [];
 
-  // ── Synthetic pre-history augmentation ─────────────────────────
-  // When real data is still sparse after Supabase recovery, prepend a
-  // deterministic O-U curve to give the graph a rich visual history.
+  // ── Synthetic pre-history: last resort for brand-new debates ────────────────
+  // Only used when the debate truly just started AND Supabase has no data yet.
+  // This makes the chart non-empty on day-0, but once real points accumulate
+  // the synthetic prefix disappears naturally on the next pull.
   let history = realHistory;
   if (_historySparse(realHistory)) {
     const firstReal     = realHistory[0];
@@ -1187,7 +1217,7 @@ async function getPredictionHistory(debateId, range) {
     });
     history = _mergeHistory(synthetic, realHistory);
   }
-  // ────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (normalizedRange === 'MAX') {
     return compressProbabilityHistory(history).map(function(point) {
