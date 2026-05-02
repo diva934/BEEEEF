@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: bots sur tous les debats + seeding rapide + synchro graphique temps reel"
+git commit -m "feat: predictions style Polymarket — prix crypto cibles, lois nommees, leaders, verdicts, sommets"
 git push origin main --force
 echo.
 git log --oneline -3

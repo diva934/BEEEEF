@@ -191,46 +191,157 @@ function extractTimeRef(text) {
   return '';
 }
 
+// ── Named-entity lookup: maps common lowercase variants to canonical display names ──
+const NAMED_ENTITIES = {
+  // US Politics
+  'trump': 'Trump', 'donald trump': 'Trump',
+  'biden': 'Biden', 'joe biden': 'Biden',
+  'harris': 'Kamala Harris', 'kamala harris': 'Kamala Harris',
+  'desantis': 'DeSantis', 'ron desantis': 'DeSantis',
+  'pelosi': 'Pelosi', 'schumer': 'Schumer', 'mcconnell': 'McConnell',
+  'rubio': 'Rubio', 'marco rubio': 'Rubio',
+  // World leaders
+  'macron': 'Macron', 'emmanuel macron': 'Macron',
+  'putin': 'Putin', 'vladimir putin': 'Putin',
+  'zelensky': 'Zelensky', 'volodymyr zelensky': 'Zelensky',
+  'xi': 'Xi Jinping', 'xi jinping': 'Xi Jinping',
+  'modi': 'Modi', 'narendra modi': 'Modi',
+  'starmer': 'Starmer', 'keir starmer': 'Starmer',
+  'scholz': 'Scholz', 'olaf scholz': 'Scholz',
+  'meloni': 'Meloni', 'giorgia meloni': 'Meloni',
+  'netanyahu': 'Netanyahu', 'benjamin netanyahu': 'Netanyahu',
+  'erdogan': 'Erdoğan', 'erdoğan': 'Erdoğan',
+  'kim jong un': 'Kim Jong Un', 'kim': 'Kim Jong Un',
+  // Tech / Business
+  'musk': 'Elon Musk', 'elon musk': 'Elon Musk',
+  'altman': 'Sam Altman', 'sam altman': 'Sam Altman',
+  'zuckerberg': 'Zuckerberg', 'mark zuckerberg': 'Zuckerberg',
+  'pichai': 'Sundar Pichai', 'sundar pichai': 'Sundar Pichai',
+  'cook': 'Tim Cook', 'tim cook': 'Tim Cook',
+  // Institutions / bodies
+  'the fed': 'the Fed', 'federal reserve': 'the Fed', 'fed': 'the Fed',
+  'ecb': 'the ECB', 'european central bank': 'the ECB',
+  'boe': 'the BoE', 'bank of england': 'the BoE',
+  'boj': 'the BoJ', 'bank of japan': 'the BoJ',
+  'imf': 'the IMF', 'world bank': 'the World Bank',
+  'supreme court': 'the Supreme Court',
+  'nato': 'NATO', 'g7': 'the G7', 'g20': 'the G20',
+  'congress': 'Congress', 'senate': 'the Senate', 'house': 'the House',
+  'eu': 'the EU', 'european union': 'the EU',
+  'un': 'the UN', 'united nations': 'the UN',
+  // Crypto assets
+  'bitcoin': 'Bitcoin', 'btc': 'Bitcoin',
+  'ethereum': 'Ethereum', 'eth': 'Ethereum',
+  'solana': 'Solana', 'sol': 'Solana',
+  'xrp': 'XRP', 'ripple': 'XRP',
+  'dogecoin': 'Dogecoin', 'doge': 'Dogecoin',
+  'bnb': 'BNB', 'binance coin': 'BNB',
+  'cardano': 'Cardano', 'ada': 'Cardano',
+};
+
+function resolveNamedEntity(raw) {
+  if (!raw) return '';
+  const key = String(raw).toLowerCase().trim();
+  if (NAMED_ENTITIES[key]) return NAMED_ENTITIES[key];
+  // Partial match: check if text contains a known entity key
+  for (const [pattern, canonical] of Object.entries(NAMED_ENTITIES)) {
+    if (key === pattern || (key.length > 4 && key.includes(pattern))) return canonical;
+  }
+  return '';
+}
+
+/**
+ * Extract a price target like "$100k", "$4,000", "$100,000" from text.
+ * Returns the formatted string like "100,000" or null.
+ */
+function extractPriceTarget(text) {
+  const m = String(text || '').match(/\$\s*(\d[\d,]*)\s*([km])?(?:\s*(?:billion|million|thousand))?\b/i);
+  if (!m) return null;
+  let num = Number(m[1].replace(/,/g, ''));
+  if (m[2]) {
+    if (/k/i.test(m[2])) num *= 1000;
+    if (/m/i.test(m[2])) num *= 1000000;
+  }
+  if (!Number.isFinite(num) || num <= 0) return null;
+  return num >= 1000 ? num.toLocaleString('en-US') : String(num);
+}
+
+/**
+ * Extract a named bill/act/law from a headline.
+ * e.g. "Senate votes on the Immigration Reform Act" → "Immigration Reform Act"
+ */
+function extractBillName(text) {
+  const m = String(text || '').match(/\b((?:[A-Z][A-Za-z-]+ ){1,6}(?:Act|Bill|Reform|Law|Amendment|Resolution|Package|Plan|Proposal))\b/);
+  return m ? m[1].trim() : null;
+}
+
 /**
  * Build a Polymarket-style binary prediction question from a news item.
  *
  * Priority chain (first match wins):
- *  1. Direct question in headline ("Will X …?" → keep as-is)
- *  2. Sports match  ("A vs B" / "A face B" / "A host B")
- *  3. Election / referendum / vote
- *  4. Fed / central bank rate decision
- *  5. Summit / peace talks / diplomatic meeting
- *  6. Earnings / IPO / financial event
- *  7. Trial / ruling / court verdict
- *  8. Tech launch / product announcement
- *  9. Military / geopolitical action
- * 10. Generic event verb pattern (set to / expected to / due to)
- * 11. Launch / unveil / announce
- * 12. Approval / passage / signing
- * 13. Price movement
- * 14. Fallback using leading entity
+ *  0.  Direct binary question in headline ("Will X …?" → keep)
+ *  1.  Crypto price target ("Bitcoin may reach $100k" → "Will Bitcoin reach $100,000 this week?")
+ *  2.  Named bill / legislation vote ("Will the [Act] pass Congress?")
+ *  3.  Sports match ("A vs B / A face B")
+ *  4.  Election / referendum / vote result
+ *  5.  Central bank rate decision
+ *  6.  Summit / peace talks with named leaders
+ *  7.  Earnings / IPO
+ *  8.  Court verdict / ruling with named defendant
+ *  9.  Named political figure + specific scheduled action
+ * 10.  Tech product launch / keynote
+ * 11.  Military / geopolitical action
+ * 12.  "Set to / expected to / due to + verb"
+ * 13.  Approval / passage / signing
+ * 14.  Price / market movement
+ * 15.  Category-aware fallback using leading entity
  *
  * Returns a question string ending in "?", or null if nothing usable.
  */
 function buildQuestion(item) {
   const title = cleanHeadline(item.sourceTitle);
-  const desc  = String(item.sourceDescription || '').slice(0, 180);
+  const desc  = String(item.sourceDescription || '').slice(0, 200);
   const full  = title + ' ' + desc;
   const t     = full.toLowerCase();
-  const timeRef = extractTimeRef(full);
+  const timeRef    = extractTimeRef(full);
   const timeSuffix = timeRef ? ` ${timeRef}` : '';
 
   // Reject open-ended journalism questions
   if (/^(How|Why|What|When|Where|Who)\b/i.test(title)) return null;
 
-  // 1. Headline already contains a binary question
+  // 0. Headline already contains a binary question
   const directQ = title.match(/^(Will|Could|Can|Should|Would)\s+(.+)$/i);
   if (directQ) {
-    const body = cleanSegment(directQ[2], 10);
+    const body = cleanSegment(directQ[2], 12);
     if (body && body.length > 6) return `Will ${body}?`;
   }
 
-  // 2. Sports match preview  ──  "A vs B", "A face B", "A host B", "A take on B"
+  // 1. Crypto price target — "Bitcoin may reach $100k", "ETH could hit $4,000"
+  const cryptoAssets = ['bitcoin', 'btc', 'ethereum', 'eth', 'solana', 'sol', 'xrp', 'ripple',
+                        'dogecoin', 'doge', 'bnb', 'cardano', 'ada', 'crypto'];
+  const hasCrypto = cryptoAssets.some(a => t.includes(a));
+  if (hasCrypto) {
+    const priceTarget = extractPriceTarget(full);
+    if (priceTarget) {
+      const assetMatch = full.match(/\b(Bitcoin|Ethereum|Solana|XRP|Ripple|Dogecoin|BNB|Cardano|BTC|ETH|SOL|DOGE|ADA)\b/i);
+      const asset = assetMatch ? (resolveNamedEntity(assetMatch[1]) || cleanSegment(assetMatch[1], 1)) : 'Bitcoin';
+      const th = timeRef ? ` ${timeRef}` : ' by end of month';
+      return `Will ${asset} reach $${priceTarget}${th}?`;
+    }
+  }
+
+  // 2. Named bill / legislation
+  const billName = extractBillName(full);
+  if (billName) {
+    const chamber = /\bsenate\b/i.test(t) ? 'the Senate' :
+                    /\bhouse\b/i.test(t)   ? 'the House' :
+                    /\bcongress\b/i.test(t) ? 'Congress' : 'Congress';
+    if (/\b(votes?|pass(es)?|approve[sd]?|blocks?|rejects?|filibuster|signs?|vetoes?)\b/i.test(t)) {
+      return `Will the ${billName} pass ${chamber}?`;
+    }
+  }
+
+  // 3. Sports match preview
   const vsMatch = title.match(/^(.+?)\s+(?:vs\.?|v\.?|face[s]?|hosts?|takes? on|meet[s]?)\s+(.+?)(?:\s+in\s+(.+))?$/i);
   if (vsMatch && item.category === 'sports') {
     const teamA = cleanSegment(vsMatch[1], 4);
@@ -239,44 +350,60 @@ function buildQuestion(item) {
     if (teamA && teamB) return `Will ${teamA} beat ${teamB}${comp}?`;
   }
 
-  // 3. Election / referendum / vote result
+  // 4. Election / referendum / vote result
   const elecMatch = title.match(/^(.+?)\s+(wins?|leads?|defeats?|clinches?|secures?)\s+(election|vote|referendum|primary|runoff|seat|majority)\b/i);
   if (elecMatch) {
-    const entity = cleanSegment(elecMatch[1], 5);
+    const entity = resolveNamedEntity(elecMatch[1]) || cleanSegment(elecMatch[1], 5);
     if (entity) return `Will ${entity} win the ${cleanSegment(elecMatch[3], 3)}?`;
   }
   if (/\b(election|referendum)\b/.test(t)) {
-    const entity = extractLeadingEntity(title);
-    if (entity) return `Will ${entity} win the election?`;
+    const raw    = extractLeadingEntity(title);
+    const entity = resolveNamedEntity(raw) || raw;
+    if (entity) {
+      const geoM    = full.match(/\b(presidential|senate|congressional|gubernatorial|state|primary|general)\s+(election|race|vote|primary)\b/i);
+      const elecType = geoM ? `${geoM[1]} ${geoM[2]}` : 'election';
+      return `Will ${entity} win the ${elecType}?`;
+    }
   }
-  if (/\b(vote|ballot|polls? (open|close))\b/.test(t) && /\b(today|tonight|tomorrow|this week)\b/.test(t)) {
-    const entity = extractLeadingEntity(title);
+  if (/\b(vote|ballot|polls?\s+(open|close))\b/.test(t) && /\b(today|tonight|tomorrow|this week)\b/.test(t)) {
+    const raw    = extractLeadingEntity(title);
+    const entity = resolveNamedEntity(raw) || raw;
     if (entity) return `Will ${entity} secure enough votes${timeSuffix}?`;
   }
 
-  // 4. Central bank rate decision
+  // 5. Central bank rate decision
   if (/\b(fed|fomc|ecb|bank of england|boe|rba|boj|reserve bank)\b/.test(t) &&
       /\b(rate|rates|cut|hike|raise|hold|decision|meeting|policy)\b/.test(t)) {
-    const bank = /\becb\b/.test(t) ? 'the ECB' :
+    const bank = /\becb\b/.test(t)             ? 'the ECB' :
                  /\bbank of england|boe\b/.test(t) ? 'the BoE' :
-                 /\brba\b/.test(t) ? 'the RBA' :
-                 /\bboj\b/.test(t) ? 'the BoJ' : 'the Fed';
+                 /\brba\b/.test(t)             ? 'the RBA' :
+                 /\bboj\b/.test(t)             ? 'the BoJ' : 'the Fed';
     const action = /\b(cut|lower|reduce)\b/.test(t) ? 'cut rates' :
-                   /\b(raise|hike|increase)\b/.test(t) ? 'raise rates' : 'change rates';
+                   /\b(raise|hike|increase)\b/.test(t) ? 'raise rates' : 'hold rates';
     return `Will ${bank} ${action}${timeSuffix}?`;
   }
 
-  // 5. Summit / peace talks / diplomatic meeting
-  if (/\b(summit|peace talks?|ceasefire|negotiations?|diplomatic talks?|deal)\b/.test(t) &&
-      /\b(set to|expected|scheduled|agreed|hold|meet|sign)\b/.test(t)) {
-    const entity = extractLeadingEntity(title);
+  // 6. Summit / peace talks — try to get named leaders
+  if (/\b(summit|peace talks?|ceasefire|negotiations?|diplomatic talks?|deal|accord)\b/.test(t) &&
+      /\b(set to|expected|scheduled|agreed|hold|meet|sign|reach|forge)\b/.test(t)) {
+    const leaderList = ['trump', 'putin', 'zelensky', 'macron', 'xi jinping', 'modi',
+                        'netanyahu', 'starmer', 'scholz', 'erdogan'];
+    const leaderA = leaderList.find(n => t.includes(n));
+    const leaderB = leaderList.filter(n => n !== leaderA).find(n => t.includes(n));
+    if (leaderA && leaderB) {
+      const a = NAMED_ENTITIES[leaderA] || leaderA;
+      const b = NAMED_ENTITIES[leaderB] || leaderB;
+      return `Will ${a} and ${b} reach a deal${timeSuffix}?`;
+    }
+    const raw    = extractLeadingEntity(title);
+    const entity = resolveNamedEntity(raw) || raw;
     if (entity) return `Will ${entity} reach a deal${timeSuffix}?`;
   }
 
-  // 6. Earnings / IPO / financial results
+  // 7. Earnings / IPO / financial results
   const earningsMatch = title.match(/^(.+?)\s+(earnings|results|quarterly results|profit|revenue|ipo)\b/i);
   if (earningsMatch) {
-    const co = cleanSegment(earningsMatch[1], 4);
+    const co   = cleanSegment(earningsMatch[1], 4);
     const type = earningsMatch[2].toLowerCase();
     if (co) {
       if (/ipo/.test(type)) return `Will ${co}'s IPO price above expectations?`;
@@ -284,49 +411,84 @@ function buildQuestion(item) {
     }
   }
 
-  // 7. Trial / ruling / court verdict
+  // 8. Trial / ruling / court verdict — try to get named defendant/party
   if (/\b(trial|verdict|ruling|sentence|acquit|convict|court)\b/.test(t) &&
-      /\b(today|tomorrow|this week|expected|scheduled|due)\b/.test(t)) {
-    const entity = extractLeadingEntity(title);
-    if (entity) return `Will ${entity} be found guilty${timeSuffix}?`;
+      /\b(today|tomorrow|this week|expected|scheduled|due|set to)\b/.test(t)) {
+    const raw    = extractLeadingEntity(title);
+    const entity = resolveNamedEntity(raw) || raw;
+    const courtT = /\bsupreme court\b/i.test(t) ? 'the Supreme Court' :
+                   /\bappeals?\s+court\b/i.test(t) ? 'the appeals court' : 'the court';
+    // Avoid "Will the Supreme Court prevail in the Supreme Court"
+    const entityIsTheCourt = entity && entity.toLowerCase().includes('court');
+    if (entity && !entityIsTheCourt) return `Will ${entity} prevail in ${courtT}${timeSuffix}?`;
+    return `Will ${courtT} rule in favor of the defense${timeSuffix}?`;
   }
 
-  // 8. Tech product launch / keynote / announcement
+  // 9. Named political figure + specific scheduled action
+  const knownLeaders = ['Trump', 'Biden', 'Harris', 'Macron', 'Putin', 'Zelensky',
+                        'Xi', 'Modi', 'Netanyahu', 'Starmer', 'Scholz', 'Musk', 'Erdogan'];
+  const leaderHit = knownLeaders.find(l => t.includes(l.toLowerCase()));
+  if (leaderHit) {
+    const leader = NAMED_ENTITIES[leaderHit.toLowerCase()] || leaderHit;
+    if (/\b(sign|veto|block|approve|enact)\b/.test(t)) {
+      const bn = extractBillName(full);
+      if (bn) return `Will ${leader} sign the ${bn}?`;
+      return `Will ${leader} sign the bill${timeSuffix}?`;
+    }
+    if (/\b(announce|unveil|reveal|confirm|declare)\b/.test(t)) {
+      const topic = /\b(tariff|sanction|deal|plan|policy|agreement|withdrawal|invasion)\b/i.exec(full)?.[1];
+      if (topic) return `Will ${leader} announce new ${topic.toLowerCase()}s${timeSuffix}?`;
+      return `Will ${leader} make a major announcement${timeSuffix}?`;
+    }
+    if (/\b(win|lose|lead|ahead|behind)\b/.test(t) && /\b(election|primary|vote|race)\b/.test(t)) {
+      return `Will ${leader} win the election?`;
+    }
+    if (/\b(testify|appear|address|speak|face)\b/.test(t) && /\b(congress|senate|court|hearing|committee|icc|tribunal)\b/.test(t)) {
+      return `Will ${leader} face serious consequences at the hearing${timeSuffix}?`;
+    }
+  }
+
+  // 10. Tech product launch / keynote / announcement
+  // Only match when the subject doesn't contain "set to / due to / expected to"
   const launchMatch = title.match(/^(.+?)\s+(launches?|unveils?|announces?|releases?|debuts?|reveals?|introduces?)\s+(.+)$/i);
-  if (launchMatch) {
+  if (launchMatch && !/\b(set|due|expected|poised|likely)\s+to\b/i.test(launchMatch[1])) {
     const co  = cleanSegment(launchMatch[1], 3);
     const obj = cleanSegment(launchMatch[3], 5);
     if (co && obj) return `Will ${possessive(co)} ${obj} be a hit${timeSuffix}?`;
   }
-  if (/\b(keynote|wwdc|developer conference|product event)\b/.test(t)) {
-    const entity = extractLeadingEntity(title);
+  if (/\b(keynote|wwdc|developer conference|product event|build conference|google i\/o)\b/.test(t)) {
+    const raw    = extractLeadingEntity(title);
+    const entity = resolveNamedEntity(raw) || raw;
     if (entity) return `Will ${entity} announce something major at the event?`;
   }
 
-  // 9. Military / geopolitical action
-  if (/\b(strike|attack|invasion|offensive|troops?|military)\b/.test(t) &&
-      /\b(set to|expected|planned|threat|could|may)\b/.test(t)) {
-    const entity = extractLeadingEntity(title);
+  // 11. Military / geopolitical action
+  if (/\b(strike|attack|invasion|offensive|troops?|military|ceasefire|truce)\b/.test(t) &&
+      /\b(set to|expected|planned|threat|could|may|imminent)\b/.test(t)) {
+    const raw    = extractLeadingEntity(title);
+    const entity = resolveNamedEntity(raw) || raw;
     if (entity) return `Will ${entity} take military action${timeSuffix}?`;
   }
 
-  // 10. "Set to / expected to / due to / poised to + verb"
+  // 12. "Set to / expected to / due to / poised to + verb"
   const setToMatch = title.match(/^(.+?)\s+(?:set|due|expected|poised|likely)\s+to\s+(\w+(?:\s+\w+)?)/i);
   if (setToMatch) {
-    const subj = cleanSegment(setToMatch[1], 5);
+    const raw  = setToMatch[1];
+    const subj = resolveNamedEntity(raw) || cleanSegment(raw, 5);
     const verb = cleanSegment(setToMatch[2], 3);
     if (subj && verb && verb.length > 2) return `Will ${subj} ${verb}${timeSuffix}?`;
   }
 
-  // 11. Approval / passage / signing
+  // 13. Approval / passage / signing
   const approvalMatch = title.match(/^(.+?)\s+(approves?|passes?|backs?|blocks?|bans?|signs?|vetoes?)\s+(.+)$/i);
   if (approvalMatch) {
-    const obj = cleanSegment(approvalMatch[3], 6);
-    const subj = cleanSegment(approvalMatch[1], 4);
+    const obj  = cleanSegment(approvalMatch[3], 6);
+    const raw  = approvalMatch[1];
+    const subj = resolveNamedEntity(raw) || cleanSegment(raw, 4);
     if (subj && obj) return `Will ${subj} ${approvalMatch[2].toLowerCase()} ${obj}?`;
   }
 
-  // 12. Price / market movement
+  // 14. Price / market movement
   const moveMatch = title.match(/^(.+?)\s+(rises?|jumps?|surges?|falls?|slumps?|drops?|soars?|plunges?|hits?)\b/i);
   if (moveMatch) {
     const subj = cleanSegment(moveMatch[1], 4);
@@ -334,18 +496,21 @@ function buildQuestion(item) {
     if (subj) return `Will ${subj} ${dir}${timeSuffix}?`;
   }
 
-  // 13. Fallback — build around leading entity + event keyword
-  const entity = extractLeadingEntity(title);
+  // 15. Category-aware fallback using leading named entity
+  const raw    = extractLeadingEntity(title);
+  const entity = resolveNamedEntity(raw) || raw;
   if (entity) {
     if (item.category === 'sports')     return `Will ${entity} win${timeSuffix}?`;
-    if (item.category === 'crypto')     return `Will ${entity} break its record this week?`;
+    if (item.category === 'crypto')     return `Will ${entity} break its all-time high this week?`;
     if (item.category === 'economy')    return `Will ${entity} move the market${timeSuffix}?`;
     if (item.category === 'technology') return `Will ${entity} dominate the headlines this week?`;
     if (item.category === 'politics')   return `Will ${entity} succeed${timeSuffix}?`;
+    return `Will ${entity} make headlines${timeSuffix}?`;
   }
 
   return null;
 }
+
 
 function isUsableQuestion(question) {
   if (!question) return false;
