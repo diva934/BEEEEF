@@ -125,6 +125,16 @@ function hashNumber(seed) {
   return parseInt(digest, 16);
 }
 
+/**
+ * Generate a stable, deterministic debate ID from a seed (article URL / sourceKey).
+ * Same seed → same ID across server restarts → Supabase history survives reboots.
+ * Format: 8-4-4-4-12 hex (UUID v5-ish, NOT RFC-compliant but fine as a DB key).
+ */
+function deterministicDebateId(seed) {
+  const h = crypto.createHash('sha1').update(String(seed || '')).digest('hex');
+  return h.slice(0,8) + '-' + h.slice(8,12) + '-5' + h.slice(13,16) + '-' + h.slice(16,20) + '-' + h.slice(20,32);
+}
+
 function seededRange(seed, min, max) {
   const value = hashNumber(seed);
   return min + (value % (max - min + 1));
@@ -545,6 +555,7 @@ function buildDebateFromNews(item, options = {}) {
   const contextVideoUrl = normalizeWhitespace(options.contextVideoUrl || buildYouTubeSearchUrl(item));
 
   return {
+    id: deterministicDebateId(item.sourceKey || item.sourceUrl || item.sourceTitle),
     title,
     description: buildDescription(item),
     sourceExcerpt: buildSourceExcerpt(item),
@@ -689,6 +700,7 @@ function buildDebateFromLiveStream(streamItem, options = {}) {
     || `https://i.ytimg.com/vi/${streamItem.videoId}/maxresdefault.jpg`;
 
   return {
+    id: deterministicDebateId('yt-live-' + streamItem.videoId),
     title,
     description     : `Debate from live stream: ${channelLabel} - "${streamItem.title}"`,
     sourceExcerpt   : streamItem.title,

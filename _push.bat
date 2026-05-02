@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "feat: timer decompte ticking H:MM:SS + countdown live view + fix DI timer + questions Polymarket"
+git commit -m "feat: deterministic debate IDs + graph history persistence + Polymarket questions + timer countdown H:MM:SS"
 git push origin main --force
 echo.
 git log --oneline -3
