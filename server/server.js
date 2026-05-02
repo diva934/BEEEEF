@@ -1334,6 +1334,48 @@ setInterval(spawnBotsForNewContextDebates, 30000);
 setTimeout(spawnBotsForNewContextDebates, 5000);
 
 // ─────────────────────────────────────────────────────────────
+//  Supabase history flush every 5 min
+//  Runs from server.js (Supabase already works here for auth/bets).
+// ─────────────────────────────────────────────────────────────
+async function flushHistoryToSupabase() {
+  try {
+    var pushFn = supabaseApi && supabaseApi.pushDebateHistoryBatch;
+    if (typeof pushFn !== 'function') {
+      console.warn('[history-flush] pushDebateHistoryBatch not available');
+      return;
+    }
+    var allDebates = listDebates({ includeUnlisted: true });
+    var sinceTs = Date.now() - 6 * 60 * 1000;
+    var points = [];
+    for (var i = 0; i < allDebates.length; i++) {
+      var d = allDebates[i];
+      if (!d || !d.id || !Array.isArray(d.probabilityHistory)) continue;
+      for (var j = 0; j < d.probabilityHistory.length; j++) {
+        var p = d.probabilityHistory[j];
+        if (Number(p.timestamp) >= sinceTs) {
+          points.push({
+            debate_id:   String(d.id),
+            recorded_at: Number(p.timestamp),
+            yes_prob:    Number(p.yesProbability),
+            volume:      Number(p.volume || 0),
+          });
+        }
+      }
+    }
+    if (!points.length) {
+      console.log('[history-flush] no recent points to push');
+      return;
+    }
+    await pushFn(points);
+    console.log('[history-flush] pushed ' + points.length + ' points to Supabase');
+  } catch (err) {
+    console.error('[history-flush] error:', err.message);
+  }
+}
+setInterval(flushHistoryToSupabase, 5 * 60 * 1000);
+setTimeout(flushHistoryToSupabase, 60 * 1000); // first flush 60s after startup
+
+// ─────────────────────────────────────────────────────────────
 //  Live-stream monitor — closes debates when stream ends
 // ─────────────────────────────────────────────────────────────
 setInterval(() => {
