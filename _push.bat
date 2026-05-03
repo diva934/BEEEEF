@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "feat: auto-validator — real CoinGecko+ESPN validation + sports predictions + proper settlement"
+git commit -m "fix: supabase.js truncation — parimutuel settlement fully live, winners get losers tokens"
 git push origin main --force
 echo.
 git log --oneline -3

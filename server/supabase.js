@@ -761,18 +761,36 @@ async function deleteBetAsAdmin(betId) {
   });
 }
 
-async function settleDebateBetsAsAdmin(debateId, winnerSide, odds, meta = {}) {
+async function settleDebateBetsAsAdmin(debateId, winnerSide, _oddsHint, meta = {}) {
   if (!debateId) throw createError('debateId requis', 400);
   if (!['yes', 'no'].includes(winnerSide)) throw createError('winnerSide invalide', 400);
-  const normalizedOdds = roundCurrency(odds);
-  if (!Number.isFinite(normalizedOdds) || normalizedOdds <= 1) {
-    throw createError('Odds invalides', 400);
-  }
 
   const rows = await listPendingBetsForDebateAsAdmin(debateId);
   if (!rows.length) {
-    return { debateId: String(debateId), settledCount: 0, totalGain: 0, totalLoss: 0, winners: 0 };
+    return { debateId: String(debateId), settledCount: 0, totalGain: 0, totalLoss: 0, winners: 0, odds: null };
   }
+
+  // ── Compute real parimutuel odds from actual bets ──────────────────────────
+  // Winners split the ENTIRE pool (their stake + all loser stakes).
+  // odds = totalPool / winnerSidePool  →  each winner gets back betAmt × odds
+  // This guarantees losers' tokens flow exactly to winners, nothing more, nothing less.
+  let totalPool = 0;
+  let winnerPool = 0;
+  for (const bet of rows) {
+    const amt = roundCurrency(bet.amt || 0);
+    if (!Number.isFinite(amt) || amt <= 0) continue;
+    totalPool += amt;
+    if (bet.side === winnerSide) winnerPool += amt;
+  }
+
+  // If nobody bet on the winning side → refund everyone (edge case)
+  if (winnerPool <= 0) {
+    console.warn(`[settle] debate ${debateId}: no bets on winning side (${winnerSide}) — refunding all`);
+    return refundDebateBetsAsAdmin(debateId, { reason: 'no_winners_on_side' });
+  }
+
+  // Parimutuel odds: how much each winner token earns back from the whole pool
+  const realOdds = roundCurrency(totalPool / winnerPool);
 
   const creditByUser = new Map();
   const winTransactions = [];
@@ -786,7 +804,9 @@ async function settleDebateBetsAsAdmin(debateId, winnerSide, odds, meta = {}) {
     const amount = roundCurrency(bet.amt || 0);
     if (!Number.isFinite(amount) || amount <= 0) continue;
     const won = bet.side === winnerSide;
-    const payout = won ? roundCurrency(amount * normalizedOdds) : roundCurrency(-amount);
+    // Winner gets back: betAmount × (totalPool / winnerPool)
+    // Loser payout is negative (already paid when placing — just marks the record)
+    const payout = won ? roundCurrency(amount * realOdds) : roundCurrency(-amount);
 
     await patchBetAsAdmin(bet.id, {
       status: won ? 'won' : 'lost',
@@ -809,7 +829,9 @@ async function settleDebateBetsAsAdmin(debateId, winnerSide, odds, meta = {}) {
         metadata: {
           source: 'prediction_auto_settlement',
           winnerSide,
-          odds: normalizedOdds,
+          odds: realOdds,
+          totalPool: roundCurrency(totalPool),
+          winnerPool: roundCurrency(winnerPool),
           settledAt,
           reason: meta.reason || 'validated_prediction',
         },
@@ -821,6 +843,7 @@ async function settleDebateBetsAsAdmin(debateId, winnerSide, odds, meta = {}) {
     settledCount += 1;
   }
 
+  // Credit winners — their balance increases by their proportional share of the pool
   for (const [userId, creditAmount] of creditByUser.entries()) {
     if (!creditAmount) continue;
     const profile = await getProfileBalanceAsAdmin(userId);
@@ -831,12 +854,17 @@ async function settleDebateBetsAsAdmin(debateId, winnerSide, odds, meta = {}) {
     await insertTokenTransactionAsAdmin(row);
   }
 
+  console.log(`[settle] ${debateId} → side=${winnerSide} pool=${roundCurrency(totalPool)} winnerPool=${roundCurrency(winnerPool)} odds=${realOdds} settled=${settledCount} winners=${winners}`);
+
   return {
     debateId: String(debateId),
     settledCount,
     totalGain: roundCurrency(totalGain),
     totalLoss: roundCurrency(totalLoss),
     winners,
+    odds: realOdds,
+    totalPool: roundCurrency(totalPool),
+    winnerPool: roundCurrency(winnerPool),
   };
 }
 
