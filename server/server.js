@@ -567,37 +567,50 @@ app.get('/api/predictions/:id/history', async (req, res) => {
 app.get('/news/status', getNewsStatusHandler);
 app.get('/api/news/status', getNewsStatusHandler);
 
-// ── Diagnostic: test Supabase debate_history write/read ──────────────────────
+// ── Diagnostic: test Supabase debate_history write/read (raw fetch) ──────────
 app.get('/api/debug/supabase-test', async (req, res) => {
-  const result = { push: null, pull: null, env: {} };
-  // Check env vars present (redact values)
-  result.env.SUPABASE_URL        = process.env.SUPABASE_URL ? 'SET' : 'MISSING';
-  result.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING';
-  result.env.SUPABASE_PUBLISHABLE_KEY  = process.env.SUPABASE_PUBLISHABLE_KEY  ? 'SET' : 'MISSING';
+  const result = { push: null, pull: null, env: {}, rawPush: null };
 
-  const pushFn = supabaseApi && supabaseApi.pushDebateHistoryBatch;
-  const pullFn = supabaseApi && supabaseApi.pullDebateHistory;
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
 
-  // Push test row
-  const testRow = [{
-    debate_id:   '__debug_test__',
-    recorded_at: Date.now(),
-    yes_prob:    42.0,
-    volume:      0,
-  }];
+  result.env.SUPABASE_URL              = supabaseUrl ? 'SET (' + supabaseUrl.slice(0, 30) + '...)' : 'MISSING';
+  result.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey  ? 'SET (len=' + serviceKey.length + ')'        : 'MISSING';
+  result.env.SUPABASE_PUBLISHABLE_KEY  = process.env.SUPABASE_PUBLISHABLE_KEY ? 'SET' : 'MISSING';
+
+  const endpoint = supabaseUrl.replace(/\/$/, '') + '/rest/v1/debate_history';
+  const headers  = {
+    apikey:          serviceKey,
+    Authorization:   'Bearer ' + serviceKey,
+    'Content-Type':  'application/json',
+    Prefer:          'return=representation',
+  };
+
+  // Raw push — shows exact status + body
+  const testRow = [{ debate_id: '__debug_test__', recorded_at: Date.now(), yes_prob: 42.0, volume: 0 }];
   try {
-    await pushFn(testRow);
-    result.push = 'OK';
+    const pushResp = await fetch(endpoint, {
+      method:  'POST',
+      headers: { ...headers, Prefer: 'resolution=ignore-duplicates,return=representation' },
+      body:    JSON.stringify(testRow),
+    });
+    const pushBody = await pushResp.text();
+    result.rawPush = { status: pushResp.status, body: pushBody.slice(0, 500) };
+    result.push = pushResp.ok ? 'OK (status ' + pushResp.status + ')' : 'FAIL (status ' + pushResp.status + ')';
   } catch (e) {
-    result.push = 'ERROR: ' + e.message;
+    result.push = 'NETWORK ERROR: ' + e.message;
   }
 
-  // Pull it back
+  // Raw pull
   try {
-    const rows = await pullFn('__debug_test__', 0, 10);
-    result.pull = `OK — got ${rows.length} row(s)`;
+    const pullUrl = endpoint + '?debate_id=eq.__debug_test__&select=recorded_at,yes_prob&limit=10';
+    const pullResp = await fetch(pullUrl, { headers });
+    const pullBody = await pullResp.text();
+    result.pull = pullResp.ok
+      ? 'OK status=' + pullResp.status + ' body=' + pullBody.slice(0, 300)
+      : 'FAIL status=' + pullResp.status + ' body=' + pullBody.slice(0, 300);
   } catch (e) {
-    result.pull = 'ERROR: ' + e.message;
+    result.pull = 'NETWORK ERROR: ' + e.message;
   }
 
   res.json(result);

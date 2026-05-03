@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "debug: add /api/debug/supabase-test to diagnose empty debate_history"
+git commit -m "debug: raw fetch diagnostic for supabase push — shows real status+body"
 git push origin main --force
 echo.
 git log --oneline -3
