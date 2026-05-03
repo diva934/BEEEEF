@@ -1111,12 +1111,18 @@ function getLatestPredictionHistoryPoint(debateId) {
  * Returns true when the real history is too sparse or too flat to render
  * a meaningful curve — meaning we should prepend synthetic pre-history.
  *
- * Criteria (either):
+ * Criteria (any):
  *  • Fewer than 5 real points, OR
- *  • All real points have the same yesProbability (within ±0.5 pp)
+ *  • All real points have the same yesProbability (within ±0.5 pp), OR
+ *  • Real history covers less than 45 minutes of wall-clock time
+ *    (debate just started — bots have only been running a few minutes,
+ *     so the 1H chart would show mostly empty space without synthetic fill)
  */
 function _historySparse(history) {
   if (!Array.isArray(history) || history.length < 5) return true;
+  const timestamps = history.map(p => Number(p.timestamp));
+  const spanMs = Math.max(...timestamps) - Math.min(...timestamps);
+  if (spanMs < 45 * 60 * 1000) return true; // less than 45 min of real data
   const min = Math.min(...history.map(p => p.yesProbability));
   const max = Math.max(...history.map(p => p.yesProbability));
   return (max - min) < 0.5;
@@ -1199,17 +1205,27 @@ async function getPredictionHistory(debateId, range) {
 
   if (!realHistory.length) return [];
 
-  // ── Synthetic pre-history: last resort for brand-new debates ────────────────
-  // Only used when the debate truly just started AND Supabase has no data yet.
-  // This makes the chart non-empty on day-0, but once real points accumulate
-  // the synthetic prefix disappears naturally on the next pull.
+  // ── Synthetic pre-history ───────────────────────────────────────────────────
+  // Prepends a synthetic random-walk curve before the first real data point so
+  // the chart always looks full even for fresh debates (< 45 min of real data).
+  //
+  // Strategy: always generate synthetic history from debate.openedAt backwards
+  // (up to synthWindowMs) and forward to the first real point.  Real points
+  // are merged on top and always win on time-collision.
+  // Once the debate accumulates 45+ min of real data with visible variance,
+  // _historySparse returns false and this block is skipped permanently.
   let history = realHistory;
   if (_historySparse(realHistory)) {
     const firstReal     = realHistory[0];
     const durationMs    = Math.max(3600000, Number(debate.durationMs) || 3600000);
-    const synthWindowMs = Math.min(durationMs, 24 * 60 * 60 * 1000);
-    const synthToTs     = firstReal.timestamp;
-    const synthFromTs   = synthToTs - synthWindowMs;
+    // Anchor synthetic history at debate.openedAt when available — this ensures
+    // the synthetic curve starts from the real debate start, not from the first
+    // bot-bet point (which may be only a few minutes into the debate).
+    const debateOpenedAt = Number(debate.openedAt) > 0 ? Number(debate.openedAt) : firstReal.timestamp;
+    const synthWindowMs  = Math.min(durationMs, 24 * 60 * 60 * 1000);
+    // synthToTs = first real point (or debate.openedAt, whichever is earlier)
+    const synthToTs  = Math.min(firstReal.timestamp, debateOpenedAt + 60000); // max 1 min after open
+    const synthFromTs = debateOpenedAt - synthWindowMs;
 
     const synthetic = generateSyntheticHistory(debate, synthFromTs, synthToTs, {
       endYesPct:   firstReal.yesProbability,
