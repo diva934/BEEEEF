@@ -928,6 +928,34 @@ function reconcileDebates() {
 
   debates = debates.map((debate, index) => {
     const safeDebate = sanitizeDebate(debate, index);
+
+    // ── Purge legacy opinion-poll debates ────────────────────────────────────
+    // Old debates created before the ESPN/CoinGecko pipeline have no
+    // predictionSourceType and no openedAt. They never expire naturally.
+    // Close them immediately so they stop polluting the active list.
+    if (
+      !safeDebate.closed &&
+      !safeDebate.predictionSourceType &&
+      !safeDebate.openedAt
+    ) {
+      changed = true;
+      closedIds.push(safeDebate.id);
+      console.log('[reconcile] purging legacy debate:', safeDebate.title?.slice(0, 60));
+      return sanitizeDebate({
+        ...safeDebate,
+        closed: true,
+        closedAt: currentNow,
+        endsAt: currentNow,
+        winnerSide: null,
+        validationState: 'cancelled',
+        settlementState: 'refunded',
+        closureReason: 'legacy_purge',
+        verdictReasoning: 'Legacy debate replaced by real-event prediction.',
+        updatedAt: nowIso(currentNow),
+      }, index);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if (!safeDebate.closed && currentNow >= safeDebate.endsAt) {
       changed = true;
       closedIds.push(safeDebate.id);
