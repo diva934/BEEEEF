@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: debates.js duplicate removed, pull limit 2000, always merge Supabase history"
+git commit -m "debug: add /api/debug/supabase-test to diagnose empty debate_history"
 git push origin main --force
 echo.
 git log --oneline -3

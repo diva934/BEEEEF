@@ -567,6 +567,42 @@ app.get('/api/predictions/:id/history', async (req, res) => {
 app.get('/news/status', getNewsStatusHandler);
 app.get('/api/news/status', getNewsStatusHandler);
 
+// ── Diagnostic: test Supabase debate_history write/read ──────────────────────
+app.get('/api/debug/supabase-test', async (req, res) => {
+  const result = { push: null, pull: null, env: {} };
+  // Check env vars present (redact values)
+  result.env.SUPABASE_URL        = process.env.SUPABASE_URL ? 'SET' : 'MISSING';
+  result.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING';
+  result.env.SUPABASE_PUBLISHABLE_KEY  = process.env.SUPABASE_PUBLISHABLE_KEY  ? 'SET' : 'MISSING';
+
+  const pushFn = supabaseApi && supabaseApi.pushDebateHistoryBatch;
+  const pullFn = supabaseApi && supabaseApi.pullDebateHistory;
+
+  // Push test row
+  const testRow = [{
+    debate_id:   '__debug_test__',
+    recorded_at: Date.now(),
+    yes_prob:    42.0,
+    volume:      0,
+  }];
+  try {
+    await pushFn(testRow);
+    result.push = 'OK';
+  } catch (e) {
+    result.push = 'ERROR: ' + e.message;
+  }
+
+  // Pull it back
+  try {
+    const rows = await pullFn('__debug_test__', 0, 10);
+    result.pull = `OK — got ${rows.length} row(s)`;
+  } catch (e) {
+    result.pull = 'ERROR: ' + e.message;
+  }
+
+  res.json(result);
+});
+
 // Compatibility endpoints kept so the frontend can hydrate and sign out cleanly.
 app.post('/auth/session', withApi(async () => {
   throw createError('Connexion geree cote client via Supabase Auth', 410);
