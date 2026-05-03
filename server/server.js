@@ -22,6 +22,7 @@ const {
   listGiftOrders,
   placeBet,
   redeemGiftCard,
+  refundDebateBetsAsAdmin,
   refundGiftPoints,
   settleDebateBets,
   settleDebateBetsAsAdmin,
@@ -44,6 +45,7 @@ const {
   listDebates,
   removeBetFromDebate,
   reconcileDebates,
+  resolveDebate,
 } = require('./debates');
 const { startBotsForDebate, stopBotsForDebate } = require('./debate-bots');
 const {
@@ -51,6 +53,7 @@ const {
   runNewsMaintenance,
   startNewsScheduler,
 } = require('./news-pipeline');
+const { startAutoValidator } = require('./auto-validator');
 const stripeLib = require('./stripe');
 const { listTokenTransactions } = supabaseApi;
 
@@ -1297,6 +1300,15 @@ setInterval(() => {
     console.warn('[predictions] startup bootstrap failed:', error.message);
   }
   startNewsScheduler();
+
+  // Start real-event auto-validator (crypto + sports predictions)
+  startAutoValidator({
+    listDebates,
+    resolveDebate,
+    settleDebateBetsAsAdmin,
+    refundDebateBetsAsAdmin,
+    io,
+  });
 })();
 
 // ─────────────────────────────────────────────────────────────
@@ -1400,36 +1412,44 @@ setInterval(() => {
       // ── Auto-settle: distribute points to winners ──────────────
       const closedDebate = getDebateById(String(debateId));
       if (closedDebate && typeof settleDebateBetsAsAdmin === 'function') {
-        const winnerSide = closedDebate.winnerSide ||
-          (Number(closedDebate.yesPct) >= 50 ? 'yes' : 'no');
-        const winnerPct = winnerSide === 'yes'
-          ? Number(closedDebate.yesPct)
-          : 100 - Number(closedDebate.yesPct);
-        const odds = (winnerPct > 0 && winnerPct < 100)
-          ? Math.round((100 / winnerPct) * 100) / 100
-          : 2.0;
+        // Real-event debates (crypto, sports) are validated by auto-validator.js
+        // which queries the actual data source before settling.
+        const isRealEvent = closedDebate.predictionSourceType === 'crypto' ||
+          closedDebate.predictionSourceType === 'sports';
 
-        settleDebateBetsAsAdmin(String(debateId), winnerSide, odds, {
-          reason: 'auto_timer_expiry',
-          closedAt: closedDebate.closedAt,
-        }).then(result => {
-          if (result && result.settledCount > 0) {
-            console.log(`[settle] debate ${debateId} → side=${winnerSide} odds=${odds} bets=${result.settledCount} winners=${result.winners}`);
-          }
-          // Notify all subscribers of the settled outcome
-          io.to(String(debateId)).emit('prediction:settled', {
-            debateId: String(debateId),
-            winnerSide,
-            winnerLabel: closedDebate.winnerLabel ||
-              (winnerSide === 'yes' ? closedDebate.yesLabel : closedDebate.noLabel),
-            odds,
-            settledCount: result?.settledCount || 0,
-            winners: result?.winners || 0,
-            totalGain: result?.totalGain || 0,
+        if (!isRealEvent) {
+          // Fallback: crowd-vote settlement for non-sourced debates (news / live streams)
+          const winnerSide = closedDebate.winnerSide ||
+            (Number(closedDebate.yesPct) >= 50 ? 'yes' : 'no');
+          const winnerPct = winnerSide === 'yes'
+            ? Number(closedDebate.yesPct)
+            : 100 - Number(closedDebate.yesPct);
+          const odds = (winnerPct > 0 && winnerPct < 100)
+            ? Math.round((100 / winnerPct) * 100) / 100
+            : 2.0;
+
+          settleDebateBetsAsAdmin(String(debateId), winnerSide, odds, {
+            reason: 'auto_timer_expiry',
+            closedAt: closedDebate.closedAt,
+          }).then(result => {
+            if (result && result.settledCount > 0) {
+              console.log(`[settle] debate ${debateId} → side=${winnerSide} odds=${odds} bets=${result.settledCount} winners=${result.winners}`);
+            }
+            io.to(String(debateId)).emit('prediction:settled', {
+              debateId: String(debateId),
+              winnerSide,
+              winnerLabel: closedDebate.winnerLabel ||
+                (winnerSide === 'yes' ? closedDebate.yesLabel : closedDebate.noLabel),
+              odds,
+              settledCount: result?.settledCount || 0,
+              winners: result?.winners || 0,
+              totalGain: result?.totalGain || 0,
+            });
+          }).catch(err => {
+            console.warn(`[settle] auto-settle failed for debate ${debateId}:`, err.message);
           });
-        }).catch(err => {
-          console.warn(`[settle] auto-settle failed for debate ${debateId}:`, err.message);
-        });
+        }
+        // If isRealEvent → auto-validator.js will handle it within 30s
       }
     });
   }
