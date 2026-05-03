@@ -1146,7 +1146,7 @@ async function pushDebateHistoryBatch(points) {
  * Fetch stored history points for a debate from Supabase.
  * Returns array sorted asc by recorded_at.
  */
-async function pullDebateHistory(debateId, fromTs = 0, limit = 600) {
+async function pullDebateHistory(debateId, fromTs = 0, limit = 2000) {
   if (!debateId) return [];
   try {
     const target = getServiceRestUrl('/rest/v1/debate_history', {
@@ -1154,7 +1154,7 @@ async function pullDebateHistory(debateId, fromTs = 0, limit = 600) {
       recorded_at: `gte.${Math.max(0, Number(fromTs) || 0)}`,
       select:      'recorded_at,yes_prob,volume',
       order:       'recorded_at.asc',
-      limit:       String(Math.min(600, Math.max(1, Number(limit) || 600))),
+      limit:       String(Math.min(2000, Math.max(1, Number(limit) || 2000))),
     });
     const rows = await serviceRoleFetchJson(target);
     return Array.isArray(rows) ? rows : [];

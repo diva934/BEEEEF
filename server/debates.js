@@ -21,9 +21,9 @@ try {
 
 // Per-debate Supabase pull cache — avoids hammering the DB on every request
 // while still ensuring every user sees the same full history.
-// TTL: 60 s (in-memory live points are always merged on top regardless).
-const _historyPullCache = new Map(); // debateId → { ts: number, rows: array }
+const _historyPullCache = new Map(); // debateId -> { ts: number, rows: array }
 const HISTORY_PULL_CACHE_TTL_MS = 60 * 1000;
+
 
 const DATA_FILE = process.env.DEBATES_FILE || path.join(__dirname, 'data', 'debates.json');
 const REGION_IDS = ['fr', 'de', 'gb', 'es', 'it', 'be', 'ch', 'nl', 'pt', 'pl', 'se', 'at'];
