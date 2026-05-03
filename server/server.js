@@ -567,55 +567,6 @@ app.get('/api/predictions/:id/history', async (req, res) => {
 app.get('/news/status', getNewsStatusHandler);
 app.get('/api/news/status', getNewsStatusHandler);
 
-// ── Diagnostic: test Supabase debate_history write/read (raw fetch) ──────────
-app.get('/api/debug/supabase-test', async (req, res) => {
-  const result = { push: null, pull: null, env: {}, rawPush: null };
-
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
-
-  result.env.SUPABASE_URL              = supabaseUrl ? 'SET (' + supabaseUrl.slice(0, 30) + '...)' : 'MISSING';
-  result.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey  ? 'SET (len=' + serviceKey.length + ')'        : 'MISSING';
-  result.env.SUPABASE_PUBLISHABLE_KEY  = process.env.SUPABASE_PUBLISHABLE_KEY ? 'SET' : 'MISSING';
-
-  const endpoint = supabaseUrl.replace(/\/$/, '') + '/rest/v1/debate_history';
-  const headers  = {
-    apikey:          serviceKey,
-    Authorization:   'Bearer ' + serviceKey,
-    'Content-Type':  'application/json',
-    Prefer:          'return=representation',
-  };
-
-  // Raw push — shows exact status + body
-  const testRow = [{ debate_id: '__debug_test__', recorded_at: Date.now(), yes_prob: 42.0, volume: 0 }];
-  try {
-    const pushResp = await fetch(endpoint, {
-      method:  'POST',
-      headers: { ...headers, Prefer: 'resolution=ignore-duplicates,return=representation' },
-      body:    JSON.stringify(testRow),
-    });
-    const pushBody = await pushResp.text();
-    result.rawPush = { status: pushResp.status, body: pushBody.slice(0, 500) };
-    result.push = pushResp.ok ? 'OK (status ' + pushResp.status + ')' : 'FAIL (status ' + pushResp.status + ')';
-  } catch (e) {
-    result.push = 'NETWORK ERROR: ' + e.message;
-  }
-
-  // Raw pull
-  try {
-    const pullUrl = endpoint + '?debate_id=eq.__debug_test__&select=recorded_at,yes_prob&limit=10';
-    const pullResp = await fetch(pullUrl, { headers });
-    const pullBody = await pullResp.text();
-    result.pull = pullResp.ok
-      ? 'OK status=' + pullResp.status + ' body=' + pullBody.slice(0, 300)
-      : 'FAIL status=' + pullResp.status + ' body=' + pullBody.slice(0, 300);
-  } catch (e) {
-    result.pull = 'NETWORK ERROR: ' + e.message;
-  }
-
-  res.json(result);
-});
-
 // Compatibility endpoints kept so the frontend can hydrate and sign out cleanly.
 app.post('/auth/session', withApi(async () => {
   throw createError('Connexion geree cote client via Supabase Auth', 410);
