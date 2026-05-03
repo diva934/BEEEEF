@@ -1086,8 +1086,10 @@ function recordProbabilityHistoryAtIndex(index, { force = false, timestamp = now
     probabilityHistory: appended.history,
   };
 
-  // Persist to Supabase so history survives server restarts (fire-and-forget)
-  if (appended.changed && appended.point && typeof _pushHistoryBatch === 'function') {
+  // Persist to Supabase — only real points (at or after debate.openedAt)
+  const _openedAt = Number(debate.openedAt) > 0 ? Number(debate.openedAt) - 5000 : 0;
+  if (appended.changed && appended.point && typeof _pushHistoryBatch === 'function'
+      && Number(appended.point.timestamp) >= _openedAt) {
     _pushHistoryBatch([{
       debate_id:   String(debate.id),
       recorded_at: Number(appended.point.timestamp),
@@ -1205,34 +1207,13 @@ async function getPredictionHistory(debateId, range) {
 
   if (!realHistory.length) return [];
 
-  // ── Synthetic pre-history ───────────────────────────────────────────────────
-  // Prepends a synthetic random-walk curve before the first real data point so
-  // the chart always looks full even for fresh debates (< 45 min of real data).
-  //
-  // Strategy: always generate synthetic history from debate.openedAt backwards
-  // (up to synthWindowMs) and forward to the first real point.  Real points
-  // are merged on top and always win on time-collision.
-  // Once the debate accumulates 45+ min of real data with visible variance,
-  // _historySparse returns false and this block is skipped permanently.
-  let history = realHistory;
-  if (_historySparse(realHistory)) {
-    const firstReal     = realHistory[0];
-    const durationMs    = Math.max(3600000, Number(debate.durationMs) || 3600000);
-    // Anchor synthetic history at debate.openedAt when available — this ensures
-    // the synthetic curve starts from the real debate start, not from the first
-    // bot-bet point (which may be only a few minutes into the debate).
-    const debateOpenedAt = Number(debate.openedAt) > 0 ? Number(debate.openedAt) : firstReal.timestamp;
-    const synthWindowMs  = Math.min(durationMs, 24 * 60 * 60 * 1000);
-    // synthToTs = first real point (or debate.openedAt, whichever is earlier)
-    const synthToTs  = Math.min(firstReal.timestamp, debateOpenedAt + 60000); // max 1 min after open
-    const synthFromTs = debateOpenedAt - synthWindowMs;
-
-    const synthetic = generateSyntheticHistory(debate, synthFromTs, synthToTs, {
-      endYesPct:   firstReal.yesProbability,
-      startPool:   Math.max(0, firstReal.volume * 0.10),
-    });
-    history = _mergeHistory(synthetic, realHistory);
-  }
+  // ── Only real data — no synthetic pre-history ───────────────────────────────
+  // Filter out any points that pre-date the debate opening (could have been
+  // pushed to Supabase from a previous synthetic-history run).
+  const debateOpenedAt = Number(debate.openedAt) > 0 ? Number(debate.openedAt) : 0;
+  const history = debateOpenedAt > 0
+    ? realHistory.filter(function(p) { return p.timestamp >= debateOpenedAt - 5000; }) // 5s grace
+    : realHistory;
   // ────────────────────────────────────────────────────────────────────────────
 
   if (normalizedRange === 'MAX') {

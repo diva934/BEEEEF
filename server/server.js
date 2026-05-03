@@ -1352,9 +1352,11 @@ async function flushHistoryToSupabase() {
     for (var i = 0; i < allDebates.length; i++) {
       var d = allDebates[i];
       if (!d || !d.id || !Array.isArray(d.probabilityHistory)) continue;
+      var openedAt = Number(d.openedAt) > 0 ? Number(d.openedAt) - 5000 : 0; // 5s grace
       for (var j = 0; j < d.probabilityHistory.length; j++) {
         var p = d.probabilityHistory[j];
         if (!p || !p.timestamp || !Number.isFinite(p.yesProbability)) continue;
+        if (openedAt > 0 && Number(p.timestamp) < openedAt) continue; // skip pre-debate synthetic
         points.push({
           debate_id:   String(d.id),
           recorded_at: Number(p.timestamp),
