@@ -5370,7 +5370,7 @@ function updateProbabilityHistorySummaryReal(points){
 
 function renderProbabilityHistoryChart({strategy='replace',point=null}={}){
   const wrap=document.getElementById('liveProbabilityChartWrap');
-  const shouldShow=Boolean(currentDebate)&&String(currentDebate?.category||'').toLowerCase()!=='crypto';
+  const shouldShow=Boolean(currentDebate);
   if(wrap)wrap.hidden=!shouldShow;
   if(!shouldShow)return;
   const chart=ensureProbabilityHistoryChart();
@@ -5408,10 +5408,6 @@ async function loadPredictionHistory(range=probabilityHistoryRange,{debate=curre
   }
 
   probabilityHistoryRange=normalizeProbabilityHistoryRange(range);
-  if(String(debate?.category||'').toLowerCase()==='crypto'){
-    renderProbabilityHistoryChart();
-    return;
-  }
 
   const requestId=++probabilityHistoryRequestId;
   const noteEl=document.getElementById('liveProbabilityChartNote');
@@ -5445,8 +5441,6 @@ async function loadPredictionHistory(range=probabilityHistoryRange,{debate=curre
 function mergePredictionHistoryPoint(payload){
   if(!currentDebate)return;
   if(String(payload?.predictionId||'')!==String(currentDebate.id))return;
-  if(String(currentDebate?.category||'').toLowerCase()==='crypto')return;
-
   const normalized=normalizeProbabilityHistoryPointReal(payload,currentDebate.id);
   if(!normalized)return;
 

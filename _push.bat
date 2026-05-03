@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "feat: shared graph history via Supabase — remove debug endpoint"
+git commit -m "fix: graph shows real backend history for ALL debates including crypto"
 git push origin main --force
 echo.
 git log --oneline -3
