@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: purge legacy opinion-poll debates — seuls les vrais evenements ESPN/crypto restent"
+git commit -m "fix: refreshDebatesFromServer — replace undefined getServerRegion + purge legacy debates"
 git push origin main --force
 echo.
 git log --oneline -3

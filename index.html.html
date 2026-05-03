@@ -6005,7 +6005,10 @@ function applyDebatePayload(payload, { rerender = false } = {}) {
 
 async function refreshDebatesFromServer() {
   try {
-    const response = await fetch(BACKEND_URL + '/debates?region=' + encodeURIComponent(getServerRegion()), {
+    const _activeRegion = (typeof userRegion !== 'undefined' && userRegion && userRegion !== 'unknown')
+      ? userRegion
+      : (typeof inferRegionFromBrowser === 'function' ? inferRegionFromBrowser() : null) || 'fr';
+    const response = await fetch(BACKEND_URL + '/debates?region=' + encodeURIComponent(_activeRegion), {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
