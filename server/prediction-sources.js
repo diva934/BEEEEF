@@ -575,11 +575,16 @@ function isEventActionable(event, now = nowMs()) {
   if (event.completed || event.state === 'post') return false;
 
   const startMs = Date.parse(event.startTime);
-  const endMs = Date.parse(event.endEstimate || 0);
   if (!Number.isFinite(startMs)) return false;
-  if (Number.isFinite(endMs) && (endMs <= now || endMs - now > MAX_ACTIVE_HORIZON_MS)) return false;
-  if (event.state === 'in') return true;
 
+  // Live/in-progress event: use endEstimate horizon check
+  if (event.state === 'in') {
+    const endMs = Date.parse(event.endEstimate || 0);
+    if (Number.isFinite(endMs) && (endMs <= now || endMs - now > MAX_ACTIVE_HORIZON_MS)) return false;
+    return true;
+  }
+
+  // Scheduled event: only check the 7-day lookahead window (don't filter by endEstimate)
   const lookaheadMs = startMs - now;
   return lookaheadMs >= 0 && lookaheadMs <= MAX_EVENT_LOOKAHEAD_MS;
 }

@@ -6,7 +6,7 @@ const { resolveThematicImage } = require('./image-fallbacks');
 const { REGION_CONTEXTS } = require('./prediction-sources');
 
 const MIN_PREDICTION_DURATION_MS = 25 * 60 * 1000;
-const MAX_PREDICTION_DURATION_MS = 8 * 60 * 60 * 1000;
+const MAX_PREDICTION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — covers full week sports lookahead
 const MAX_CREATION_LOOKAHEAD_MS = 7 * 24 * 60 * 60 * 1000; // match prediction-sources 7-day window
 const DEFAULT_PREDICTION_DURATION_MS = Math.max(
   MIN_PREDICTION_DURATION_MS,
@@ -107,15 +107,19 @@ function isResolvableEventWindow({ startMs, endMs, status = '', now = nowMs() })
 
   const normalizedStatus = normalizeText(status).toLowerCase();
   if (normalizedStatus === 'in' || normalizedStatus === 'live' || normalizedStatus === 'in_progress') {
+    // Live event: window must fit within the global max duration
     return endMs - now >= MIN_PREDICTION_DURATION_MS && endMs - now <= MAX_PREDICTION_DURATION_MS;
   }
 
+  // Scheduled future event: check lookahead window and minimum duration only.
+  // The event can be days away; we allow it as long as it starts within the lookahead
+  // and will eventually end after a meaningful window.
   const lookaheadMs = startMs - now;
   if (lookaheadMs < 0 || lookaheadMs > MAX_CREATION_LOOKAHEAD_MS) {
     return false;
   }
 
-  return endMs - now >= MIN_PREDICTION_DURATION_MS && endMs - now <= MAX_PREDICTION_DURATION_MS;
+  return endMs - now >= MIN_PREDICTION_DURATION_MS;
 }
 
 function hashSeed(seed) {
