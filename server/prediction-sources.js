@@ -6,8 +6,8 @@ const REQUEST_TIMEOUT_MS = Math.max(5000, Number(process.env.PREDICTION_REQUEST_
 const MAX_FETCH_RETRIES = Math.max(0, Number(process.env.PREDICTION_FETCH_RETRIES) || 1);
 const ESPN_CACHE_MS = Math.max(15000, Number(process.env.ESPN_CACHE_MS) || 45000);
 const COINGECKO_CACHE_MS = Math.max(15000, Number(process.env.COINGECKO_CACHE_MS) || 45000);
-const MAX_ACTIVE_HORIZON_MS = 8 * 60 * 60 * 1000;
-const MAX_EVENT_LOOKAHEAD_MS = 12 * 60 * 60 * 1000;
+const MAX_ACTIVE_HORIZON_MS = 36 * 60 * 60 * 1000;  // 36h — covers long events + buffer
+const MAX_EVENT_LOOKAHEAD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — full week of matches
 
 const LEAGUE_SPECS = {
   'fra.1': { key: 'fra.1', sport: 'soccer', league: 'fra.1', label: 'Ligue 1', regionParam: 'fr' },
@@ -140,6 +140,21 @@ const CRYPTO_MARKET_SPECS = [
   { id: 'sui', symbol: 'SUI', name: 'Sui' },
 ];
 
+
+// ─── Stock indices (Yahoo Finance — no API key required) ─────────────────────
+const STOCK_MARKET_SPECS = [
+  { symbol: '^FCHI',  name: 'CAC 40',     currency: 'EUR', regions: ['fr', 'be', 'lu', 'ch'] },
+  { symbol: '^GDAXI', name: 'DAX',        currency: 'EUR', regions: ['de', 'at', 'ch'] },
+  { symbol: '^FTSE',  name: 'FTSE 100',   currency: 'GBP', regions: ['gb', 'ie'] },
+  { symbol: '^GSPC',  name: 'S&P 500',    currency: 'USD', regions: ['us', 'ca', 'mx'] },
+  { symbol: '^IXIC',  name: 'NASDAQ',     currency: 'USD', regions: ['us', 'ca'] },
+  { symbol: '^DJI',   name: 'Dow Jones',  currency: 'USD', regions: ['us'] },
+  { symbol: '^AEX',   name: 'AEX',        currency: 'EUR', regions: ['nl', 'be'] },
+  { symbol: '^IBEX',  name: 'IBEX 35',    currency: 'EUR', regions: ['es'] },
+  { symbol: '^MIB',   name: 'FTSE MIB',   currency: 'EUR', regions: ['it'] },
+  { symbol: '^N225',  name: 'Nikkei 225', currency: 'JPY', regions: ['jp'] },
+];
+
 let espnCache = {
   generatedAt: 0,
   feeds: {},
@@ -147,6 +162,12 @@ let espnCache = {
 };
 
 let coinGeckoCache = {
+  generatedAt: 0,
+  assets: [],
+  errors: [],
+};
+
+let stockCache = {
   generatedAt: 0,
   assets: [],
   errors: [],
@@ -343,8 +364,9 @@ async function fetchEspnLeague(spec, dateKeys) {
 function buildDateKeys() {
   const now = new Date();
   const keys = new Set();
-  keys.add(formatDateKey(now));
-  keys.add(formatDateKey(new Date(now.getTime() + 24 * 60 * 60 * 1000)));
+  for (let i = 0; i < 7; i++) {
+    keys.add(formatDateKey(new Date(now.getTime() + i * 24 * 60 * 60 * 1000)));
+  }
   return [...keys];
 }
 
@@ -436,6 +458,77 @@ async function fetchCoinGeckoMarketUniverse() {
   };
 
   return coinGeckoCache;
+}
+
+
+// ─── Yahoo Finance — stock index fetch ───────────────────────────────────────
+const STOCK_CACHE_MS = Math.max(60000, Number(process.env.STOCK_CACHE_MS) || 5 * 60 * 1000);
+
+function normalizeYahooStock(symbol, raw) {
+  const meta = raw?.chart?.result?.[0]?.meta;
+  if (!meta || !meta.symbol) return null;
+  const price = Number(meta.regularMarketPrice);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const spec = STOCK_MARKET_SPECS.find(s => s.symbol === symbol) || {};
+  return {
+    provider: 'yahoo_finance',
+    providerMode: 'yahoo_public',
+    symbol: meta.symbol,
+    name: spec.name || meta.shortName || meta.symbol,
+    currency: meta.currency || spec.currency || 'USD',
+    currentPrice: price,
+    previousClose: Number(meta.chartPreviousClose || meta.previousClose || 0),
+    regularMarketOpen: Number(meta.regularMarketOpen || 0),
+    high52w: Number(meta.fiftyTwoWeekHigh || 0),
+    low52w: Number(meta.fiftyTwoWeekLow || 0),
+    marketState: String(meta.marketState || 'CLOSED'),
+    exchangeName: String(meta.exchangeName || ''),
+    regions: spec.regions || [],
+    sourceUrl: 'https://finance.yahoo.com/quote/' + encodeURIComponent(meta.symbol) + '/',
+    apiUrl: 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(meta.symbol) + '?interval=1d&range=5d',
+  };
+}
+
+async function fetchYahooFinanceUniverse() {
+  if (nowMs() - stockCache.generatedAt < STOCK_CACHE_MS && stockCache.assets.length) {
+    return stockCache;
+  }
+  const errors = [];
+  const results = await Promise.allSettled(
+    STOCK_MARKET_SPECS.map(async (spec) => {
+      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(spec.symbol) + '?interval=1d&range=5d&includePrePost=false';
+      const response = await fetchWithRetry(url, {
+        headers: {
+          accept: 'application/json',
+          'user-agent': 'Mozilla/5.0 (compatible; BEEEF/1.0; +https://beeeef.vercel.app)',
+        },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      if (!response.ok) throw new Error('HTTP ' + response.status + ' for ' + spec.symbol);
+      const data = await response.json();
+      return normalizeYahooStock(spec.symbol, data);
+    })
+  );
+  const assets = [];
+  results.forEach((result, i) => {
+    if (result.status === 'fulfilled' && result.value) {
+      assets.push(result.value);
+    } else {
+      errors.push({ provider: 'yahoo_finance', symbol: STOCK_MARKET_SPECS[i].symbol, message: result.reason?.message || 'fetch failed' });
+    }
+  });
+  stockCache = { generatedAt: nowMs(), assets, errors };
+  return stockCache;
+}
+
+function getRegionStockContext(region, stockUniverse) {
+  const assets = Array.isArray(stockUniverse?.assets) ? stockUniverse.assets : [];
+  const relevant = assets.filter(a =>
+    Array.isArray(a.regions) && (a.regions.includes(region) || a.symbol === '^GSPC')
+  );
+  const dedupe = new Map();
+  relevant.forEach(a => dedupe.set(a.symbol, a));
+  return [...dedupe.values()].slice(0, 4);
 }
 
 async function fetchEspnSportsUniverse() {
@@ -561,9 +654,10 @@ function scoreNewsItemForRegion(item, region) {
 }
 
 async function fetchPredictionInputsByRegion() {
-  const [sportsUniverse, cryptoUniverse, latestNews] = await Promise.all([
+  const [sportsUniverse, cryptoUniverse, stockUniverse, latestNews] = await Promise.all([
     fetchEspnSportsUniverse(),
     fetchCoinGeckoMarketUniverse(),
+    fetchYahooFinanceUniverse(),
     fetchLatestNews(),
   ]);
 
@@ -572,6 +666,7 @@ async function fetchPredictionInputsByRegion() {
   Object.keys(REGION_CONTEXTS).forEach(region => {
     const sportsEvents = getRegionSportsContext(region, sportsUniverse);
     const cryptoAssets = getRegionCryptoContext(region, cryptoUniverse);
+    const stockAssets  = getRegionStockContext(region, stockUniverse);
     // Keep only event-driven articles (scoreEventSignal >= 2) so debates focus on
     // real upcoming events (matches, meetings, summits, earnings, verdicts…)
     const eventThreshold = Number(process.env.NEWS_EVENT_SIGNAL_THRESHOLD) || 2;
@@ -586,17 +681,19 @@ async function fetchPredictionInputsByRegion() {
       serverKey: REGION_CONTEXTS[region].serverKey,
       sportsEvents,
       cryptoAssets,
+      stockAssets,
       newsItems,
     };
   });
 
   return {
     generatedAt: new Date().toISOString(),
-    providerMode: 'espn_coingecko_strict_events',
+    providerMode: 'espn_coingecko_yahoo_strict_events',
     byRegion,
     errors: []
       .concat(Array.isArray(sportsUniverse?.errors) ? sportsUniverse.errors : [])
       .concat(Array.isArray(cryptoUniverse?.errors) ? cryptoUniverse.errors : [])
+      .concat(Array.isArray(stockUniverse?.errors) ? stockUniverse.errors : [])
       .concat(Array.isArray(latestNews?.errors) ? latestNews.errors : []),
   };
 }
@@ -604,6 +701,8 @@ async function fetchPredictionInputsByRegion() {
 module.exports = {
   LEAGUE_SPECS,
   REGION_CONTEXTS,
+  STOCK_MARKET_SPECS,
   fetchPredictionInputsByRegion,
+  fetchYahooFinanceUniverse,
   fetchLatestNews,
 };

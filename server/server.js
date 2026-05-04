@@ -1412,10 +1412,11 @@ setInterval(() => {
       // ── Auto-settle: distribute points to winners ──────────────
       const closedDebate = getDebateById(String(debateId));
       if (closedDebate && typeof settleDebateBetsAsAdmin === 'function') {
-        // Real-event debates (crypto, sports) are validated by auto-validator.js
+        // Real-event debates (crypto, sports, stock) are validated by auto-validator.js
         // which queries the actual data source before settling.
         const isRealEvent = closedDebate.predictionSourceType === 'crypto' ||
-          closedDebate.predictionSourceType === 'sports';
+          closedDebate.predictionSourceType === 'sports' ||
+          closedDebate.predictionSourceType === 'stock';
 
         if (!isRealEvent) {
           // Fallback: crowd-vote settlement for non-sourced debates (news / live streams)

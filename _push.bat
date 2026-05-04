@@ -22,10 +22,10 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: supabase.js truncation — parimutuel settlement fully live, winners get losers tokens"
+git commit -m "feat: sports 7-day lookahead + stock market predictions (CAC40 S&P500 DAX FTSE) + parimutuel settlement"
 git push origin main --force
 echo.
 git log --oneline -3
 echo.
 echo Deploiement lance sur Railway. Attends ~2 min puis recharge le site.
-pause
+paus

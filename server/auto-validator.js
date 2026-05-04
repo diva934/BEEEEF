@@ -21,6 +21,7 @@ const VALIDATOR_INTERVAL_MS = Math.max(
 );
 const REQUEST_TIMEOUT_MS = 10000;
 const SPORTS_GIVE_UP_AFTER_MS = 4 * 60 * 60 * 1000; // 4h after close → cancel
+const STOCK_GIVE_UP_AFTER_MS  = 2 * 60 * 60 * 1000; // 2h after deadline → cancel
 
 // Track debates that have been validated to avoid double-settling
 const _settled = new Set();
@@ -243,6 +244,23 @@ function buildVerdictReasoning(debate, winnerSide, evidence) {
     return `Final score: ${score}. ${winner} confirmed by the official ESPN scoreboard.`;
   }
 
+  if (evidence.source === 'yahoo_finance') {
+    const fmtNum = v => v >= 1000 ? v.toFixed(0) : v >= 100 ? v.toFixed(2) : v.toFixed(3);
+    const cur = evidence.currentPrice;
+    const tgt = evidence.targetPrice;
+    const sym = evidence.symbol;
+    if (evidence.market === 'price_above') {
+      return winnerSide === 'yes'
+        ? `${sym} reached ${fmtNum(cur)}, above the ${fmtNum(tgt)} target — ${winner} confirmed by Yahoo Finance.`
+        : `${sym} closed at ${fmtNum(cur)}, below the ${fmtNum(tgt)} target — ${winner} confirmed by Yahoo Finance.`;
+    }
+    if (evidence.market === 'price_below') {
+      return winnerSide === 'yes'
+        ? `${sym} fell to ${fmtNum(cur)}, below the ${fmtNum(tgt)} floor — ${winner} confirmed by Yahoo Finance.`
+        : `${sym} held at ${fmtNum(cur)}, above the ${fmtNum(tgt)} floor — ${winner} confirmed by Yahoo Finance.`;
+    }
+  }
+
   return `${winner} confirmed by the official data source at ${evidence.checkedAt}.`;
 }
 
@@ -270,7 +288,7 @@ async function runValidationPass(allDebates, opts = {}) {
     d.closed &&
     d.validationState === 'validating' &&
     d.predictionSourceType &&
-    ['crypto', 'sports'].includes(d.predictionSourceType) &&
+    ['crypto', 'sports', 'stock'].includes(d.predictionSourceType) &&
     !_settled.has(String(d.id))
   );
 
@@ -286,6 +304,8 @@ async function runValidationPass(allDebates, opts = {}) {
         result = await validateCryptoDebate(debate);
       } else if (debate.predictionSourceType === 'sports') {
         result = await validateSportsDebate(debate);
+      } else if (debate.predictionSourceType === 'stock') {
+        result = await validateStockDebate(debate);
       }
 
       if (!result) continue; // not ready yet, retry next pass

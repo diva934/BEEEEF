@@ -7,7 +7,7 @@ const { REGION_CONTEXTS } = require('./prediction-sources');
 
 const MIN_PREDICTION_DURATION_MS = 25 * 60 * 1000;
 const MAX_PREDICTION_DURATION_MS = 8 * 60 * 60 * 1000;
-const MAX_CREATION_LOOKAHEAD_MS = 12 * 60 * 60 * 1000;
+const MAX_CREATION_LOOKAHEAD_MS = 7 * 24 * 60 * 60 * 1000; // match prediction-sources 7-day window
 const DEFAULT_PREDICTION_DURATION_MS = Math.max(
   MIN_PREDICTION_DURATION_MS,
   Math.min(MAX_PREDICTION_DURATION_MS, Number(process.env.PREDICTION_DEFAULT_DURATION_MS) || 2 * 60 * 60 * 1000)
@@ -588,6 +588,111 @@ async function buildCryptoPredictionDrafts(asset, region, options = {}) {
   return drafts;
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Stock market predictions — Yahoo Finance (CAC40, S&P500, DAX…)
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildStockPredictionDrafts(asset, region, options = {}) {
+  const currentPrice = Number(asset?.currentPrice);
+  if (!asset?.symbol || !Number.isFinite(currentPrice) || currentPrice <= 0) return [];
+
+  const now = nowMs();
+  const durationMs = 6 * 60 * 60 * 1000; // 6h intraday window
+  const endsAt = now + durationMs;
+
+  const prevClose = Number(asset.previousClose) || currentPrice;
+  const dailyChangePct = prevClose > 0 ? Math.abs((currentPrice - prevClose) / prevClose * 100) : 1;
+  const moveTarget = Math.max(0.4, Math.min(2.5, dailyChangePct * 0.6 + 0.4));
+
+  function fmtPrice(p) {
+    if (p >= 10000) return p.toFixed(0);
+    if (p >= 1000)  return p.toFixed(1);
+    if (p >= 100)   return p.toFixed(2);
+    return p.toFixed(3);
+  }
+
+  const aboveTarget = parseFloat((currentPrice * (1 + moveTarget / 100)).toFixed(currentPrice >= 1000 ? 0 : 2));
+  const belowTarget = parseFloat((currentPrice * (1 - moveTarget / 100)).toFixed(currentPrice >= 1000 ? 0 : 2));
+  const deadlineLabel = formatUtcDeadline(endsAt);
+  const currency = asset.currency || 'USD';
+  const changePct = prevClose > 0 ? ((currentPrice - prevClose) / prevClose * 100).toFixed(2) : '0.00';
+  const changeSign = currentPrice >= prevClose ? '+' : '';
+
+  const imageAsset = await resolvePreviewImageAsset({
+    sourceImageUrl: '',
+    title: asset.name + ' stock market',
+    sport: 'general',
+    category: 'economy',
+    teams: [asset.name],
+  });
+
+  const baseMeta = {
+    photo: imageAsset.url,
+    sourceImageUrl: imageAsset.url,
+    previewVideoUrl: '',
+    contextVideoUrl: '',
+    sourceVideoUrl: '',
+    proofVideoUrl: '',
+    sourceUrl: asset.sourceUrl,
+    sourceTitle: asset.name + ' (' + (asset.exchangeName || asset.symbol) + ')',
+    sourceExcerpt: asset.name + ' at ' + fmtPrice(currentPrice) + ' ' + currency + ' (' + changeSign + changePct + '% today)',
+    sourceDescription: asset.name + ' live data from Yahoo Finance. Current: ' + fmtPrice(currentPrice) + ' ' + currency + ', prev close: ' + fmtPrice(prevClose) + ' ' + currency + '.',
+    sourceFeedLabel: 'Yahoo Finance',
+    sourceDomain: 'finance.yahoo.com',
+    sourceKey: 'yahoo:' + asset.symbol,
+    createdFromNews: false,
+    trending: Math.abs(Number(changePct)) >= 1.0,
+    ai: false,
+    predictionSourceType: 'stock',
+  };
+
+  const markets = [
+    {
+      key: 'price_above',
+      title: 'Will ' + asset.name + ' exceed ' + fmtPrice(aboveTarget) + ' ' + currency + ' before ' + deadlineLabel + '?',
+      description: asset.name + ' currently at ' + fmtPrice(currentPrice) + ' ' + currency + '. Resolved via Yahoo Finance live data.',
+      actionRule: {
+        kind: 'stock', provider: 'yahoo_finance', providerMode: 'yahoo_public',
+        market: 'price_above', symbol: asset.symbol, assetName: asset.name, currency,
+        targetPrice: aboveTarget, observedPrice: currentPrice,
+        endsAt: new Date(endsAt).toISOString(), apiUrl: asset.apiUrl, proofUrl: asset.sourceUrl,
+      },
+    },
+    {
+      key: 'price_below',
+      title: 'Will ' + asset.name + ' fall below ' + fmtPrice(belowTarget) + ' ' + currency + ' before ' + deadlineLabel + '?',
+      description: asset.name + ' currently at ' + fmtPrice(currentPrice) + ' ' + currency + '. Resolved via Yahoo Finance live data.',
+      actionRule: {
+        kind: 'stock', provider: 'yahoo_finance', providerMode: 'yahoo_public',
+        market: 'price_below', symbol: asset.symbol, assetName: asset.name, currency,
+        targetPrice: belowTarget, observedPrice: currentPrice,
+        endsAt: new Date(endsAt).toISOString(), apiUrl: asset.apiUrl, proofUrl: asset.sourceUrl,
+      },
+    },
+  ];
+
+  const hourBucket = Math.floor(now / (60 * 60 * 1000));
+  const drafts = [];
+  markets.forEach((market, index) => {
+    const seed = region + ':' + asset.symbol + ':' + market.key + ':' + hourBucket;
+    drafts.push({
+      ...buildBasePrediction(seed, region, 'stock', market.title, market.description, {
+        predictionKey: seed, predictionType: 'stock_price_action', predictionSourceType: 'stock',
+        durationMs, endsAt,
+        eventTitle: asset.name + ' market',
+        eventStartsAt: nowIso(now), eventEndsAt: nowIso(endsAt), eventStatus: 'live',
+        verificationProvider: 'yahoo_finance',
+        verificationSource: { provider: 'yahoo_finance', type: 'stock_market_api', label: 'Yahoo Finance', url: asset.sourceUrl, symbol: asset.symbol },
+        resolutionMethod: 'stock_price_api',
+      }),
+      ...baseMeta,
+      order: index,
+      actionRule: market.actionRule,
+    });
+  });
+  return drafts;
+}
+
 function extractSubject(text) {
   const cleaned = normalizeText(text).replace(/\s+[|:-]\s+.*$/, '');
   const directMatch = cleaned.match(/^([A-Z][A-Za-z0-9&'.-]*(?:\s+[A-Z][A-Za-z0-9&'.-]*){0,4})/);
@@ -716,6 +821,10 @@ async function buildPreparedPredictionPool(regionInput, region, options = {}) {
   cryptoDraftSets.forEach(group => {
     drafts.push(...group);
   });
+
+  const stockAssets = Array.isArray(regionInput?.stockAssets) ? regionInput.stockAssets.slice(0, 4) : [];
+  const stockDraftSets = await Promise.all(stockAssets.map(asset => buildStockPredictionDrafts(asset, region)));
+  stockDraftSets.forEach(group => { drafts.push(...group); });
 
   const newsItems = Array.isArray(regionInput?.newsItems) ? regionInput.newsItems.slice(0, maxNewsItems) : [];
   const newsDrafts = await Promise.all(newsItems.map(item => buildNewsPredictionDraft(item, region)));
