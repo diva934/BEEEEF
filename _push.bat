@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: show sports cross-region, add S&P500/NASDAQ to EU regions, fix sports native-region ownership"
+git commit -m "feat: apply Kickster dark sports UI — Poppins, dark theme, bottom nav, redesigned cards"
 git push origin main --force
 echo.
 git log --oneline -3

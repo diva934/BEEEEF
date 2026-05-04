@@ -6,7 +6,7 @@
 <title>BEEEF — Débats & prédictions média</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Inter+Tight:ital,wght@0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Inter:wght@300;400;500;600;700;800;900&family=Inter+Tight:ital,wght@0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 
 /* ════════════════════════════════════════════════════
@@ -18,78 +18,74 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  /* ── Backgrounds (Apple light) ── */
-  --ink:#fbfbfd;
-  --ink2:#ffffff;
-  --ink3:#f5f5f7;
-  --ink4:#ececf1;
+  /* ── KICKSTER DARK SPORTS THEME ── */
+  --ink:#0C0D12;
+  --ink2:#11131C;
+  --ink3:#181A26;
+  --ink4:#1E2033;
 
-  /* ── Glass surfaces ── */
-  --s1:rgba(0,0,0,0.03);
-  --s2:rgba(0,0,0,0.05);
-  --s3:rgba(0,0,0,0.08);
-  --s4:rgba(0,0,0,0.12);
+  /* ── Dark surfaces ── */
+  --s1:rgba(255,255,255,0.025);
+  --s2:rgba(255,255,255,0.04);
+  --s3:rgba(255,255,255,0.07);
+  --s4:rgba(255,255,255,0.11);
 
-  /* ── Glass spec: backdrop + border + highlight ── */
-  --glass-bg:rgba(255,255,255,0.72);
-  --glass-bg-strong:rgba(255,255,255,0.88);
-  --glass-border:rgba(0,0,0,0.09);
-  --glass-border-strong:rgba(0,0,0,0.16);
-  --glass-shine:rgba(255,255,255,0.9);
-  --glass-blur:blur(40px) saturate(1.8);
+  /* ── Glass dark ── */
+  --glass-bg:rgba(255,255,255,0.05);
+  --glass-bg-strong:rgba(255,255,255,0.09);
+  --glass-border:rgba(255,255,255,0.09);
+  --glass-border-strong:rgba(255,255,255,0.16);
+  --glass-shine:rgba(255,255,255,0.06);
+  --glass-blur:blur(40px) saturate(1.6);
 
-  /* ── Borders ── */
-  --line:rgba(0,0,0,0.08);
-  --line2:rgba(0,0,0,0.14);
-  --line3:rgba(0,0,0,0.2);
+  /* ── Borders dark ── */
+  --line:rgba(255,255,255,0.07);
+  --line2:rgba(255,255,255,0.12);
+  --line3:rgba(255,255,255,0.20);
 
-  /* ── Text ── */
-  --txt:#1d1d1f;
-  --txt2:rgba(0,0,0,0.48);
-  --txt3:rgba(0,0,0,0.3);
+  /* ── Text dark ── */
+  --txt:#ffffff;
+  --txt2:rgba(255,255,255,0.55);
+  --txt3:rgba(255,255,255,0.32);
 
-  /* ── Brand: single refined orange ── */
+  /* ── Brand orange (inchangé) ── */
   --fire:#ff6b35;
   --fire2:#ff8c55;
   --ember:#ffaa70;
   --spark:#ffd199;
 
-  /* ── System colors (Apple palette) ── */
-  --elec:#30d158;
-  --elec2:#25a244;
-  --blood:#ff453a;
-  --blood2:#cc2a21;
-  --ice:#0a84ff;
-  --ice2:#0060df;
+  /* ── System colors Kickster ── */
+  --elec:#00d68f;
+  --elec2:#00b37e;
+  --blood:#ff4d4f;
+  --blood2:#cc2a2a;
+  --ice:#4d8bff;
+  --ice2:#2b6bff;
   --purple:#bf5af2;
   --yellow:#ffd60a;
 
-  /* ── Radii ── */
-  --r:12px;--rs:8px;--rl:20px;--rxl:28px;--rfull:9999px;
+  /* ── Radii Kickster ── */
+  --r:14px;--rs:10px;--rl:22px;--rxl:30px;--rfull:9999px;
 
   /* ── Layout ── */
   --hh:56px;
 
-  /* ── Typography ── */
-  --fn-disp:'Inter Tight','Inter',system-ui,sans-serif;
-  --fn-body:'Inter',system-ui,-apple-system,sans-serif;
+  /* ── Typography Poppins ── */
+  --fn-disp:'Poppins',system-ui,sans-serif;
+  --fn-body:'Poppins',system-ui,sans-serif;
   --fn-mono:'JetBrains Mono','SF Mono',monospace;
 }
 
 html{scroll-behavior:smooth}
 body{
   font-family:var(--fn-body);
-  background:
-    radial-gradient(circle at top center, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0) 36%),
-    linear-gradient(180deg, var(--ink) 0%, var(--ink3) 52%, var(--ink4) 100%);
+  background:var(--ink);
   color:var(--txt);
   min-height:100vh;
   overflow-x:hidden;
-  background-attachment:fixed;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   text-rendering:optimizeLegibility;
-  font-feature-settings:'cv11','ss01';
   letter-spacing:-0.01em;
 }
 
@@ -3533,6 +3529,969 @@ body{
 @media(max-width:768px){
   #live-view{background:#F5F5F7 !important;}
 }
+
+/* ════════════════════════════════════════════════════
+   KICKSTER SPORTS UI — Dark Arena Theme
+   BEEEF × Kickster Live Score UI Kit
+   Poppins · Dark Navy · Sports Immersive
+════════════════════════════════════════════════════ */
+
+/* ── DARK PALETTE OVERRIDE ── */
+:root {
+  --ink:   #0C0D12 !important;
+  --ink2:  #11131C !important;
+  --ink3:  #181A26 !important;
+  --ink4:  #1E2033 !important;
+
+  --s1: rgba(255,255,255,0.025) !important;
+  --s2: rgba(255,255,255,0.04)  !important;
+  --s3: rgba(255,255,255,0.07)  !important;
+  --s4: rgba(255,255,255,0.11)  !important;
+
+  --glass-bg:          rgba(255,255,255,0.05)  !important;
+  --glass-bg-strong:   rgba(255,255,255,0.09)  !important;
+  --glass-border:      rgba(255,255,255,0.09)  !important;
+  --glass-border-strong:rgba(255,255,255,0.16) !important;
+  --glass-shine:       rgba(255,255,255,0.06)  !important;
+  --glass-blur:        blur(40px) saturate(1.6) !important;
+
+  --line:  rgba(255,255,255,0.07) !important;
+  --line2: rgba(255,255,255,0.12) !important;
+  --line3: rgba(255,255,255,0.20) !important;
+
+  --txt:  #FFFFFF                !important;
+  --txt2: rgba(255,255,255,0.55) !important;
+  --txt3: rgba(255,255,255,0.32) !important;
+
+  --fire:  #FF6B35 !important;
+  --fire2: #FF8C55 !important;
+  --ember: #FFAA70 !important;
+  --spark: #FFD199 !important;
+
+  --elec:  #00D68F !important;
+  --elec2: #00B37E !important;
+  --blood: #FF4D4F !important;
+  --blood2:#CC2A2A !important;
+  --ice:   #4D8BFF !important;
+  --ice2:  #2B6BFF !important;
+
+  --fn-disp: 'Poppins', system-ui, sans-serif !important;
+  --fn-body: 'Poppins', system-ui, sans-serif !important;
+
+  --r:    14px !important;
+  --rs:   10px !important;
+  --rl:   22px !important;
+  --rxl:  30px !important;
+}
+
+/* ── BASE RESET ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  background: #0C0D12 !important;
+  background-image: none !important;
+  color: #fff !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+body::after, body::before { display: none !important; }
+
+/* ── AMBIENT GLOWS (Kickster style — deeper, cooler) ── */
+.glow-fire {
+  background: radial-gradient(circle, rgba(255,107,53,0.14) 0%, transparent 65%) !important;
+  width: 800px !important; height: 800px !important;
+  top: -320px !important; left: -220px !important;
+}
+.glow-ice {
+  background: radial-gradient(circle, rgba(77,139,255,0.10) 0%, transparent 65%) !important;
+}
+.glow-elec {
+  background: radial-gradient(circle, rgba(0,214,143,0.07) 0%, transparent 65%) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER — Kickster dark glass bar
+═══════════════════════════════════════════════ */
+#header {
+  background: rgba(12,13,18,0.88) !important;
+  backdrop-filter: blur(48px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(1.8) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+#header::after {
+  background: linear-gradient(90deg, transparent, rgba(255,107,53,0.5) 35%, rgba(255,180,100,0.6) 50%, rgba(255,107,53,0.5) 65%, transparent) !important;
+  opacity: 0.35 !important;
+  display: block !important;
+}
+
+/* Buttons in header */
+.admin-btn, .gains-btn {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 10px !important;
+  letter-spacing: 0.05em !important;
+}
+.top-up-btn {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  padding: 7px 16px !important;
+  border-radius: var(--rfull) !important;
+  background: rgba(255,107,53,0.14) !important;
+  border: 1px solid rgba(255,107,53,0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 20px rgba(255,107,53,0.12) !important;
+  color: var(--fire) !important;
+  transition: all 0.18s ease !important;
+}
+.top-up-btn:hover {
+  background: rgba(255,107,53,0.25) !important;
+  border-color: rgba(255,107,53,0.6) !important;
+  box-shadow: 0 4px 20px rgba(255,107,53,0.3), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+.av {
+  background: linear-gradient(135deg, var(--fire), var(--fire2)) !important;
+  border: none !important;
+  box-shadow: 0 0 16px rgba(255,107,53,0.35) !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+}
+.live-ticker {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  background: rgba(255,77,79,0.12) !important;
+  border: 1px solid rgba(255,77,79,0.25) !important;
+  border-radius: var(--rfull) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   HERO — Kickster bold sports hero
+═══════════════════════════════════════════════ */
+.hero {
+  padding: calc(var(--hh) + 40px) 40px 0 !important;
+  background: none !important;
+}
+.hero::before { display: none !important; }
+.hero-title {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: clamp(46px, 6vw, 88px) !important;
+  font-weight: 900 !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.03em !important;
+  color: #fff !important;
+  text-transform: none !important;
+}
+.hero-title em {
+  font-style: italic !important;
+  color: var(--fire) !important;
+  filter: drop-shadow(0 0 24px rgba(255,107,53,0.45)) !important;
+}
+.hero-sub {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  color: rgba(255,255,255,0.5) !important;
+  line-height: 1.7 !important;
+}
+.cta-watch {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  padding: 13px 28px !important;
+  border-radius: var(--rfull) !important;
+  background: linear-gradient(135deg, var(--fire) 0%, #FF8C55 100%) !important;
+  box-shadow: 0 6px 30px rgba(255,107,53,0.45), 0 1px 0 rgba(255,255,255,0.12) inset !important;
+  transition: all 0.22s ease !important;
+}
+.cta-watch:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 40px rgba(255,107,53,0.65), 0 1px 0 rgba(255,255,255,0.14) inset !important;
+}
+.hstat-val { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; }
+.hstat-lbl { font-family: 'Poppins', sans-serif !important; font-size: 10px !important; font-weight: 500 !important; letter-spacing: 0.08em !important; }
+.hero-stats { border-left: 1px solid rgba(255,255,255,0.08) !important; }
+.hstat { border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+
+/* Hero points card */
+.hero-points-card {
+  background: linear-gradient(135deg, rgba(255,107,53,0.12) 0%, rgba(255,107,53,0.04) 100%) !important;
+  border: 1px solid rgba(255,107,53,0.22) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: 20px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 8px 32px rgba(255,107,53,0.12) !important;
+}
+.hero-points-kicker { font-family: 'Poppins', sans-serif !important; font-weight: 600 !important; color: rgba(255,255,255,0.4) !important; }
+.hero-points-value { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: var(--fire) !important; }
+.hero-points-sub { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.45) !important; }
+.hero-points-cta {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(255,107,53,0.18) !important;
+  border: 1px solid rgba(255,107,53,0.4) !important;
+  color: var(--fire) !important;
+  border-radius: var(--rfull) !important;
+  transition: all 0.18s !important;
+}
+.hero-points-cta:hover { background: rgba(255,107,53,0.3) !important; }
+
+/* ═══════════════════════════════════════════════
+   FILTER BAR — Kickster sport tabs
+═══════════════════════════════════════════════ */
+.filter-wrap {
+  background: rgba(12,13,18,0.6) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  padding: 0 40px !important;
+  position: sticky !important;
+  top: var(--hh) !important;
+  z-index: 100 !important;
+}
+.filter-inner { padding-top: 12px !important; padding-bottom: 12px !important; gap: 6px !important; }
+.filter-lbl {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  color: rgba(255,255,255,0.28) !important;
+  text-transform: uppercase !important;
+}
+.ftab {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  padding: 7px 18px !important;
+  border-radius: var(--rfull) !important;
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.45) !important;
+  transition: all 0.18s ease !important;
+}
+.ftab:hover {
+  background: rgba(255,255,255,0.09) !important;
+  color: rgba(255,255,255,0.8) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+.ftab.active {
+  background: var(--fire) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 4px 18px rgba(255,107,53,0.4) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   DEBATE CARDS — Kickster match card style
+═══════════════════════════════════════════════ */
+.debates-grid {
+  background: var(--ink) !important;
+  gap: 0 !important;
+}
+/* Separator lines via outline instead of gap */
+.debates-grid { background: rgba(255,255,255,0.06) !important; }
+
+.debate-card {
+  background: #11131C !important;
+  border: none !important;
+  outline: 1px solid rgba(255,255,255,0.07) !important;
+  position: relative !important;
+  transition: background 0.22s ease, outline-color 0.22s ease !important;
+}
+.debate-card::before {
+  background: linear-gradient(135deg, rgba(255,107,53,0.04) 0%, transparent 60%) !important;
+  opacity: 0 !important;
+  transition: opacity 0.22s !important;
+}
+.debate-card:hover {
+  background: #181A28 !important;
+  outline-color: rgba(255,107,53,0.25) !important;
+  z-index: 2 !important;
+}
+.debate-card:hover::before { opacity: 1 !important; }
+.debate-card:hover .thumb-img, .debate-card.previewing .thumb-img { transform: scale(1.06) !important; }
+
+/* Thumbnail */
+.card-thumb { background: #090A0F !important; }
+.thumb-overlay {
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.75) 100%) !important;
+}
+
+/* Live badge */
+.card-live-badge {
+  background: rgba(255,77,79,0.18) !important;
+  border: 1px solid rgba(255,77,79,0.32) !important;
+  backdrop-filter: blur(12px) !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 9.5px !important;
+  letter-spacing: 0.04em !important;
+  color: #FF6B6B !important;
+}
+.card-live-dot { background: #FF6B6B !important; }
+
+/* Trending */
+.card-trending-badge {
+  background: rgba(255,214,10,0.14) !important;
+  border: 1px solid rgba(255,214,10,0.25) !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 9.5px !important;
+  color: #FFD60A !important;
+}
+
+/* Timer */
+.card-timer {
+  background: rgba(12,13,18,0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.65) !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+}
+
+/* Card body */
+.card-info {
+  background: #11131C !important;
+  padding: 16px 18px 18px !important;
+}
+.card-title {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.01em !important;
+  color: #fff !important;
+}
+.card-category {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.6) !important;
+}
+.card-ai-badge {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 9.5px !important;
+}
+.card-meta { color: rgba(255,255,255,0.3) !important; font-family: 'Poppins', sans-serif !important; font-size: 10.5px !important; }
+
+/* Bet bar */
+.bet-bar { background: rgba(255,255,255,0.07) !important; height: 4px !important; margin-bottom: 14px !important; }
+.bet-bar-fill { background: var(--elec) !important; }
+.bet-side-yes .bet-side-name, .bet-side-yes .bet-side-pct { color: var(--elec) !important; }
+.bet-side-no .bet-side-name, .bet-side-no .bet-side-pct { color: var(--blood) !important; }
+.bet-side-name, .bet-side-pct, .bet-labels { font-family: 'Poppins', sans-serif !important; }
+.bet-side-pct { font-size: 17px !important; font-weight: 800 !important; }
+.bet-side-name { font-size: 9.5px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; }
+
+/* Odd pills */
+.odd-pill.yes { background: rgba(0,214,143,0.12) !important; color: var(--elec) !important; border: 1px solid rgba(0,214,143,0.22) !important; }
+.odd-pill.no { background: rgba(255,77,79,0.12) !important; color: var(--blood) !important; border: 1px solid rgba(255,77,79,0.22) !important; }
+.odd-caption { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.28) !important; }
+
+/* Join overlay */
+.join-cta {
+  background: rgba(12,13,18,0.72) !important;
+  backdrop-filter: blur(22px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.6) !important;
+}
+.join-btn {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  border-radius: var(--rfull) !important;
+  padding: 14px 38px !important;
+  background: var(--fire) !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.1) inset, 0 6px 30px rgba(255,107,53,0.55) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+.join-btn:hover { transform: scale(1.05) !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.15) inset, 0 10px 44px rgba(255,107,53,0.75) !important; }
+
+/* Closed overlay */
+.closed-overlay {
+  background: rgba(12,13,18,0.82) !important;
+  backdrop-filter: blur(12px) !important;
+}
+.closed-label { color: rgba(255,255,255,0.35) !important; }
+
+/* Category colors */
+.cat-crypto     { background: rgba(247,147,26,0.14)  !important; color: #F7931A !important; border: 1px solid rgba(247,147,26,0.2) !important; }
+.cat-technology { background: rgba(77,139,255,0.14)   !important; color: #4D8BFF !important; border: 1px solid rgba(77,139,255,0.2) !important; }
+.cat-economy    { background: rgba(0,214,143,0.12)    !important; color: #00D68F !important; border: 1px solid rgba(0,214,143,0.2) !important; }
+.cat-sports     { background: rgba(155,109,255,0.14)  !important; color: #9B6DFF !important; border: 1px solid rgba(155,109,255,0.2) !important; }
+.cat-geopolitics{ background: rgba(255,77,79,0.12)    !important; color: #FF6B6B !important; border: 1px solid rgba(255,77,79,0.2) !important; }
+.cat-society    { background: rgba(255,179,64,0.12)   !important; color: #FFB340 !important; border: 1px solid rgba(255,179,64,0.2) !important; }
+.cat-politics   { background: rgba(255,100,50,0.12)   !important; color: #FF6432 !important; border: 1px solid rgba(255,100,50,0.2) !important; }
+
+/* ═══════════════════════════════════════════════
+   TOP CAROUSEL — Kickster dark cards
+═══════════════════════════════════════════════ */
+#top-carousel { background: var(--ink) !important; padding: 24px 40px 0 !important; }
+.tc-title { font-family: 'Poppins', sans-serif !important; font-size: 10px !important; font-weight: 700 !important; letter-spacing: 0.1em !important; color: rgba(255,255,255,0.35) !important; }
+.tc-live-badge {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(255,77,79,0.12) !important;
+  border: 1px solid rgba(255,77,79,0.25) !important;
+  color: #FF6B6B !important;
+}
+.tc-scroll > .debate-card {
+  background: #181A28 !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+  outline: none !important;
+}
+.tc-scroll > .debate-card:hover {
+  border-color: rgba(255,107,53,0.3) !important;
+  box-shadow: 0 8px 32px rgba(255,107,53,0.18), 0 0 0 1px rgba(255,107,53,0.15) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   LIVE VIEW — Kickster dark match page
+═══════════════════════════════════════════════ */
+#live-view { background: var(--ink) !important; }
+.live-topbar, .live-page-header {
+  background: rgba(12,13,18,0.92) !important;
+  backdrop-filter: blur(32px) !important;
+  -webkit-backdrop-filter: blur(32px) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+}
+.live-topbar-title, .live-page-title { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.back-btn {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.6) !important;
+  border-radius: var(--rfull) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+.back-btn:hover { background: rgba(255,255,255,0.1) !important; color: #fff !important; }
+.live-badge-big {
+  background: rgba(255,77,79,0.14) !important;
+  border: 1px solid rgba(255,77,79,0.28) !important;
+  color: #FF6B6B !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+.live-countdown {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(255,107,53,0.12) !important;
+  border: 1px solid rgba(255,107,53,0.25) !important;
+  color: var(--fire) !important;
+}
+.live-countdown.ending { color: var(--blood) !important; background: rgba(255,77,79,0.12) !important; border-color: rgba(255,77,79,0.3) !important; }
+.viewers-count { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.3) !important; }
+
+/* Participants strip */
+.participants-strip { background: rgba(17,19,28,0.96) !important; backdrop-filter: blur(20px) !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+.pstrip-vs-lbl { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; color: rgba(255,255,255,0.25) !important; }
+.pstrip-name { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.pstrip-pos { font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; }
+.pstrip-pos.yes { color: var(--elec) !important; }
+.pstrip-pos.no  { color: var(--blood) !important; }
+.pstrip-badge-on {
+  font-family: 'Poppins', sans-serif !important;
+  background: rgba(0,214,143,0.12) !important;
+  border: 1px solid rgba(0,214,143,0.25) !important;
+  color: var(--elec) !important;
+}
+.pstrip-badge-off { font-family: 'Poppins', sans-serif !important; background: rgba(255,255,255,0.04) !important; color: rgba(255,255,255,0.28) !important; }
+.pstrip-vs { border-left: 1px solid rgba(255,255,255,0.07) !important; border-right: 1px solid rgba(255,255,255,0.07) !important; }
+
+/* ═══════════════════════════════════════════════
+   PREDICTION CHART — Kickster dark chart area
+═══════════════════════════════════════════════ */
+.live-probability-chart-card {
+  background: #181A28 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35) !important;
+}
+.live-probability-chart-title { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: var(--elec) !important; }
+.live-probability-chart-value { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.live-probability-chart-note { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.35) !important; }
+.live-probability-range-btn {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: rgba(255,255,255,0.45) !important;
+  border-radius: var(--rfull) !important;
+}
+.live-probability-range-btn.is-active {
+  background: rgba(255,107,53,0.2) !important;
+  border-color: rgba(255,107,53,0.4) !important;
+  color: var(--fire) !important;
+}
+.live-probability-chart-volume { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.3) !important; }
+
+/* ═══════════════════════════════════════════════
+   BET PANEL — Kickster bet interface
+═══════════════════════════════════════════════ */
+.bet-panel, .live-right {
+  background: #0E0F19 !important;
+  border-left: 1px solid rgba(255,255,255,0.07) !important;
+}
+.bet-btn-yes {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(0,214,143,0.14) !important;
+  border: 1px solid rgba(0,214,143,0.3) !important;
+  color: var(--elec) !important;
+  border-radius: var(--rfull) !important;
+  transition: all 0.18s !important;
+}
+.bet-btn-yes:hover {
+  background: rgba(0,214,143,0.24) !important;
+  border-color: rgba(0,214,143,0.55) !important;
+  box-shadow: 0 6px 22px rgba(0,214,143,0.25) !important;
+}
+.bet-btn-no {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(255,77,79,0.12) !important;
+  border: 1px solid rgba(255,77,79,0.28) !important;
+  color: var(--blood) !important;
+  border-radius: var(--rfull) !important;
+  transition: all 0.18s !important;
+}
+.bet-btn-no:hover {
+  background: rgba(255,77,79,0.22) !important;
+  border-color: rgba(255,77,79,0.55) !important;
+  box-shadow: 0 6px 22px rgba(255,77,79,0.22) !important;
+}
+.bet-input, .bet-input-field {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  font-family: 'Poppins', sans-serif !important;
+  border-radius: var(--rs) !important;
+}
+.bet-input:focus, .bet-input-field:focus {
+  border-color: rgba(255,107,53,0.5) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.12) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   DEBATE INTRO (detail slide) — Kickster style
+═══════════════════════════════════════════════ */
+.debate-intro { background: var(--ink) !important; }
+.di-title {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 900 !important;
+  color: #fff !important;
+  letter-spacing: -0.03em !important;
+}
+.di-stat-box {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 14px !important;
+}
+.di-stat-val { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; }
+.di-stat-lbl { font-family: 'Poppins', sans-serif !important; font-weight: 600 !important; color: rgba(255,255,255,0.3) !important; }
+.di-odds-bar { background: rgba(255,77,79,0.15) !important; }
+.di-odds-fill { background: linear-gradient(90deg, var(--elec), var(--elec2)) !important; }
+.di-odds-labels { font-family: 'Poppins', sans-serif !important; }
+.di-cta {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, var(--fire), #FF8C55) !important;
+  border-radius: var(--rfull) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  box-shadow: 0 6px 28px rgba(255,107,53,0.4) !important;
+}
+.di-dot { background: rgba(255,255,255,0.12) !important; }
+.di-dot.active { background: var(--fire) !important; }
+.di-visual { background: #181A28 !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+
+/* ═══════════════════════════════════════════════
+   MODALS — Kickster dark modals
+═══════════════════════════════════════════════ */
+.modal-overlay, .admin-modal-overlay {
+  background: rgba(5,6,10,0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+.modal, .modal-box, .admin-modal, .setup-box, .ai-verdict-box {
+  background: #181A28 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+  backdrop-filter: none !important;
+  color: #fff !important;
+}
+.admin-modal { background: #181A28 !important; }
+.admin-modal-title { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.admin-section-title { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.3) !important; border-bottom-color: rgba(255,255,255,0.07) !important; }
+.admin-stat { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.07) !important; }
+.admin-stat-val { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.admin-stat-lbl { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.3) !important; }
+.admin-debates-table th { color: rgba(255,255,255,0.3) !important; border-bottom-color: rgba(255,255,255,0.08) !important; font-family: 'Poppins', sans-serif !important; }
+.admin-debates-table td { color: #fff !important; border-bottom-color: rgba(255,255,255,0.06) !important; font-family: 'Poppins', sans-serif !important; }
+.admin-input {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: #fff !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+.admin-input:focus { border-color: var(--fire) !important; }
+.admin-input::placeholder { color: rgba(255,255,255,0.25) !important; }
+.admin-submit-btn { font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; background: var(--fire) !important; border: none !important; }
+.admin-close-btn { font-family: 'Poppins', sans-serif !important; }
+.admin-modal-close {
+  background: rgba(255,255,255,0.07) !important;
+  border: none !important;
+  color: rgba(255,255,255,0.5) !important;
+}
+.admin-modal-close:hover { background: rgba(255,255,255,0.12) !important; color: #fff !important; }
+
+/* Gift cards modal */
+.gains-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 14px !important;
+  padding: 16px !important;
+}
+.gains-card:hover { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,107,53,0.3) !important; }
+.gains-card-brand { font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; color: #fff !important; }
+.gains-card-logo { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.12) !important; border-radius: 12px !important; }
+.gains-price-btn {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  border-radius: var(--rs) !important;
+}
+.gains-price-btn:hover { border-color: rgba(255,107,53,0.4) !important; background: rgba(255,107,53,0.1) !important; color: var(--fire) !important; }
+.gains-price-btn span { color: rgba(255,107,53,0.7) !important; }
+
+/* ═══════════════════════════════════════════════
+   TOAST — Kickster dark notification
+═══════════════════════════════════════════════ */
+#toast {
+  background: #1E2033 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.5) !important;
+  backdrop-filter: blur(24px) !important;
+}
+.toast-text { font-family: 'Poppins', sans-serif !important; font-weight: 600 !important; color: #fff !important; }
+.toast-sub { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.45) !important; }
+
+/* ═══════════════════════════════════════════════
+   SETTINGS PANEL — Kickster dark panel
+═══════════════════════════════════════════════ */
+.settings-panel {
+  background: #181A28 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,107,53,0.06) !important;
+}
+.sp-header { border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+.sp-title { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.28) !important; }
+.sp-lbl { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.28) !important; }
+.sp-server-row { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+.sp-server-name { font-family: 'Poppins', sans-serif !important; }
+.sp-lang-chip { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.7) !important; }
+.sp-edit-btn { font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; border-radius: var(--rfull) !important; }
+.sp-empty { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.25) !important; }
+.sp-close { color: rgba(255,255,255,0.35) !important; }
+.sp-close:hover { color: #fff !important; }
+.settings-btn {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: rgba(255,255,255,0.5) !important;
+}
+.settings-btn:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.15) !important; color: #fff !important; }
+.settings-btn.open { border-color: rgba(255,107,53,0.4) !important; color: var(--fire) !important; background: rgba(255,107,53,0.1) !important; }
+
+/* ═══════════════════════════════════════════════
+   ACCOUNT BUTTON
+═══════════════════════════════════════════════ */
+.account-btn {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07) !important;
+  color: #fff !important;
+}
+.account-btn:hover {
+  background: rgba(255,255,255,0.09) !important;
+  border-color: rgba(255,107,53,0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 20px rgba(255,107,53,0.12) !important;
+}
+.account-label { font-family: 'Poppins', sans-serif !important; font-weight: 600 !important; color: #fff !important; }
+.account-sub { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.35) !important; }
+
+/* ═══════════════════════════════════════════════
+   TABS (My Predictions, Leaderboard, etc.)
+═══════════════════════════════════════════════ */
+.tab-view-inner { background: var(--ink) !important; }
+.tab-view-header { border-bottom: 1px solid rgba(255,255,255,0.07) !important; background: var(--ink2) !important; }
+.tab-view-title { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.tab-view-sub { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.35) !important; }
+.mp-stat-card { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.07) !important; border-radius: 14px !important; }
+.mp-stat-lbl { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.35) !important; }
+.mp-stat-val { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.tab-empty-state { background: rgba(255,255,255,0.02) !important; border: 1px solid rgba(255,255,255,0.06) !important; border-radius: 20px !important; }
+.tab-empty-title { font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; color: #fff !important; }
+.tab-empty-sub { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.35) !important; }
+.rank-podium, .rank-list { background: none !important; }
+
+/* ═══════════════════════════════════════════════
+   WALLET BADGE, BUTTONS
+═══════════════════════════════════════════════ */
+.wallet-badge {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: #fff !important;
+}
+.wallet-badge:hover { border-color: rgba(0,214,143,0.35) !important; background: rgba(0,214,143,0.06) !important; }
+.wdot { background: var(--elec) !important; box-shadow: 0 0 8px var(--elec) !important; }
+.btn-primary {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(255,107,53,0.18) !important;
+  border: 1px solid rgba(255,107,53,0.4) !important;
+  color: var(--fire) !important;
+  border-radius: var(--rfull) !important;
+}
+.btn-primary:hover { background: rgba(255,107,53,0.3) !important; box-shadow: 0 6px 24px rgba(255,107,53,0.3) !important; }
+.btn-secondary {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.6) !important;
+  border-radius: var(--rfull) !important;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.1) !important; color: #fff !important; }
+
+/* ═══════════════════════════════════════════════
+   LIVE CHAT / COMMENT FEED
+═══════════════════════════════════════════════ */
+.chat-panel, .live-right { background: #0E0F19 !important; border-left: 1px solid rgba(255,255,255,0.07) !important; }
+.chat-msg { font-family: 'Poppins', sans-serif !important; }
+.chat-msg-name { font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; }
+.chat-input-wrap { background: #0E0F19 !important; border-top: 1px solid rgba(255,255,255,0.07) !important; }
+.chat-input {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  font-family: 'Poppins', sans-serif !important;
+  border-radius: var(--rfull) !important;
+}
+.chat-input::placeholder { color: rgba(255,255,255,0.25) !important; }
+.chat-input:focus { border-color: rgba(255,107,53,0.45) !important; outline: none !important; }
+.chat-send-btn {
+  background: var(--fire) !important;
+  border: none !important;
+  border-radius: var(--rfull) !important;
+  color: #fff !important;
+  transition: all 0.18s !important;
+}
+.chat-send-btn:hover { filter: brightness(1.1) !important; }
+
+/* ═══════════════════════════════════════════════
+   PARTICIPANT MODAL
+═══════════════════════════════════════════════ */
+.participant-modal {
+  background: #181A28 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   ENDED / AI VERDICT BANNER
+═══════════════════════════════════════════════ */
+.ended-banner {
+  background: linear-gradient(135deg, rgba(255,107,53,0.1) 0%, rgba(255,107,53,0.04) 100%) !important;
+  border-top: 1px solid rgba(255,107,53,0.22) !important;
+  border-bottom: 1px solid rgba(255,107,53,0.22) !important;
+}
+.ended-banner h3 { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; color: #fff !important; letter-spacing: 0.04em !important; }
+.ended-banner p { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.5) !important; }
+.ended-banner .winner-side { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; }
+
+/* Arena badge */
+.arena-badge {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  background: rgba(255,77,79,0.12) !important;
+  border: 1px solid rgba(255,77,79,0.22) !important;
+  color: var(--blood) !important;
+  letter-spacing: 0.1em !important;
+  border-radius: 6px !important;
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE KICKSTER BOTTOM NAV
+═══════════════════════════════════════════════ */
+#kickster-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 2000;
+  background: rgba(12,13,18,0.96);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+}
+#kickster-bottom-nav .kbn-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  max-width: 480px;
+  margin: 0 auto;
+}
+#kickster-bottom-nav .kbn-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 12px;
+  transition: all 0.18s ease;
+  position: relative;
+}
+#kickster-bottom-nav .kbn-btn .kbn-icon {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.38);
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+#kickster-bottom-nav .kbn-btn .kbn-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0;
+  transition: color 0.18s ease;
+}
+#kickster-bottom-nav .kbn-btn.active .kbn-icon,
+#kickster-bottom-nav .kbn-btn:hover .kbn-icon { color: var(--fire); transform: translateY(-1px); }
+#kickster-bottom-nav .kbn-btn.active .kbn-label,
+#kickster-bottom-nav .kbn-btn:hover .kbn-label { color: var(--fire); }
+#kickster-bottom-nav .kbn-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; left: 50%;
+  transform: translateX(-50%);
+  width: 20px; height: 2px;
+  background: var(--fire);
+  border-radius: 2px 2px 0 0;
+}
+#kickster-bottom-nav .kbn-btn .kbn-badge {
+  position: absolute;
+  top: 2px; right: 8px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  background: var(--blood);
+  border-radius: var(--rfull);
+  font-family: 'Poppins', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #0C0D12;
+}
+@media (max-width: 768px) {
+  #kickster-bottom-nav { display: block !important; }
+  #main { padding-bottom: 70px !important; }
+  .filter-wrap { padding: 0 16px !important; }
+  #top-carousel { padding: 16px 16px 0 !important; }
+  .hero { padding: calc(var(--hh) + 24px) 16px 0 !important; }
+  .debates-grid { padding-bottom: 20px !important; }
+}
+
+/* Live source card dark override */
+.live-source-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+}
+.live-source-image { border-radius: 10px !important; }
+.live-source-kicker { color: var(--ice) !important; }
+.live-source-excerpt { color: rgba(255,255,255,0.5) !important; font-family: 'Poppins', sans-serif !important; }
+.live-source-link { color: var(--fire) !important; }
+
+/* Debate info row */
+.debate-info-row { border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+.debate-info-title { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; color: #fff !important; }
+.participant-chip { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.09) !important; }
+.participant-chip span { font-family: 'Poppins', sans-serif !important; color: #fff !important; }
+.dp-vs { font-family: 'Poppins', sans-serif !important; color: rgba(255,255,255,0.28) !important; }
+#joinAsParticipantBtn {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  background: rgba(77,139,255,0.14) !important;
+  border: 1px solid rgba(77,139,255,0.3) !important;
+  color: var(--ice) !important;
+  border-radius: var(--rfull) !important;
+  letter-spacing: 0 !important;
+}
+#joinAsParticipantBtn:hover { background: rgba(77,139,255,0.24) !important; border-color: rgba(77,139,255,0.5) !important; box-shadow: 0 4px 18px rgba(77,139,255,0.2) !important; }
+
+/* Mobile tabs bar */
+.mobile-tabs-bar { background: rgba(12,13,18,0.92) !important; border-top: 1px solid rgba(255,255,255,0.07) !important; }
+
+/* Rank cards */
+.rank-podium .rank-card, .rank-list .rank-item {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+}
+.rank-name, .rank-user { font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; color: #fff !important; }
+.rank-pts { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; }
+
+/* Global scrollbar Kickster style */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+/* Progress slider */
+.live-progress-slider {
+  background: linear-gradient(90deg, #00D68F 0%, #00D68F var(--live-progress,50%), rgba(255,255,255,0.15) var(--live-progress,50%), rgba(255,255,255,0.15) 100%) !important;
+}
+.live-progress-slider::-webkit-slider-thumb { background: #fff !important; border-color: var(--elec) !important; }
+
+/* Funds / token modal inner */
+.funds-modal, .token-packs-wrap {
+  background: #181A28 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   FINAL KICKSTER RESPONSIVE OVERRIDES
+═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  #live-view { background: var(--ink) !important; }
+  .live-layout { background: var(--ink) !important; }
+  .mobile-live-split { background: var(--ink) !important; }
+}
+@media (max-width: 480px) {
+  .hero-title { font-size: clamp(36px, 11vw, 56px) !important; }
+  .cta-watch { font-size: 12px !important; padding: 11px 22px !important; }
+}
 </style>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -3717,6 +4676,43 @@ body{
     <div class="toast-sub" id="toastSub"></div>
   </div>
 </div>
+
+<!-- KICKSTER BOTTOM NAV (mobile only) -->
+<nav id="kickster-bottom-nav" aria-label="Navigation principale">
+  <div class="kbn-inner">
+    <button class="kbn-btn active" id="kbn-home" onclick="goHome();kbnActivate(this)" aria-label="Accueil" type="button">
+      <span class="kbn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </span>
+      <span class="kbn-label">Arènes</span>
+    </button>
+    <button class="kbn-btn" id="kbn-live" onclick="kbnActivate(this)" aria-label="Live" type="button">
+      <span class="kbn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49M7.76 7.76a6 6 0 000 8.49M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      </span>
+      <span class="kbn-label">Live</span>
+      <span class="kbn-badge" id="kbnLiveBadge" style="display:none">0</span>
+    </button>
+    <button class="kbn-btn" id="kbn-predictions" onclick="showMesPredictions();kbnActivate(this)" aria-label="Mes prédictions" type="button">
+      <span class="kbn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </span>
+      <span class="kbn-label">Prédictions</span>
+    </button>
+    <button class="kbn-btn" id="kbn-ranking" onclick="showClassement();kbnActivate(this)" aria-label="Classement" type="button">
+      <span class="kbn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8M9 2v7a3 3 0 006 0V2M5 3H3a2 2 0 000 4h2M19 3h2a2 2 0 010 4h-2M12 12v4M8 20h8M10 16h4"/></svg>
+      </span>
+      <span class="kbn-label">Classement</span>
+    </button>
+    <button class="kbn-btn" id="kbn-profile" onclick="openProfile();kbnActivate(this)" aria-label="Profil" type="button">
+      <span class="kbn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <span class="kbn-label">Profil</span>
+    </button>
+  </div>
+</nav>
 
 <!-- HEADER -->
 <header id="header">
@@ -4377,6 +5373,27 @@ body{
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════
+//  KICKSTER BOTTOM NAV — helper
+// ═══════════════════════════════════════════════════════════
+function kbnActivate(btn) {
+  document.querySelectorAll('#kickster-bottom-nav .kbn-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+// Sync bottom nav when views change
+function kbnSync(id) {
+  const map = { home: 'kbn-home', predictions: 'kbn-predictions', classement: 'kbn-ranking' };
+  const target = document.getElementById(map[id]);
+  if (target) kbnActivate(target);
+}
+// Update live badge count
+function updateKbnLiveBadge(count) {
+  const badge = document.getElementById('kbnLiveBadge');
+  if (!badge) return;
+  if (count > 0) { badge.style.display = 'flex'; badge.textContent = count > 9 ? '9+' : count; }
+  else { badge.style.display = 'none'; }
+}
+
 // ═══════════════════════════════════════════════════════════
 //  BEEEF — Core State
 // ═══════════════════════════════════════════════════════════
