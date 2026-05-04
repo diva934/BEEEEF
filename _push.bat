@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: remove liquid glass, white logo on dark bg, orange header line, all live cards dark"
+git commit -m "redesign: Kickster cards dark navy, colored category pills, strong thumb overlay, fix grid bg"
 git push origin main --force
 echo.
 git log --oneline -3

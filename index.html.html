@@ -3770,136 +3770,256 @@ body::after, body::before { display: none !important; }
   color: rgba(255,255,255,0.28) !important;
   text-transform: uppercase !important;
 }
+/* ── FILTER TABS — Kickster category pill style ── */
+.filter-wrap {
+  background: transparent !important;
+  padding: 12px 20px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+}
+.filter-lbl {
+  display: none !important; /* hide "ARÈNES" label — cleaner like Kickster */
+}
 .ftab {
   font-family: 'Poppins', sans-serif !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   letter-spacing: 0 !important;
   text-transform: none !important;
-  padding: 7px 18px !important;
-  border-radius: var(--rfull) !important;
+  padding: 6px 16px !important;
+  border-radius: 99px !important;
   background: rgba(255,255,255,0.05) !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  color: rgba(255,255,255,0.45) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  color: rgba(255,255,255,0.4) !important;
   transition: all 0.18s ease !important;
+  cursor: pointer !important;
 }
 .ftab:hover {
   background: rgba(255,255,255,0.09) !important;
-  color: rgba(255,255,255,0.8) !important;
-  border-color: rgba(255,255,255,0.14) !important;
+  color: rgba(255,255,255,0.75) !important;
+  border-color: rgba(255,255,255,0.12) !important;
 }
 .ftab.active {
   background: var(--fire) !important;
   border-color: transparent !important;
   color: #fff !important;
-  box-shadow: 0 4px 18px rgba(255,107,53,0.4) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 16px rgba(255,107,53,0.45), 0 0 0 1px rgba(255,107,53,0.2) !important;
 }
 
 /* ═══════════════════════════════════════════════
    DEBATE CARDS — Kickster match card style
 ═══════════════════════════════════════════════ */
+
+/* Grid container — dark, no white tint */
 .debates-grid {
-  background: var(--ink) !important;
-  gap: 0 !important;
+  background: transparent !important;
+  gap: 16px !important;
+  padding: 0 20px 32px !important;
 }
-/* Separator lines via outline instead of gap */
-.debates-grid { background: rgba(255,255,255,0.06) !important; }
 
+/* ── CARD BASE ── */
 .debate-card {
-  background: #11131C !important;
-  border: none !important;
-  outline: 1px solid rgba(255,255,255,0.07) !important;
-  position: relative !important;
-  transition: background 0.22s ease, outline-color 0.22s ease !important;
+  background: #16192A !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  outline: none !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
-.debate-card::before {
-  background: linear-gradient(135deg, rgba(255,107,53,0.04) 0%, transparent 60%) !important;
-  opacity: 0 !important;
-  transition: opacity 0.22s !important;
-}
+.debate-card::before { display: none !important; }
 .debate-card:hover {
-  background: #181A28 !important;
-  outline-color: rgba(255,107,53,0.25) !important;
-  z-index: 2 !important;
+  transform: translateY(-3px) !important;
+  border-color: rgba(255,107,53,0.3) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,107,53,0.15) !important;
 }
-.debate-card:hover::before { opacity: 1 !important; }
-.debate-card:hover .thumb-img, .debate-card.previewing .thumb-img { transform: scale(1.06) !important; }
+.debate-card:hover .thumb-img,
+.debate-card.previewing .thumb-img { transform: scale(1.06) !important; }
 
-/* Thumbnail */
-.card-thumb { background: #090A0F !important; }
+/* ── THUMBNAIL — Kickster style hero image ── */
+.card-thumb {
+  background: #090A0F !important;
+  padding-top: 58% !important; /* slightly taller than before for more visual impact */
+  position: relative !important;
+  overflow: hidden !important;
+}
+.thumb-img {
+  object-fit: cover !important;
+  object-position: center center !important;
+  filter: brightness(0.85) !important; /* slightly dim so text overlay is readable */
+  transition: transform 0.45s ease, filter 0.3s ease !important;
+}
+.debate-card:hover .thumb-img { filter: brightness(1) !important; }
+
+/* Strong gradient overlay — image fades into dark card body */
 .thumb-overlay {
-  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.75) 100%) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(0,0,0,0.05) 0%,
+    rgba(0,0,0,0.25) 50%,
+    rgba(22,25,42,0.95) 100%
+  ) !important;
 }
 
-/* Live badge */
-.card-live-badge {
-  background: rgba(255,77,79,0.18) !important;
-  border: 1px solid rgba(255,77,79,0.32) !important;
-  backdrop-filter: blur(12px) !important;
+/* ── CATEGORY TAG — colored like Kickster sport pills ── */
+.card-category, .card-category-text {
   font-family: 'Poppins', sans-serif !important;
+  font-size: 9px !important;
   font-weight: 700 !important;
-  font-size: 9.5px !important;
-  letter-spacing: 0.04em !important;
-  color: #FF6B6B !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  padding: 2px 8px !important;
+  border-radius: 99px !important;
+  border: none !important;
 }
-.card-live-dot { background: #FF6B6B !important; }
-
-/* Trending */
-.card-trending-badge {
-  background: rgba(255,214,10,0.14) !important;
-  border: 1px solid rgba(255,214,10,0.25) !important;
-  font-family: 'Poppins', sans-serif !important;
-  font-weight: 700 !important;
-  font-size: 9.5px !important;
-  color: #FFD60A !important;
+/* Category color coding */
+.debate-card[data-cat="sports"] .card-category,
+.debate-card[data-cat="sports"] .card-category-text {
+  background: rgba(255,107,53,0.18) !important;
+  color: #ff8c5a !important;
+}
+.debate-card[data-cat="crypto"] .card-category,
+.debate-card[data-cat="crypto"] .card-category-text {
+  background: rgba(0,214,143,0.15) !important;
+  color: #00d68f !important;
+}
+.debate-card[data-cat="politics"] .card-category,
+.debate-card[data-cat="politics"] .card-category-text {
+  background: rgba(77,139,255,0.15) !important;
+  color: #6da4ff !important;
+}
+.debate-card[data-cat="geopolitics"] .card-category,
+.debate-card[data-cat="geopolitics"] .card-category-text {
+  background: rgba(180,100,255,0.15) !important;
+  color: #c07aff !important;
 }
 
-/* Timer */
+/* ── TIMER badge ── */
 .card-timer {
-  background: rgba(12,13,18,0.7) !important;
-  backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  color: rgba(255,255,255,0.65) !important;
+  background: rgba(0,0,0,0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.7) !important;
   font-family: 'Poppins', sans-serif !important;
-  font-size: 9.5px !important;
+  font-size: 9px !important;
   font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 2px 7px !important;
 }
 
-/* Card body */
+/* ── CARD BODY ── */
 .card-info {
-  background: #11131C !important;
-  padding: 16px 18px 18px !important;
+  background: #16192A !important;
+  padding: 14px 16px 16px !important;
+  border-top: 1px solid rgba(255,255,255,0.05) !important;
+}
+.card-topline {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 8px !important;
 }
 .card-title {
   font-family: 'Poppins', sans-serif !important;
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
-  line-height: 1.25 !important;
-  letter-spacing: -0.01em !important;
+  line-height: 1.3 !important;
   color: #fff !important;
+  margin-bottom: 12px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
 }
-.card-category {
-  font-family: 'Poppins', sans-serif !important;
-  font-size: 9.5px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  color: rgba(255,255,255,0.6) !important;
-}
-.card-ai-badge {
-  font-family: 'Poppins', sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 9.5px !important;
-}
-.card-meta { color: rgba(255,255,255,0.3) !important; font-family: 'Poppins', sans-serif !important; font-size: 10.5px !important; }
 
-/* Bet bar */
-.bet-bar { background: rgba(255,255,255,0.07) !important; height: 4px !important; margin-bottom: 14px !important; }
-.bet-bar-fill { background: var(--elec) !important; }
-.bet-side-yes .bet-side-name, .bet-side-yes .bet-side-pct { color: var(--elec) !important; }
-.bet-side-no .bet-side-name, .bet-side-no .bet-side-pct { color: var(--blood) !important; }
-.bet-side-name, .bet-side-pct, .bet-labels { font-family: 'Poppins', sans-serif !important; }
+/* ── LIVE / TRENDING badges ── */
+.card-live-badge {
+  background: rgba(255,69,58,0.15) !important;
+  border: 1px solid rgba(255,69,58,0.3) !important;
+  color: #FF6B6B !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 9px !important; font-weight: 700 !important;
+  border-radius: 5px !important; padding: 2px 7px !important;
+}
+.card-live-dot { background: #FF4444 !important; }
+.card-trending-badge {
+  background: rgba(255,200,0,0.12) !important;
+  border: 1px solid rgba(255,200,0,0.22) !important;
+  color: #ffd60a !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 9px !important; font-weight: 700 !important;
+  border-radius: 5px !important;
+}
+
+/* ── BET BAR — Kickster prediction bar style ── */
+.market-strip, .bet-bar-wrap { margin-top: auto !important; }
+.bet-labels {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+}
+.bet-side {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+.bet-side-name {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  opacity: 0.6 !important;
+}
+.bet-side-pct {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+.bet-side-yes .bet-side-name { color: #00d68f !important; opacity: 0.7 !important; }
+.bet-side-yes .bet-side-pct { color: #00d68f !important; }
+.bet-side-no .bet-side-name { color: #FF4D4F !important; opacity: 0.7 !important; }
+.bet-side-no .bet-side-pct { color: #FF4D4F !important; }
+
+.bet-bar {
+  width: 100% !important;
+  height: 5px !important;
+  background: rgba(255,255,255,0.06) !important;
+  border-radius: 99px !important;
+  overflow: hidden !important;
+  margin-bottom: 10px !important;
+}
+.bet-bar-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #00c97a, #00d68f) !important;
+  border-radius: 99px !important;
+  transition: width 0.6s ease !important;
+}
+
+/* Odds */
+.card-meta, .card-odds, .card-pool {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 10px !important;
+  color: rgba(255,255,255,0.28) !important;
+}
+
+/* ── CAROUSEL cards — slightly larger image ── */
+.tc-scroll > .debate-card {
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45) !important;
+}
+.tc-scroll > .debate-card .card-thumb { padding-top: 64% !important; }
+
+/* tc-rank badge */
+.tc-rank {
+  background: var(--fire) !important;
+  color: #fff !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  border-radius: 7px !important;
+  padding: 2px 8px !important;
+  box-shadow: 0 2px 10px rgba(255,107,53,0.4) !important;
+}
 .bet-side-pct { font-size: 17px !important; font-weight: 800 !important; }
 .bet-side-name { font-size: 9.5px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; }
 
