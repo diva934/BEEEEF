@@ -398,27 +398,265 @@ body{
   </div>
 </div>
 
+<style>
+/* ── SEARCH OVERLAY ── */
+#search-overlay{
+  position:fixed;inset:0;z-index:2000;background:rgba(255,255,255,0.97);
+  backdrop-filter:blur(12px);display:none;flex-direction:column;padding:0 16px;
+}
+#search-overlay.open{display:flex}
+.search-top{
+  display:flex;align-items:center;gap:10px;height:60px;border-bottom:1px solid var(--line);
+}
+.search-field{
+  flex:1;display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border-radius:10px;padding:8px 12px;
+}
+.search-field svg{width:16px;height:16px;flex-shrink:0;color:var(--txt3);stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.search-input{
+  flex:1;border:none;background:none;outline:none;font-family:var(--fn-body);
+  font-size:14px;color:var(--txt);
+}
+.search-input::placeholder{color:var(--txt3)}
+.search-cancel{
+  background:none;border:none;font-family:var(--fn-body);font-size:14px;
+  color:var(--blue-light);cursor:pointer;padding:4px;white-space:nowrap;
+}
+.search-results{flex:1;overflow-y:auto;padding-top:12px}
+.search-hint{padding:40px 0;text-align:center;color:var(--txt3);font-size:13px}
+.search-result-item{
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;
+}
+.search-result-item:hover{opacity:0.75}
+.search-result-thumb{
+  width:44px;height:44px;border-radius:8px;flex-shrink:0;
+}
+.search-result-title{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:3px;line-height:1.3}
+.search-result-meta{font-size:11px;color:var(--txt3)}
+.search-result-pool{font-size:11px;color:var(--blue-light);font-weight:600}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);
+  z-index:3000;background:#1a1a1a;color:#fff;
+  padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;
+  white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s,transform 0.2s;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── NAV SECTIONS ── */
+.nav-section{display:none}
+.nav-section.active{display:block}
+</style>
+
+<!-- SEARCH OVERLAY -->
+<div id="search-overlay">
+  <div class="search-top">
+    <div class="search-field">
+      <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5l5 5"/></svg>
+      <input id="searchInput" class="search-input" type="search" placeholder="Chercher une prédiction…" autocomplete="off">
+    </div>
+    <button class="search-cancel" onclick="closeSearch()">Annuler</button>
+  </div>
+  <div class="search-results" id="searchResults">
+    <div class="search-hint">Tapez pour chercher parmi les prédictions</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
 <script>
-// Navigation
+/* ─── DATA ─── */
+let _debates = [];
+
+async function loadDebates() {
+  try {
+    const res = await fetch('/api/predictions');
+    const data = await res.json();
+    _debates = (data.debates || []).filter(d => !d.closed && d.listed !== false);
+    renderTopPredictions();
+  } catch(_) { /* server unavailable — keep placeholder content */ }
+}
+
+/* ─── TOP PREDICTIONS CARDS ─── */
+const CAT_GRADIENTS = {
+  sports:     'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+  economy:    'linear-gradient(135deg,#11998e 0%,#38ef7d 100%)',
+  politics:   'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)',
+  technology: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
+  crypto:     'linear-gradient(135deg,#f7971e 0%,#ffd200 100%)',
+  society:    'linear-gradient(135deg,#fd746c 0%,#ff9068 100%)',
+  geopolitics:'linear-gradient(135deg,#3a1c71 0%,#d76d77 100%)',
+  general:    'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+};
+
+function fmtViewers(n) {
+  if (!n) return '—';
+  if (n >= 1000) return Math.round(n / 100) / 10 + 'k vues';
+  return n + ' vues';
+}
+
+function fmtPool(n) {
+  if (!n) return '0 pts';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M pts';
+  if (n >= 1000) return Math.round(n / 1000) + 'k pts';
+  return n + ' pts';
+}
+
+function renderTopPredictions() {
+  if (!_debates.length) return;
+
+  // Top 2 by pool size
+  const top = [..._debates].sort((a, b) => (b.pool || 0) - (a.pool || 0)).slice(0, 2);
+  const cards = document.querySelectorAll('.highlight-card');
+
+  top.forEach((debate, i) => {
+    const card = cards[i];
+    if (!card) return;
+
+    const grad = (debate.gradColors && debate.gradColors.length >= 2)
+      ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
+      : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
+
+    const imgEl = card.querySelector('.highlight-image');
+    const badgeEl = card.querySelector('.highlight-badge');
+    const textEl = card.querySelector('.highlight-text');
+
+    if (imgEl) imgEl.style.background = grad;
+    if (badgeEl) badgeEl.innerHTML = `<div class="badge-icon"></div>${fmtViewers(debate.viewers)}`;
+    if (textEl) textEl.innerHTML = escHtml(debate.title) + (debate.yesLabel ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>` : '');
+
+    card.onclick = () => openDebate(debate.id);
+  });
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openDebate(id) {
+  window.location.href = '/?debate=' + encodeURIComponent(id);
+}
+
+/* ─── NAVIGATION ─── */
+const NAV_LABELS = ['Accueil','Calendrier','Vidéos','Galerie','Profil'];
+
 document.querySelectorAll('.nav-item').forEach((item, index) => {
   item.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     item.classList.add('active');
+    if (index > 0) showToast(NAV_LABELS[index] + ' — bientôt disponible');
   });
 });
 
-// Tags
+/* ─── FILTER TAGS ─── */
 document.querySelectorAll('.tag').forEach(tag => {
   tag.addEventListener('click', () => {
     document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
     tag.classList.add('active');
+    filterNews(tag.textContent.trim());
   });
 });
 
-// Subscribe action
-document.querySelector('.subscribe-arrow').addEventListener('click', () => {
-  alert('Accédez à BEEEF Premium!');
+function filterNews(cat) {
+  const MAP = {
+    'Tous': null, 'Football': 'football', 'Basketball': 'basketball',
+    'Crypto': 'crypto', 'Bourse': 'bourse', 'Esports': 'esports',
+  };
+  const key = MAP[cat] || null;
+  document.querySelectorAll('.news-item').forEach(item => {
+    item.style.display = (!key || item.dataset.cat === key) ? 'flex' : 'none';
+  });
+}
+
+// Mark each news item with a data-cat
+(function() {
+  const cats = ['football','football','football','football'];
+  document.querySelectorAll('.news-item').forEach((el, i) => {
+    el.dataset.cat = cats[i] || 'football';
+  });
+})();
+
+/* ─── SEARCH ─── */
+document.querySelector('.icon-btn[title="Rechercher"]').addEventListener('click', openSearch);
+
+function openSearch() {
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('searchInput').focus(), 80);
+}
+function closeSearch() {
+  document.getElementById('search-overlay').classList.remove('open');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '<div class="search-hint">Tapez pour chercher parmi les prédictions</div>';
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const resultsEl = document.getElementById('searchResults');
+  if (!q) {
+    resultsEl.innerHTML = '<div class="search-hint">Tapez pour chercher parmi les prédictions</div>';
+    return;
+  }
+  const matches = _debates.filter(d =>
+    (d.title || '').toLowerCase().includes(q) ||
+    (d.category || '').toLowerCase().includes(q) ||
+    (d.yesLabel || '').toLowerCase().includes(q) ||
+    (d.noLabel || '').toLowerCase().includes(q)
+  ).slice(0, 12);
+
+  if (!matches.length) {
+    resultsEl.innerHTML = '<div class="search-hint">Aucun résultat pour "' + escHtml(q) + '"</div>';
+    return;
+  }
+  resultsEl.innerHTML = matches.map(d => {
+    const grad = (d.gradColors && d.gradColors.length >= 2)
+      ? `linear-gradient(135deg,${d.gradColors[0]},${d.gradColors[1]})`
+      : (CAT_GRADIENTS[d.category] || CAT_GRADIENTS.general);
+    return `<div class="search-result-item" onclick="closeSearch();openDebate('${d.id}')">
+      <div class="search-result-thumb" style="background:${grad}"></div>
+      <div>
+        <div class="search-result-title">${escHtml(d.title)}</div>
+        <div class="search-result-meta">${escHtml(d.category || '')} · <span class="search-result-pool">${fmtPool(d.pool)}</span></div>
+      </div>
+    </div>`;
+  }).join('');
 });
+
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSearch();
+});
+
+/* ─── NOTIFICATIONS ─── */
+document.querySelector('.icon-btn[title="Notifications"]').addEventListener('click', () => {
+  showToast('Aucune nouvelle notification');
+});
+
+/* ─── SUBSCRIBE ─── */
+document.querySelector('.subscribe-arrow').addEventListener('click', () => {
+  showToast('BEEEF Premium — bientôt disponible 👑');
+});
+
+/* ─── VOIR TOUT ─── */
+document.querySelectorAll('.see-all').forEach((el, i) => {
+  el.addEventListener('click', () => {
+    if (i === 0) showToast('Toutes les prédictions — bientôt');
+    else showToast('Toutes les actualités — bientôt');
+  });
+});
+
+/* ─── TOAST ─── */
+let _toastT;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ─── INIT ─── */
+loadDebates();
 </script>
 
 </body>
