@@ -459,9 +459,12 @@ async function finalizeValidatingPredictions(inputs) {
 
 async function replenishRegion(region, regionInput) {
   const existingDebates = listDebates({ includeUnlisted: true, region });
+  // For quota counting only consider debates OWNED by this region (sports shown cross-region
+  // should not eat into this region's creation budget).
+  const ownDebates = existingDebates.filter(d => d.region === region);
   const countsBefore = {
-    active: existingDebates.filter(item => !item.closed && item.listed !== false).length,
-    prepared: existingDebates.filter(item => !item.closed && item.listed === false).length,
+    active: ownDebates.filter(item => !item.closed && item.listed !== false).length,
+    prepared: ownDebates.filter(item => !item.closed && item.listed === false).length,
   };
   const drafts = await createDraftsForRegion(regionInput, region, existingDebates);
   const created = [];

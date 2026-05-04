@@ -146,8 +146,8 @@ const STOCK_MARKET_SPECS = [
   { symbol: '^FCHI',  name: 'CAC 40',     currency: 'EUR', regions: ['fr', 'be', 'lu', 'ch'] },
   { symbol: '^GDAXI', name: 'DAX',        currency: 'EUR', regions: ['de', 'at', 'ch'] },
   { symbol: '^FTSE',  name: 'FTSE 100',   currency: 'GBP', regions: ['gb', 'ie'] },
-  { symbol: '^GSPC',  name: 'S&P 500',    currency: 'USD', regions: ['us', 'ca', 'mx'] },
-  { symbol: '^IXIC',  name: 'NASDAQ',     currency: 'USD', regions: ['us', 'ca'] },
+  { symbol: '^GSPC',  name: 'S&P 500',    currency: 'USD', regions: ['us', 'ca', 'mx', 'fr', 'de', 'gb', 'es', 'it', 'be', 'nl', 'ch', 'at', 'pt', 'pl', 'se'] },
+  { symbol: '^IXIC',  name: 'NASDAQ',     currency: 'USD', regions: ['us', 'ca', 'fr', 'de', 'gb', 'es', 'it', 'be', 'nl', 'ch', 'at', 'pt', 'pl', 'se'] },
   { symbol: '^DJI',   name: 'Dow Jones',  currency: 'USD', regions: ['us'] },
   { symbol: '^AEX',   name: 'AEX',        currency: 'EUR', regions: ['nl', 'be'] },
   { symbol: '^IBEX',  name: 'IBEX 35',    currency: 'EUR', regions: ['es'] },
@@ -524,7 +524,7 @@ async function fetchYahooFinanceUniverse() {
 function getRegionStockContext(region, stockUniverse) {
   const assets = Array.isArray(stockUniverse?.assets) ? stockUniverse.assets : [];
   const relevant = assets.filter(a =>
-    Array.isArray(a.regions) && (a.regions.includes(region) || a.symbol === '^GSPC')
+    Array.isArray(a.regions) && a.regions.includes(region)
   );
   const dedupe = new Map();
   relevant.forEach(a => dedupe.set(a.symbol, a));
@@ -606,6 +606,12 @@ function getRegionSportsContext(region, sportsUniverse) {
   const now = nowMs();
 
   config.leagueKeys.forEach(leagueKey => {
+    const spec = LEAGUE_SPECS[leagueKey];
+    // Each event is "owned" by its league's native region to avoid cross-region duplicates.
+    // E.g. UEFA CL (regionParam:'gb') is only created by gb, then shown globally via listDebates.
+    const nativeRegion = spec?.regionParam || region;
+    if (nativeRegion !== region) return;
+
     const feed = Array.isArray(sportsUniverse?.feeds?.[leagueKey]) ? sportsUniverse.feeds[leagueKey] : [];
     feed.forEach(event => {
       if (!isEventActionable(event, now)) return;

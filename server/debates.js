@@ -1080,7 +1080,11 @@ function listDebates(options = {}) {
   const normalizedRegion = region ? normalizeRegionId(region, null) : null;
   return debates
     .slice()
-    .filter(debate => !normalizedRegion || debate.region === normalizedRegion)
+    .filter(debate => {
+      // Sports predictions are international — show them to all regions
+      if (debate.predictionSourceType === 'sports') return true;
+      return !normalizedRegion || debate.region === normalizedRegion;
+    })
     .filter(debate => includeUnlisted || debate.listed !== false)
     .sort((left, right) => left.order - right.order)
     .map(toPublicDebate);
