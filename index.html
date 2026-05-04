@@ -270,7 +270,7 @@ body{
       <div class="see-all">Voir Tout</div>
     </div>
 
-    <div class="highlights-grid">
+    <div class="highlights-grid" id="topGrid">
       <div class="highlight-card">
         <div class="highlight-image" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)">
           <div class="highlight-badge">
@@ -297,6 +297,9 @@ body{
         </div>
       </div>
     </div>
+
+    <!-- grille étendue — masquée par défaut, remplie par JS au clic "Voir Tout" -->
+    <div class="highlights-grid" id="allGrid" style="display:none;margin-top:12px"></div>
   </div>
 
   <!-- SUBSCRIBE CARD -->
@@ -466,11 +469,51 @@ body{
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- BACKEND TECH -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/sync.js"></script>
+
 <script>
+/* ══════════════════════════════════════════════════
+   GLOBALS ATTENDUS PAR sync.js
+══════════════════════════════════════════════════ */
+let balance    = 0;
+let userRegion = localStorage.getItem('beeef_region') || 'fr';
+let userLangs  = JSON.parse(localStorage.getItem('beeef_langs') || '["fr"]');
+window.currentUser = null;
+
+function updateBalanceUI() { /* balance non affiché sur la home — sync.js met à jour balance */ }
+function closeModal() {}
+function applyUserPrefs() {}
+
+/* ─── showToast : compatible sync.js (icon,text,sub) ET usage interne (msg) ─── */
+let _toastT;
+function showToast(iconOrMsg, text, sub) {
+  const el = document.getElementById('toast');
+  const msg = text ? (text + (sub ? ' — ' + sub : '')) : iconOrMsg;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ══════════════════════════════════════════════════
+   BACKEND URL (même logique que l'app complète)
+══════════════════════════════════════════════════ */
+const BACKEND_URL = (function() {
+  const override =
+    String(window.BEEEF_BACKEND_URL || '').replace(/\/+$/, '') ||
+    new URLSearchParams(window.location.search).get('backend') || '';
+  if (override) return override;
+  const h = String(window.location.hostname || '').toLowerCase();
+  if (h === 'localhost' || h === '127.0.0.1' || h === '::1') return 'http://localhost:3001';
+  return 'https://beeeef-production.up.railway.app';
+})();
+
 /* ─── DATA ─── */
 let _debates = [];
-let _topIds  = ['', ''];          // IDs des 2 prédictions actuellement affichées
-const POLL_INTERVAL = 30_000;     // vérification toutes les 30 s
+let _topIds  = ['', ''];
+const POLL_INTERVAL = 30_000;
 
 const CAT_GRADIENTS = {
   sports:     'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
@@ -504,7 +547,11 @@ function openDebate(id) {
 /* ─── FETCH + DIFF ─── */
 async function loadDebates() {
   try {
-    const res  = await fetch('/api/predictions');
+    const region = (userRegion && userRegion !== 'unknown') ? userRegion : 'fr';
+    const res  = await fetch(BACKEND_URL + '/debates?region=' + encodeURIComponent(region), {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
     const data = await res.json();
     _debates = (data.debates || []).filter(d => !d.closed && d.listed !== false);
     updateTopPredictions();
@@ -555,10 +602,78 @@ function updateTopPredictions() {
       card.style.opacity = '1';
     }, 350);
   });
+
+  // Abonne le socket aux 2 nouvelles prédictions affichées
+  syncSocketSubscriptions(newIds.filter(Boolean));
+
+  // Si "Voir Tout" est ouvert, re-rendre le reste avec les nouvelles données
+  if (_allExpanded) renderAllGrid();
+}
+
+/* ══════════════════════════════════════════════════
+   SOCKET.IO — mise à jour temps réel des cards
+══════════════════════════════════════════════════ */
+let _homeSocket     = null;
+let _subscribedIds  = new Set();
+
+function getHomeSocket() {
+  if (_homeSocket) return _homeSocket;
+  if (typeof io !== 'function') return null;
+
+  _homeSocket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+
+  _homeSocket.on('prediction:settled', payload => {
+    const id = String(payload?.debateId || payload?.predictionId || '');
+    if (_subscribedIds.has(id)) {
+      // Une des 2 top prédictions vient de se clore → refresh immédiat
+      loadDebates();
+    }
+  });
+
+  _homeSocket.on('debate_state', payload => {
+    const id = String(payload?.id || '');
+    if (!_subscribedIds.has(id)) return;
+    // Mise à jour locale
+    const idx = _debates.findIndex(d => String(d.id) === id);
+    if (idx >= 0) _debates[idx] = { ..._debates[idx], ...payload };
+
+    if (payload.viewers == null) return;
+    const viewers = fmtViewers(payload.viewers);
+
+    // Mise à jour badge dans le top 2
+    const cardIdx = _topIds.indexOf(id);
+    if (cardIdx >= 0) {
+      const badge = document.querySelectorAll('#topGrid .highlight-badge')[cardIdx];
+      if (badge) badge.innerHTML = `<div class="badge-icon"></div>${viewers}`;
+    }
+
+    // Mise à jour badge dans la grille étendue si ouverte
+    if (_allExpanded) {
+      const extCard = document.querySelector(`#allGrid [data-debate-id="${id}"]`);
+      const badge   = extCard?.querySelector('.highlight-badge');
+      if (badge) badge.innerHTML = `<div class="badge-icon"></div>${viewers}`;
+    }
+  });
+
+  _homeSocket.on('connect_error', () => {});
+  return _homeSocket;
+}
+
+function syncSocketSubscriptions(ids) {
+  const socket = getHomeSocket();
+  if (!socket) return;
+
+  // Désabonnement des anciens
+  _subscribedIds.forEach(id => {
+    if (!ids.includes(id)) socket.emit('unsubscribe_debate', { debateId: id });
+  });
+  _subscribedIds = new Set(ids);
+
+  // Abonnement aux nouveaux
+  ids.forEach(id => socket.emit('subscribe_debate', { debateId: id }));
 }
 
 /* ─── POLLING AUTOMATIQUE ─── */
-// Vérifie si le top 2 a changé toutes les 30 s
 setInterval(loadDebates, POLL_INTERVAL);
 
 /* ─── NAVIGATION ─── */
@@ -659,23 +774,85 @@ document.querySelector('.subscribe-arrow').addEventListener('click', () => {
   showToast('BEEEF Premium — bientôt disponible 👑');
 });
 
-/* ─── VOIR TOUT ─── */
-document.querySelectorAll('.see-all').forEach((el, i) => {
-  el.addEventListener('click', () => {
-    if (i === 0) showToast('Toutes les prédictions — bientôt');
-    else showToast('Toutes les actualités — bientôt');
-  });
-});
+/* ══════════════════════════════════════════════════
+   VOIR TOUT — prédictions
+══════════════════════════════════════════════════ */
+let _allExpanded = false;
 
-/* ─── TOAST ─── */
-let _toastT;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastT);
-  _toastT = setTimeout(() => el.classList.remove('show'), 2600);
+function buildCard(debate) {
+  const grad = (debate.gradColors && debate.gradColors.length >= 2)
+    ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
+    : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
+  const label = debate.yesLabel
+    ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>` : '';
+  return `
+    <div class="highlight-card" data-debate-id="${escHtml(debate.id)}"
+         onclick="openDebate('${escHtml(debate.id)}')">
+      <div class="highlight-image" style="background:${grad}">
+        <div class="highlight-badge">
+          <div class="badge-icon"></div>
+          ${fmtViewers(debate.viewers)}
+        </div>
+        <div class="highlight-overlay"></div>
+        <div class="highlight-text">${escHtml(debate.title)}${label}</div>
+      </div>
+    </div>`;
 }
+
+function renderAllGrid() {
+  const allGrid = document.getElementById('allGrid');
+  if (!allGrid || !_allExpanded) return;
+  // Toutes les prédictions sauf le top 2 déjà affiché
+  const rest = [..._debates]
+    .sort((a, b) => (b.pool || 0) - (a.pool || 0))
+    .slice(2);
+  allGrid.innerHTML = rest.map(buildCard).join('');
+  // Mise à jour socket : abonner aussi les nouvelles cartes visibles
+  const allIds = _topIds.concat(rest.map(d => d.id)).filter(Boolean);
+  syncSocketSubscriptions(allIds);
+}
+
+const seeAllPredBtn = document.querySelector('.see-all');
+if (seeAllPredBtn) {
+  seeAllPredBtn.addEventListener('click', () => {
+    const allGrid = document.getElementById('allGrid');
+    if (!allGrid) return;
+    _allExpanded = !_allExpanded;
+    if (_allExpanded) {
+      renderAllGrid();
+      allGrid.style.display = 'grid';
+      seeAllPredBtn.textContent = 'Voir Moins';
+    } else {
+      allGrid.style.display = 'none';
+      allGrid.innerHTML = '';
+      seeAllPredBtn.textContent = 'Voir Tout';
+      // Réduire les abonnements socket au top 2 seulement
+      syncSocketSubscriptions(_topIds.filter(Boolean));
+    }
+  });
+}
+
+/* ─── VOIR TOUT — actualités ─── */
+const seeAllNewsBtn = document.querySelectorAll('.see-all')[1];
+if (seeAllNewsBtn) {
+  seeAllNewsBtn.addEventListener('click', () => {
+    showToast('Toutes les actualités — bientôt');
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   RETOUR STRIPE (?paid=ok / ?paid=cancel)
+══════════════════════════════════════════════════ */
+(function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const paid   = params.get('paid');
+  if (!paid) return;
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete('paid');
+  history.replaceState({}, '', clean.toString());
+  if (paid === 'ok')     showToast('ok', 'Paiement reçu', 'Tes points arrivent…');
+  if (paid === 'cancel') showToast('warn', 'Paiement annulé', 'Aucun point crédité');
+})();
 
 /* ─── INIT ─── */
 loadDebates();
