@@ -556,8 +556,13 @@ async function buildCryptoPredictionDrafts(asset, region, options = {}) {
     },
   ];
 
+  // Use a duration-aligned time bucket so each "round" of the debate gets a fresh
+  // seed — title and endsAt are always generated together from the same `now`, so
+  // they stay in sync.  Old debates expire naturally and the next bucket creates a
+  // clean replacement.
+  const durationBucket = Math.floor(now / durationMs);
   markets.forEach((market, index) => {
-    const seed = `${region}:${asset.id}:${market.key}`;
+    const seed = `${region}:${asset.id}:${market.key}:${durationBucket}`;
     drafts.push({
       ...buildBasePrediction(seed, region, 'crypto', market.title, market.description, {
         predictionKey: seed,

@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "feat: sports 7-day lookahead + stock market predictions (CAC40 S&P500 DAX FTSE) + parimutuel settlement"
+git commit -m "fix: crypto prediction timer/title sync — time-bucketed seed + base-key dedup guard"
 git push origin main --force
 echo.
 git log --oneline -3

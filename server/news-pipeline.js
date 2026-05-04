@@ -274,9 +274,27 @@ async function refreshOpenPredictionMedia(inputs) {
 }
 
 async function createDraftsForRegion(regionInput, region, existingDebates) {
+  const nowMs = Date.now();
   const existingKeys = new Set(
     existingDebates
       .map(debate => String(debate.predictionKey || '').toLowerCase())
+      .filter(Boolean)
+  );
+
+  // For time-bucketed predictions (crypto/stock) that use keys like
+  // "region:asset:direction:bucket", also block new debates whose *base key*
+  // (everything before the last colon) matches an existing ACTIVE debate.
+  // This prevents duplicate debates for the same asset when a fresh bucket
+  // is generated before the previous debate has expired.
+  const activeBaseKeys = new Set(
+    existingDebates
+      .filter(d => !d.closed && Number(d.endsAt) > nowMs)
+      .map(d => {
+        const key = String(d.predictionKey || '').toLowerCase();
+        const parts = key.split(':');
+        // Only strip the bucket suffix if the key has 4+ segments (region:asset:direction:bucket)
+        return parts.length >= 4 ? parts.slice(0, -1).join(':') : key;
+      })
       .filter(Boolean)
   );
 
@@ -285,7 +303,14 @@ async function createDraftsForRegion(regionInput, region, existingDebates) {
     preparedBuffer: PREPARED_PREDICTIONS_PER_REGION,
   });
 
-  return pool.filter(draft => !existingKeys.has(String(draft.predictionKey || '').toLowerCase()));
+  return pool.filter(draft => {
+    const key = String(draft.predictionKey || '').toLowerCase();
+    if (existingKeys.has(key)) return false;
+    const parts = key.split(':');
+    const baseKey = parts.length >= 4 ? parts.slice(0, -1).join(':') : key;
+    if (activeBaseKeys.has(baseKey)) return false;
+    return true;
+  });
 }
 
 async function lockOpenPredictions(inputs) {
