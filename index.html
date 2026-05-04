@@ -469,17 +469,9 @@ body{
 <script>
 /* ─── DATA ─── */
 let _debates = [];
+let _topIds  = ['', ''];          // IDs des 2 prédictions actuellement affichées
+const POLL_INTERVAL = 30_000;     // vérification toutes les 30 s
 
-async function loadDebates() {
-  try {
-    const res = await fetch('/api/predictions');
-    const data = await res.json();
-    _debates = (data.debates || []).filter(d => !d.closed && d.listed !== false);
-    renderTopPredictions();
-  } catch(_) { /* server unavailable — keep placeholder content */ }
-}
-
-/* ─── TOP PREDICTIONS CARDS ─── */
 const CAT_GRADIENTS = {
   sports:     'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
   economy:    'linear-gradient(135deg,#11998e 0%,#38ef7d 100%)',
@@ -493,22 +485,46 @@ const CAT_GRADIENTS = {
 
 function fmtViewers(n) {
   if (!n) return '—';
-  if (n >= 1000) return Math.round(n / 100) / 10 + 'k vues';
+  if (n >= 1000) return (Math.round(n / 100) / 10) + 'k vues';
   return n + ' vues';
 }
-
 function fmtPool(n) {
   if (!n) return '0 pts';
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M pts';
-  if (n >= 1000) return Math.round(n / 1000) + 'k pts';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M pts';
+  if (n >= 1_000)     return Math.round(n / 1_000) + 'k pts';
   return n + ' pts';
 }
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function openDebate(id) {
+  window.location.href = '/?debate=' + encodeURIComponent(id);
+}
 
-function renderTopPredictions() {
-  if (!_debates.length) return;
+/* ─── FETCH + DIFF ─── */
+async function loadDebates() {
+  try {
+    const res  = await fetch('/api/predictions');
+    const data = await res.json();
+    _debates = (data.debates || []).filter(d => !d.closed && d.listed !== false);
+    updateTopPredictions();
+  } catch(_) { /* serveur indisponible — on garde le contenu existant */ }
+}
 
-  // Top 2 by pool size
-  const top = [..._debates].sort((a, b) => (b.pool || 0) - (a.pool || 0)).slice(0, 2);
+function getTop2() {
+  return [..._debates]
+    .sort((a, b) => (b.pool || 0) - (a.pool || 0))
+    .slice(0, 2);
+}
+
+function updateTopPredictions() {
+  const top     = getTop2();
+  const newIds  = top.map(d => d.id);
+
+  // Pas de changement dans le top 2 → rien à faire
+  if (newIds[0] === _topIds[0] && newIds[1] === _topIds[1]) return;
+
+  _topIds = newIds;
   const cards = document.querySelectorAll('.highlight-card');
 
   top.forEach((debate, i) => {
@@ -519,25 +535,31 @@ function renderTopPredictions() {
       ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
       : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
 
-    const imgEl = card.querySelector('.highlight-image');
-    const badgeEl = card.querySelector('.highlight-badge');
-    const textEl = card.querySelector('.highlight-text');
+    // Transition douce : fade out → update → fade in
+    card.style.transition = 'opacity 0.35s';
+    card.style.opacity    = '0';
 
-    if (imgEl) imgEl.style.background = grad;
-    if (badgeEl) badgeEl.innerHTML = `<div class="badge-icon"></div>${fmtViewers(debate.viewers)}`;
-    if (textEl) textEl.innerHTML = escHtml(debate.title) + (debate.yesLabel ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>` : '');
+    setTimeout(() => {
+      const imgEl   = card.querySelector('.highlight-image');
+      const badgeEl = card.querySelector('.highlight-badge');
+      const textEl  = card.querySelector('.highlight-text');
 
-    card.onclick = () => openDebate(debate.id);
+      if (imgEl)   imgEl.style.background = grad;
+      if (badgeEl) badgeEl.innerHTML = `<div class="badge-icon"></div>${fmtViewers(debate.viewers)}`;
+      if (textEl)  textEl.innerHTML  = escHtml(debate.title)
+        + (debate.yesLabel
+            ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>`
+            : '');
+
+      card.onclick       = () => openDebate(debate.id);
+      card.style.opacity = '1';
+    }, 350);
   });
 }
 
-function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function openDebate(id) {
-  window.location.href = '/?debate=' + encodeURIComponent(id);
-}
+/* ─── POLLING AUTOMATIQUE ─── */
+// Vérifie si le top 2 a changé toutes les 30 s
+setInterval(loadDebates, POLL_INTERVAL);
 
 /* ─── NAVIGATION ─── */
 const NAV_LABELS = ['Accueil','Calendrier','Vidéos','Galerie','Profil'];
