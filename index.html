@@ -62,13 +62,13 @@ body{
 }
 
 .logo-beef{
-  display:flex;align-items:center;justify-content:center;width:96px;height:40px;
-  border-radius:14px;background:transparent;
-  cursor:pointer;transition:all 0.2s;box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  display:flex;align-items:center;justify-content:center;width:112px;height:46px;
+  background:transparent;border:none;box-shadow:none;
+  cursor:pointer;transition:transform 0.2s;
 }
-.logo-beef:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+.logo-beef:hover{transform:translateY(-2px);}
 .logo-beef img{
-  max-width:100%;height:auto;display:block;object-fit:contain;
+  width:100%;height:100%;display:block;object-fit:contain;
 }
 
 .header-right{
@@ -564,15 +564,55 @@ function getTop2() {
     .slice(0, 2);
 }
 
-function updateTopPredictions() {
-  const top     = getTop2();
-  const newIds  = top.map(d => d.id);
+/* ── Image generation via /api/image-gen (proxy → Zenith) ── */
+const _imgCache = {};  // debateId → url (session)
 
-  // Pas de changement dans le top 2 → rien à faire
+async function getDebateImage(debateId) {
+  if (_imgCache[debateId]) return _imgCache[debateId];
+  try {
+    const res  = await fetch(BACKEND_URL + '/api/image-gen?id=' + encodeURIComponent(debateId));
+    const data = await res.json();
+    if (data.url) { _imgCache[debateId] = data.url; return data.url; }
+  } catch(_) {}
+  return null;
+}
+
+function applyCardVisuals(card, debate, grad) {
+  const imgEl   = card.querySelector('.highlight-image');
+  const badgeEl = card.querySelector('.highlight-badge');
+  const textEl  = card.querySelector('.highlight-text');
+
+  // Dégradé de couleur immédiatement (fond de secours)
+  if (imgEl) {
+    imgEl.style.background        = grad;
+    imgEl.style.backgroundSize    = 'cover';
+    imgEl.style.backgroundPosition = 'center';
+  }
+  if (badgeEl) badgeEl.innerHTML = `<div class="badge-icon"></div>${fmtViewers(debate.viewers)}`;
+  if (textEl)  textEl.innerHTML  = escHtml(debate.title)
+    + (debate.yesLabel
+        ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>`
+        : '');
+
+  card.onclick = () => openDebate(debate.id);
+
+  // Image contextuelle en arrière-plan (async, remplace le dégradé quand prête)
+  getDebateImage(debate.id).then(url => {
+    if (!url || !imgEl) return;
+    imgEl.style.backgroundImage    = `url("${url}")`;
+    imgEl.style.backgroundSize     = 'cover';
+    imgEl.style.backgroundPosition = 'center';
+  });
+}
+
+function updateTopPredictions() {
+  const top    = getTop2();
+  const newIds = top.map(d => d.id);
+
   if (newIds[0] === _topIds[0] && newIds[1] === _topIds[1]) return;
 
   _topIds = newIds;
-  const cards = document.querySelectorAll('.highlight-card');
+  const cards = document.querySelectorAll('#topGrid .highlight-card');
 
   top.forEach((debate, i) => {
     const card = cards[i];
@@ -582,31 +622,15 @@ function updateTopPredictions() {
       ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
       : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
 
-    // Transition douce : fade out → update → fade in
     card.style.transition = 'opacity 0.35s';
     card.style.opacity    = '0';
-
     setTimeout(() => {
-      const imgEl   = card.querySelector('.highlight-image');
-      const badgeEl = card.querySelector('.highlight-badge');
-      const textEl  = card.querySelector('.highlight-text');
-
-      if (imgEl)   imgEl.style.background = grad;
-      if (badgeEl) badgeEl.innerHTML = `<div class="badge-icon"></div>${fmtViewers(debate.viewers)}`;
-      if (textEl)  textEl.innerHTML  = escHtml(debate.title)
-        + (debate.yesLabel
-            ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>`
-            : '');
-
-      card.onclick       = () => openDebate(debate.id);
+      applyCardVisuals(card, debate, grad);
       card.style.opacity = '1';
     }, 350);
   });
 
-  // Abonne le socket aux 2 nouvelles prédictions affichées
   syncSocketSubscriptions(newIds.filter(Boolean));
-
-  // Si "Voir Tout" est ouvert, re-rendre le reste avec les nouvelles données
   if (_allExpanded) renderAllGrid();
 }
 
@@ -788,7 +812,7 @@ function buildCard(debate) {
   return `
     <div class="highlight-card" data-debate-id="${escHtml(debate.id)}"
          onclick="openDebate('${escHtml(debate.id)}')">
-      <div class="highlight-image" style="background:${grad}">
+      <div class="highlight-image" style="background:${grad};background-size:cover;background-position:center">
         <div class="highlight-badge">
           <div class="badge-icon"></div>
           ${fmtViewers(debate.viewers)}
@@ -802,11 +826,23 @@ function buildCard(debate) {
 function renderAllGrid() {
   const allGrid = document.getElementById('allGrid');
   if (!allGrid || !_allExpanded) return;
-  // Toutes les prédictions sauf le top 2 déjà affiché
   const rest = [..._debates]
     .sort((a, b) => (b.pool || 0) - (a.pool || 0))
     .slice(2);
   allGrid.innerHTML = rest.map(buildCard).join('');
+
+  // Charger les images générées pour chaque carte de la grille étendue
+  rest.forEach(debate => {
+    getDebateImage(debate.id).then(url => {
+      if (!url) return;
+      const imgEl = allGrid.querySelector(`[data-debate-id="${debate.id}"] .highlight-image`);
+      if (imgEl) {
+        imgEl.style.backgroundImage    = `url("${url}")`;
+        imgEl.style.backgroundSize     = 'cover';
+        imgEl.style.backgroundPosition = 'center';
+      }
+    });
+  });
   // Mise à jour socket : abonner aussi les nouvelles cartes visibles
   const allIds = _topIds.concat(rest.map(d => d.id)).filter(Boolean);
   syncSocketSubscriptions(allIds);
