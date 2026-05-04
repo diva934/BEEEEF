@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEEEF — Home Scroll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#ffffff;
+  --bg2:#f8f9fa;
+  --bg3:#f0f2f5;
+  --line:#e0e2e6;
+  --line2:#d0d3da;
+  --txt:#1a1a1a;
+  --txt2:#666666;
+  --txt3:#999999;
+  --blue:#0f2d7a;
+  --blue-light:#1e48d8;
+  --blue-bg:#f0f7ff;
+  --orange:#ff6b35;
+  --fn-disp:'Poppins',system-ui,sans-serif;
+  --fn-body:'Poppins',system-ui,sans-serif;
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--fn-body);
+  background:var(--bg);
+  color:var(--txt);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ═══════════════════════════════════════════════════
+   HEADER - Fixed Top
+═══════════════════════════════════════════════════ */
+.header{
+  position:fixed;top:0;left:0;right:0;height:60px;z-index:1000;
+  background:var(--bg);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);
+}
+
+.header-left{
+  display:flex;align-items:center;gap:16px;flex:1;
+}
+
+.logo-header{
+  font-family:var(--fn-disp);font-size:18px;font-weight:900;
+  background:linear-gradient(135deg,var(--orange),#ff8c55);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  letter-spacing:-1px;
+}
+
+.logo-beef{
+  display:flex;align-items:center;justify-content:center;width:96px;height:40px;
+  border-radius:14px;background:transparent;
+  cursor:pointer;transition:all 0.2s;box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+.logo-beef:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+.logo-beef img{
+  max-width:100%;height:auto;display:block;object-fit:contain;
+}
+
+.header-right{
+  display:flex;align-items:center;gap:12px;flex:1;justify-content:flex-end;
+}
+
+.icon-btn{
+  width:40px;height:40px;border-radius:50%;border:none;background:transparent;
+  color:var(--txt2);cursor:pointer;
+  transition:all 0.2s;display:flex;align-items:center;justify-content:center;
+}
+.icon-btn:hover{color:var(--blue-light);background:#eef3ff}
+.icon-btn svg{width:20px;height:20px}
+
+.header-center{
+  display:none;
+}
+
+.profile-badge{
+  display:none;
+}
+
+.signal-bars{
+  display:none}
+.bar{
+  width:2px;background:#cccccc;border-radius:1px}
+.bar.filled{background:var(--txt)}
+.bar:nth-child(1){height:4px}
+.bar:nth-child(2){height:6px}
+.bar:nth-child(3){height:8px}
+
+.time{
+  font-family:var(--fn-disp);font-size:14px;font-weight:600;color:var(--txt);
+  min-width:45px}
+
+.battery-icon{
+  display:none;
+}
+
+/* ═══════════════════════════════════════════════════
+   MAIN CONTENT - Scrollable
+═══════════════════════════════════════════════════ */
+.main{
+  padding-top:80px;padding-bottom:120px;
+}
+
+.section{
+  padding:0 16px 24px}
+
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{
+  font-size:16px;font-weight:700;color:var(--txt)}
+.see-all{
+  font-size:12px;color:var(--blue);cursor:pointer}
+
+/* ═══════════════════════════════════════════════════
+   BEST HIGHLIGHTS - Cards with Images
+═══════════════════════════════════════════════════ */
+.highlights-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.highlight-card{
+  position:relative;overflow:hidden;border-radius:12px;height:180px;
+  cursor:pointer;transition:transform 0.2s;background:var(--bg2)
+}
+.highlight-card:hover{transform:scale(0.98)}
+
+.highlight-image{
+  width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  position:relative;display:flex;align-items:flex-end;justify-content:flex-start}
+
+.highlight-overlay{
+  position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(0,0,0,0.7));
+}
+
+.highlight-badge{
+  position:absolute;top:10px;right:10px;display:flex;align-items:center;gap:4px;
+  background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:6px;
+  font-size:11px;color:var(--txt);z-index:2}
+.badge-icon{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.3)}
+
+.highlight-text{
+  position:relative;z-index:3;padding:12px;color:#fff;
+  font-size:13px;font-weight:600;line-height:1.3}
+
+/* ═══════════════════════════════════════════════════
+   SUBSCRIBE CARD
+═══════════════════════════════════════════════════ */
+.section.subscribe-section{padding:24px 16px}
+
+.subscribe-card{
+  background:linear-gradient(135deg,#0f2d7a 0%,#1e48d8 100%);
+  border-radius:14px;padding:20px;display:flex;align-items:center;
+  gap:16px;position:relative;overflow:hidden}
+
+.subscribe-crown{
+  font-size:40px}
+
+.subscribe-content{flex:1}
+.subscribe-title{
+  font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.subscribe-subtitle{
+  font-size:12px;color:rgba(255,255,255,0.8)}
+
+.subscribe-arrow{
+  font-size:24px;color:#fff;cursor:pointer}
+
+/* ═══════════════════════════════════════════════════
+   LATEST NEWS
+═══════════════════════════════════════════════════ */
+.filter-tags{
+  display:flex;gap:8px;padding:0 16px;margin-bottom:16px;overflow-x:auto;
+  scrollbar-width:none}
+.filter-tags::-webkit-scrollbar{display:none}
+
+.tag{
+  padding:6px 12px;border-radius:20px;background:var(--bg3);
+  border:1px solid var(--line2);font-size:12px;color:var(--txt3);
+  cursor:pointer;white-space:nowrap;transition:all 0.2s}
+.tag.active{
+  background:var(--blue-light);border-color:var(--blue-light);color:#fff}
+
+.news-feed{
+  padding:0 16px}
+
+.news-item{
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);
+  cursor:pointer;transition:all 0.2s}
+.news-item:last-child{border-bottom:none}
+.news-item:hover{opacity:0.8}
+
+.news-image{
+  width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#ff6b6b,#ff8c42);
+  flex-shrink:0}
+
+.news-content{flex:1;min-width:0}
+.news-title{
+  font-size:13px;font-weight:600;color:var(--txt);margin-bottom:4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-meta{
+  font-size:11px;color:var(--txt3)}
+
+/* ═══════════════════════════════════════════════════
+   BOTTOM NAVIGATION
+═══════════════════════════════════════════════════ */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;height:70px;
+  background:var(--bg);border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-around;
+  z-index:999}
+
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;height:100%;gap:6px;cursor:pointer;color:var(--txt3);
+  transition:all 0.2s;font-size:10px;position:relative}
+.nav-item.active{color:var(--blue-light)}
+.nav-item.active::before{
+  content:'';position:absolute;top:0;width:24px;height:3px;background:var(--blue-light);border-radius:0 0 2px 2px}
+.nav-icon{
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.nav-icon svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.5}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════ */
+@media(max-width:600px){
+  .highlights-grid{grid-template-columns:1fr}
+  .header-center{display:none}
+}
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-beef"><img src="assets/beeef-logo.png" alt="BEEEF logo"></div>
+  </div>
+
+  <div class="header-right">
+    <button class="icon-btn" title="Rechercher">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5l5 5"/></svg>
+    </button>
+    <button class="icon-btn" title="Notifications">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M18 8c0-3.31-2.69-6-6-6s-6 2.69-6 6v5h12V8z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- BEST HIGHLIGHTS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Meilleures Prédictions</div>
+      <div class="see-all">Voir Tout</div>
+    </div>
+
+    <div class="highlights-grid">
+      <div class="highlight-card">
+        <div class="highlight-image" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)">
+          <div class="highlight-badge">
+            <div class="badge-icon"></div>
+            24k vues
+          </div>
+          <div class="highlight-overlay"></div>
+          <div class="highlight-text">
+            Le PSG va dominer 🔥<br>Très confiant
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-card">
+        <div class="highlight-image" style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%)">
+          <div class="highlight-badge">
+            <div class="badge-icon"></div>
+            10k vues
+          </div>
+          <div class="highlight-overlay"></div>
+          <div class="highlight-text">
+            Retournement dramatique 🎬<br>À ne pas manquer
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIBE CARD -->
+  <div class="section subscribe-section">
+    <div class="subscribe-card">
+      <div class="subscribe-crown">👑</div>
+      <div class="subscribe-content">
+        <div class="subscribe-title">S'abonner maintenant</div>
+        <div class="subscribe-subtitle">Débloquez les analyses premium</div>
+      </div>
+      <div class="subscribe-arrow">→</div>
+    </div>
+  </div>
+
+  <!-- LATEST NEWS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Actualités</div>
+      <div class="see-all">Voir Tout</div>
+    </div>
+
+    <div class="filter-tags">
+      <div class="tag active">Tous</div>
+      <div class="tag">Football</div>
+      <div class="tag">Basketball</div>
+      <div class="tag">Crypto</div>
+      <div class="tag">Bourse</div>
+      <div class="tag">Esports</div>
+    </div>
+
+    <div class="news-feed">
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Liverpool: Slot veut remporter la Premier League</div>
+          <div class="news-meta">À l'instant • Football</div>
+        </div>
+      </div>
+
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Ligue 1: Les favoris du titre selon nos experts</div>
+          <div class="news-meta">Il y a 2h • Analyse</div>
+        </div>
+      </div>
+
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Mercato d'été: Les mouvements à suivre</div>
+          <div class="news-meta">Il y a 4h • Transferts</div>
+        </div>
+      </div>
+
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Champions League: Analyse des quarts de finale</div>
+          <div class="news-meta">Hier • Compétitions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </div>
+    <div>Accueil</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    </div>
+    <div>Calendrier</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
+    </div>
+    <div>Vidéos</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h4.96l-4.01-5.05-1.54 2.04-2.63-3.39h3.97L10.5 9.6l1.46-1.31z"/></svg>
+    </div>
+    <div>Galerie</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </div>
+    <div>Profil</div>
+  </div>
+</div>
+
+<script>
+// Navigation
+document.querySelectorAll('.nav-item').forEach((item, index) => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+
+// Tags
+document.querySelectorAll('.tag').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+  });
+});
+
+// Subscribe action
+document.querySelector('.subscribe-arrow').addEventListener('click', () => {
+  alert('Accédez à BEEEF Premium!');
+});
+</script>
+
+</body>
+</html>
