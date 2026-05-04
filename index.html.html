@@ -3717,6 +3717,14 @@ body::after, body::before { display: none !important; }
 .hero-stats { border-left: 1px solid rgba(255,255,255,0.08) !important; }
 .hstat { border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
 
+/* Hero main card — override white glass */
+.hero-main {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 40px rgba(0,0,0,0.3) !important;
+  border-radius: 24px !important;
+}
+
 /* Hero points card */
 .hero-points-card {
   background: linear-gradient(135deg, rgba(255,107,53,0.12) 0%, rgba(255,107,53,0.04) 100%) !important;
@@ -4478,6 +4486,150 @@ body::after, body::before { display: none !important; }
 .funds-modal, .token-packs-wrap {
   background: #181A28 !important;
   border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════
+   KICKSTER — LIVE VIEW DARK OVERRIDES
+═══════════════════════════════════════════════ */
+
+/* Bottom nav buttons */
+#kickster-bottom-nav .kbn-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Hero main card */
+.hero-main {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 40px rgba(0,0,0,0.3) !important;
+  border-radius: 24px !important;
+}
+
+/* Live info cards */
+.live-info-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+.live-info-card * { color: inherit !important; }
+
+/* Live chart card */
+.live-chart-card, .live-chart-wrap {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+}
+
+/* Live data metrics */
+.live-data-metric {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: none !important;
+}
+.live-data-metric .metric-label { color: rgba(255,255,255,0.45) !important; font-family: 'Poppins', sans-serif !important; }
+.live-data-metric .metric-val { color: #fff !important; font-family: 'Poppins', sans-serif !important; font-weight: 700 !important; }
+
+/* Ended banner */
+.ended-banner {
+  background: rgba(255,77,79,0.08) !important;
+  border: 1px solid rgba(255,77,79,0.2) !important;
+  color: var(--blood) !important;
+}
+
+/* Betting panel */
+.betting-panel {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: none !important;
+}
+.betting-panel .panel-title,
+.betting-panel .bet-label,
+.betting-panel .bet-stake-label { color: #fff !important; font-family: 'Poppins', sans-serif !important; }
+.betting-panel .bet-odds { color: var(--elec) !important; font-weight: 800 !important; }
+.betting-panel .bet-input-wrap { background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; }
+.betting-panel input { background: transparent !important; color: #fff !important; }
+
+/* Bet YES / NO buttons */
+.bet-btn-yes, .bet-btn-oui {
+  background: rgba(0,214,143,0.12) !important;
+  border: 1px solid rgba(0,214,143,0.35) !important;
+  color: var(--elec) !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+}
+.bet-btn-yes:hover, .bet-btn-oui:hover {
+  background: rgba(0,214,143,0.22) !important;
+  box-shadow: 0 4px 18px rgba(0,214,143,0.25) !important;
+}
+.bet-btn-no, .bet-btn-non {
+  background: rgba(255,77,79,0.10) !important;
+  border: 1px solid rgba(255,77,79,0.30) !important;
+  color: var(--blood) !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+}
+.bet-btn-no:hover, .bet-btn-non:hover {
+  background: rgba(255,77,79,0.20) !important;
+  box-shadow: 0 4px 18px rgba(255,77,79,0.20) !important;
+}
+
+/* Live chat column */
+.live-chat-column {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: none !important;
+}
+.chat-messages {
+  background: transparent !important;
+}
+.chat-msg { color: rgba(255,255,255,0.85) !important; font-family: 'Poppins', sans-serif !important; }
+.chat-msg-author { color: var(--fire) !important; font-weight: 700 !important; }
+.chat-input-wrap { background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; }
+.chat-input { background: transparent !important; color: #fff !important; }
+.chat-send-btn { background: var(--fire) !important; color: #fff !important; border-radius: 10px !important; }
+
+/* Live bet strip & KPIs */
+.live-bet-strip {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: none !important;
+}
+.live-bet-kpi {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: none !important;
+}
+.live-bet-kpi .kpi-val { color: #fff !important; font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; }
+.live-bet-kpi .kpi-label { color: rgba(255,255,255,0.45) !important; font-family: 'Poppins', sans-serif !important; }
+
+/* Admin panel */
+.admin-close {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.7) !important;
+}
+.admin-btn {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: #fff !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+/* Global card & panel fallback — anything still white */
+[class*="card"]:not([class*="rank-card"]):not([class*="token-card"]):not([class*="source-card"]) {
+  color: #fff !important;
+}
+[class*="panel"] { color: #fff !important; }
+
+/* Modal overlays */
+.modal-overlay, .overlay-bg { background: rgba(0,0,0,0.7) !important; }
+.modal-box, .modal-inner {
+  background: #181A26 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
 }
 
 /* ═══════════════════════════════════════════════
