@@ -22,7 +22,7 @@ if exist .git\index.lock del /f /q .git\index.lock
 if exist .git\index del /f /q .git\index
 git reset
 git add -A
-git commit -m "fix: dark theme — live-view, bet panel, chat, kbn-btns, hero-main all dark"
+git commit -m "fix: remove liquid glass, white logo on dark bg, orange header line, all live cards dark"
 git push origin main --force
 echo.
 git log --oneline -3

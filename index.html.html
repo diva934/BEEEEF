@@ -4489,6 +4489,56 @@ body::after, body::before { display: none !important; }
 }
 
 /* ═══════════════════════════════════════════════
+   LIQUID GLASS — SUPPRESSION TOTALE
+═══════════════════════════════════════════════ */
+.liquidweb__backdrop {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+.liquidweb__content {
+  position: static !important;
+  transform: none !important;
+  filter: none !important;
+}
+.liquidweb {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-clip: unset !important;
+  -webkit-background-clip: unset !important;
+  isolation: auto !important;
+}
+/* Restore normal look to liquidweb buttons */
+.gains-price-btn.liquidweb,
+.admin-btn.liquidweb,
+.back-btn.liquidweb,
+.proom-ctrl-btn.liquidweb,
+.setup-btn-back.liquidweb {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ═══════════════════════════════════════════════
+   LOGO — VISIBLE SUR FOND SOMBRE
+═══════════════════════════════════════════════ */
+.logo-mark {
+  /* Le PNG est sombre → on le rend blanc + glow orange */
+  filter: brightness(0) invert(1) drop-shadow(0 0 16px rgba(255,107,53,0.55)) !important;
+  transition: filter 0.2s ease !important;
+}
+.logo:hover .logo-mark {
+  filter: brightness(0) invert(1) drop-shadow(0 0 24px rgba(255,107,53,0.85)) !important;
+}
+
+/* Header orange accent line — plus visible */
+#header::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,107,53,0.7) 30%, rgba(255,180,100,0.9) 50%, rgba(255,107,53,0.7) 70%, transparent 100%) !important;
+  opacity: 0.6 !important;
+  height: 2px !important;
+  display: block !important;
+}
+
+/* ═══════════════════════════════════════════════
    KICKSTER — LIVE VIEW DARK OVERRIDES
 ═══════════════════════════════════════════════ */
 
@@ -4647,7 +4697,7 @@ body::after, body::before { display: none !important; }
 </style>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/liquid-web/liquid-core.min.js"></script>
+<!-- liquid-web removed -->
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><defs>
