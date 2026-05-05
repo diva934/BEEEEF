@@ -52,15 +52,6 @@ body{
   display:flex;align-items:center;gap:16px;flex:1;
 }
 
-.logo-header{
-  font-family:var(--fn-disp);font-size:18px;font-weight:900;
-  background:linear-gradient(135deg,var(--orange),#ff8c55);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-  letter-spacing:-1px;
-}
-
 .logo-beef{
   display:flex;align-items:center;justify-content:center;width:160px;height:52px;
   background:transparent;border:none;box-shadow:none;
@@ -82,31 +73,6 @@ body{
 }
 .icon-btn:hover{color:var(--blue-light);background:#eef3ff}
 .icon-btn svg{width:20px;height:20px}
-
-.header-center{
-  display:none;
-}
-
-.profile-badge{
-  display:none;
-}
-
-.signal-bars{
-  display:none}
-.bar{
-  width:2px;background:#cccccc;border-radius:1px}
-.bar.filled{background:var(--txt)}
-.bar:nth-child(1){height:4px}
-.bar:nth-child(2){height:6px}
-.bar:nth-child(3){height:8px}
-
-.time{
-  font-family:var(--fn-disp);font-size:14px;font-weight:600;color:var(--txt);
-  min-width:45px}
-
-.battery-icon{
-  display:none;
-}
 
 /* ═══════════════════════════════════════════════════
    MAIN CONTENT - Scrollable
@@ -237,8 +203,55 @@ body{
 ═══════════════════════════════════════════════════ */
 @media(max-width:600px){
   .highlights-grid{grid-template-columns:1fr}
-  .header-center{display:none}
 }
+
+/* ═══════════════════════════════════════════════════
+   CALENDRIER
+═══════════════════════════════════════════════════ */
+.cal-wrap{padding:20px 16px 140px}
+.cal-page-title{font-size:22px;font-weight:900;color:var(--txt);margin-bottom:2px;letter-spacing:-0.5px}
+.cal-page-sub{font-size:13px;color:var(--txt3);margin-bottom:22px}
+
+.cal-date-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:28px;padding-bottom:2px}
+.cal-date-strip::-webkit-scrollbar{display:none}
+.cal-day{flex:0 0 54px;display:flex;flex-direction:column;align-items:center;padding:10px 8px 8px;border-radius:16px;background:var(--bg3);border:1px solid var(--line);cursor:pointer;transition:all 0.2s;gap:3px}
+.cal-day.active{background:var(--orange);border-color:var(--orange)}
+.cal-day-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--txt3)}
+.cal-day.active .cal-day-name{color:rgba(255,255,255,0.75)}
+.cal-day-num{font-size:20px;font-weight:900;color:var(--txt);line-height:1}
+.cal-day.active .cal-day-num{color:#fff}
+.cal-day-dot{width:5px;height:5px;border-radius:50%;background:var(--orange);margin-top:2px}
+.cal-day.active .cal-day-dot{background:rgba(255,255,255,0.6)}
+.cal-day-dot.empty{background:transparent}
+
+.cal-competition-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:0 2px}
+.cal-competition-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--txt3)}
+.cal-competition-line{flex:1;height:1px;background:var(--line)}
+
+.cal-match-card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all 0.18s;position:relative;overflow:hidden}
+.cal-match-card:hover{border-color:var(--orange);background:#fff9f7;transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,107,53,0.1)}
+.cal-match-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-match-time-badge{font-size:11px;font-weight:700;color:var(--txt3);background:var(--bg3);padding:4px 10px;border-radius:8px}
+.cal-match-live{font-size:10px;font-weight:800;color:var(--orange);text-transform:uppercase;letter-spacing:0.05em}
+.cal-match-pool{font-size:11px;font-weight:700;color:var(--blue-light)}
+
+.cal-teams{display:flex;align-items:center;gap:0}
+.cal-team{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+.cal-team-emoji{width:40px;height:40px;border-radius:50%;background:var(--bg3);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:20px}
+.cal-team-name{font-size:12px;font-weight:700;color:var(--txt);text-align:center;line-height:1.3;max-width:90px}
+.cal-divider{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;padding:0 12px}
+.cal-vs-text{font-size:13px;font-weight:900;color:var(--txt3)}
+.cal-vs-pct{font-size:10px;font-weight:600;color:var(--txt3)}
+
+.cal-odds-row{display:flex;gap:8px;margin-top:14px}
+.cal-odd-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 8px;border-radius:12px;background:var(--bg3);border:1.5px solid var(--line);gap:2px;cursor:pointer;transition:all 0.18s}
+.cal-odd-btn:hover{border-color:var(--orange);background:rgba(255,107,53,0.06)}
+.cal-odd-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--txt3)}
+.cal-odd-val{font-size:15px;font-weight:900;color:var(--blue-light)}
+
+.cal-empty-state{text-align:center;padding:60px 20px;color:var(--txt3)}
+.cal-empty-icon{font-size:48px;margin-bottom:12px;opacity:0.4}
+.cal-empty-text{font-size:14px;font-weight:600}
 
 </style>
 </head>
@@ -368,313 +381,17 @@ body{
 
   </div> <!-- end home-section -->
 
-  <!-- CALENDAR / NEWS SECTION -->
-  <div class="nav-section" id="calendar-section" style="padding-top: 80px; padding-bottom: 120px;">
-    <style>
-      .news-page-topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 22px;
-        padding: 0 16px;
-      }
+  <!-- CALENDRIER -->
+  <div class="nav-section" id="calendar-section" style="padding-top:80px">
+    <div class="cal-wrap">
+      <div class="cal-page-title">Calendrier</div>
+      <div class="cal-page-sub">Prédictions à venir</div>
 
-      .news-page-topbar button {
-        border: none;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 12px;
-        border-radius: 16px;
-        cursor: pointer;
-        color: var(--txt);
-        font-size: 1rem;
-        box-shadow: 0 10px 20px rgba(17, 31, 79, 0.06);
-      }
+      <!-- Bande de dates -->
+      <div class="cal-date-strip" id="calDateStrip"></div>
 
-      .news-page-title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        letter-spacing: -0.03em;
-        text-align: center;
-        flex: 1;
-      }
-
-      .news-page-pillbar {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding: 0 16px 8px;
-        margin-bottom: 24px;
-        scrollbar-width: none;
-      }
-
-      .news-page-pillbar::-webkit-scrollbar {
-        display: none;
-      }
-
-      .news-page-pill {
-        flex: 0 0 auto;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 16px;
-        border-radius: 999px;
-        background: var(--bg2);
-        border: 1px solid var(--line);
-        color: var(--txt3);
-        font-size: 0.95rem;
-        white-space: nowrap;
-        cursor: pointer;
-      }
-
-      .news-page-pill.active {
-        background: var(--blue-light);
-        border-color: transparent;
-        color: #fff;
-        box-shadow: 0 10px 24px rgba(30, 72, 216, 0.18);
-      }
-
-      .news-page-pill-icon {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: #e5e8fb;
-        display: grid;
-        place-items: center;
-        font-size: 0.85rem;
-        color: var(--blue-light);
-      }
-
-      .news-page-pill.active .news-page-pill-icon {
-        background: rgba(255, 255, 255, 0.3);
-        color: #fff;
-      }
-
-      .news-page-section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-        gap: 16px;
-        padding: 0 16px;
-      }
-
-      .news-page-section-header h2 {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 700;
-      }
-
-      .news-page-section-header a {
-        color: var(--blue-light);
-        text-decoration: none;
-        font-size: 0.9rem;
-      }
-
-      .news-page-card {
-        background: var(--surface);
-        border-radius: 30px;
-        overflow: hidden;
-        box-shadow: 0 20px 45px rgba(17, 31, 79, 0.12);
-        border: 1px solid var(--line);
-        margin: 0 16px 18px;
-      }
-
-      .news-page-hero-card {
-        position: relative;
-        min-height: 240px;
-        display: grid;
-        align-items: end;
-        color: #fff;
-        background: linear-gradient(180deg, rgba(4, 28, 89, 0.16) 0%, rgba(3, 19, 50, 0.92) 100%),
-          url('https://images.unsplash.com/photo-1517927033932-b4d5c8e1e6e0?auto=format&fit=crop&w=900&q=80') center/cover no-repeat;
-      }
-
-      .news-page-hero-card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
-      }
-
-      .news-page-hero-content {
-        position: relative;
-        padding: 18px;
-        display: grid;
-        gap: 10px;
-      }
-
-      .news-page-hero-content .label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
-        width: fit-content;
-        font-size: 0.85rem;
-        color: #fff;
-      }
-
-      .news-page-hero-title-large {
-        margin: 0;
-        font-size: 1.15rem;
-        line-height: 1.35;
-        font-weight: 700;
-      }
-
-      .news-page-hero-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-top: 12px;
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.85);
-      }
-
-      .news-page-hero-meta span {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .news-page-hero-meta .badge {
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
-        color: #fff;
-      }
-
-      .news-page-article-row {
-        display: flex;
-        gap: 14px;
-        overflow-x: auto;
-        padding: 0 16px 10px;
-        margin-bottom: 14px;
-      }
-
-      .news-page-article-row::-webkit-scrollbar {
-        display: none;
-      }
-
-      .news-page-small-card {
-        flex: 0 0 240px;
-        background: var(--surface);
-        border-radius: 28px;
-        border: 1px solid var(--line);
-        overflow: hidden;
-        box-shadow: 0 18px 35px rgba(17, 31, 79, 0.08);
-        cursor: pointer;
-      }
-
-      .news-page-small-card img {
-        width: 100%;
-        display: block;
-        height: 150px;
-        object-fit: cover;
-      }
-
-      .news-page-small-card-body {
-        padding: 14px;
-        display: grid;
-        gap: 10px;
-      }
-
-      .news-page-small-card-body h3 {
-        margin: 0;
-        font-size: 0.96rem;
-        line-height: 1.35;
-      }
-
-      .news-page-small-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.82rem;
-        color: var(--txt3);
-      }
-    </style>
-
-    <header class="news-page-topbar">
-      <button aria-label="Retour">←</button>
-      <div class="news-page-title">News</div>
-      <button aria-label="Plus">•••</button>
-    </header>
-
-    <div class="news-page-pillbar">
-      <div class="news-page-pill active"><span class="news-page-pill-icon">⚽</span>Soccer</div>
-      <div class="news-page-pill"><span class="news-page-pill-icon">🏀</span>Basketball</div>
-      <div class="news-page-pill"><span class="news-page-pill-icon">🏈</span>Football</div>
-      <div class="news-page-pill"><span class="news-page-pill-icon">⚾</span>Baseball</div>
-      <div class="news-page-pill"><span class="news-page-pill-icon">🎾</span>Tennis</div>
-    </div>
-
-    <div class="news-page-section-header">
-      <h2>Trending News</h2>
-      <a href="#">See All</a>
-    </div>
-
-    <article class="news-page-card news-page-hero-card">
-      <div class="news-page-hero-content">
-        <div class="label">Soccer</div>
-        <h3 class="news-page-hero-title-large">Title Decider: Newcastle Challenges Arsenal in Pre...</h3>
-        <div class="news-page-hero-meta">
-          <span>Premier League</span>
-          <span class="badge">5h ago</span>
-        </div>
-      </div>
-      <div class="news-page-hero-meta" style="padding: 14px; gap: 12px;">
-        <span>▶ 04:00</span>
-        <span>💚</span>
-        <span>100K Views</span>
-      </div>
-    </article>
-
-    <article class="news-page-card news-page-hero-card" style="background-image: linear-gradient(180deg, rgba(4, 28, 89, 0.16) 0%, rgba(3, 19, 50, 0.92) 100%), url('https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=900&q=80');">
-      <div class="news-page-hero-content">
-        <div class="label">Soccer</div>
-        <h3 class="news-page-hero-title-large">The Reds vs Liverpool FC — Match build-up</h3>
-        <div class="news-page-hero-meta">
-          <span>Premier League</span>
-          <span class="badge">4h ago</span>
-        </div>
-      </div>
-      <div class="news-page-hero-meta" style="padding: 14px; gap: 12px;">
-        <span>▶ 04:00</span>
-        <span>💚</span>
-        <span>87K Views</span>
-      </div>
-    </article>
-
-    <div class="news-page-section-header" style="margin-top: 8px;">
-      <h2>Best Clip</h2>
-      <a href="#">See All</a>
-    </div>
-
-    <div class="news-page-article-row">
-      <div class="news-page-small-card">
-        <img src="https://images.unsplash.com/photo-1505842465776-3d4f49f9b811?auto=format&fit=crop&w=600&q=80" alt="Best clip 1">
-        <div class="news-page-small-card-body">
-          <h3>Flying finish seals the win</h3>
-          <div class="news-page-small-meta"><span>24k views</span><span>▶ 03:12</span></div>
-        </div>
-      </div>
-      <div class="news-page-small-card">
-        <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80" alt="Best clip 2">
-        <div class="news-page-small-card-body">
-          <h3>Late strike turns the game</h3>
-          <div class="news-page-small-meta"><span>24k views</span><span>▶ 02:48</span></div>
-        </div>
-      </div>
-      <div class="news-page-small-card">
-        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80" alt="Best clip 3">
-        <div class="news-page-small-card-body">
-          <h3>Top 3 plays of the week</h3>
-          <div class="news-page-small-meta"><span>24k views</span><span>▶ 04:05</span></div>
-        </div>
-      </div>
+      <!-- Matchs dynamiques -->
+      <div id="calBody"></div>
     </div>
   </div> <!-- end calendar-section -->
 
@@ -1108,6 +825,9 @@ document.querySelectorAll('.nav-item').forEach((item, index) => {
       showSection('home-section');
     } else if (index === 1) {
       showSection('calendar-section');
+      initCalendar();
+    } else if (index === 2) {
+      window.location.href = 'streaming.html';
     } else if (index === 4) {
       showSection('profile-section');
       updateProfileUI();
@@ -1238,6 +958,206 @@ function buildCard(debate) {
 function renderAllGrid() {
   const allGrid = document.getElementById('allGrid');
   if (!allGrid || !_allExpanded) return;
+  const rest = [..._debates].sort((a, b) => (b.pool || 0) - (a.pool || 0)).slice(2);
+  allGrid.innerHTML = rest.map(buildCard).join('');
+  rest.forEach(debate => {
+    getDebateImage(debate.id).then(url => {
+      if (!url) return;
+      const imgEl = allGrid.querySelector(`[data-debate-id="${debate.id}"] .highlight-image`);
+      if (imgEl) {
+        imgEl.style.backgroundImage    = `url("${url}")`;
+        imgEl.style.backgroundSize     = 'cover';
+        imgEl.style.backgroundPosition = 'center';
+      }
+    });
+  });
+  const allIds = _topIds.concat(rest.map(d => d.id)).filter(Boolean);
+  syncSocketSubscriptions(allIds);
+}
+
+const seeAllPredBtn = document.querySelector('.see-all');
+if (seeAllPredBtn) {
+  seeAllPredBtn.addEventListener('click', () => {
+    const allGrid = document.getElementById('allGrid');
+    if (!allGrid) return;
+    _allExpanded = !_allExpanded;
+    if (_allExpanded) {
+      renderAllGrid();
+      allGrid.style.display = 'grid';
+      seeAllPredBtn.textContent = 'Voir Moins';
+    } else {
+      allGrid.style.display = 'none';
+      allGrid.innerHTML = '';
+      seeAllPredBtn.textContent = 'Voir Tout';
+      syncSocketSubscriptions(_topIds.filter(Boolean));
+    }
+  });
+}
+
+const seeAllNewsBtn = document.querySelectorAll('.see-all')[1];
+if (seeAllNewsBtn) {
+  seeAllNewsBtn.addEventListener('click', () => {
+    showToast('Toutes les actualités — bientôt');
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   RETOUR STRIPE (?paid=ok / ?paid=cancel)
+══════════════════════════════════════════════════ */
+(function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const paid   = params.get('paid');
+  if (!paid) return;
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete('paid');
+  history.replaceState({}, '', clean.toString());
+  if (paid === 'ok')     showToast('ok', 'Paiement reçu', 'Tes points arrivent…');
+  if (paid === 'cancel') showToast('warn', 'Paiement annulé', 'Aucun point crédité');
+})();
+
+/* ══════════════════════════════════════════════════
+   CALENDRIER
+══════════════════════════════════════════════════ */
+const CAL_DAYS  = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const CAT_EMOJI = { sports:'⚽', crypto:'₿', politics:'🏛', geopolitics:'🌍', economy:'📈', technology:'💻', general:'🎯', society:'👥' };
+const CAT_LABEL = { sports:'Sports', crypto:'Crypto', politics:'Politique', geopolitics:'Géopolitique', economy:'Économie', technology:'Tech', general:'Général', society:'Société' };
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function initCalendar() {
+  const strip = document.getElementById('calDateStrip');
+  const body  = document.getElementById('calBody');
+  if (!strip || !body) return;
+
+  const today = new Date();
+  strip.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d   = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dot = i < 4 ? '' : ' empty';
+    const el  = document.createElement('div');
+    el.className = 'cal-day' + (i === 0 ? ' active' : '');
+    el.innerHTML = `
+      <span class="cal-day-name">${CAL_DAYS[d.getDay()]}</span>
+      <span class="cal-day-num">${d.getDate()}</span>
+      <span class="cal-day-dot${dot}"></span>`;
+    el.addEventListener('click', () => {
+      strip.querySelectorAll('.cal-day').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      renderCalBody(body, i);
+    });
+    strip.appendChild(el);
+  }
+  renderCalBody(body, 0);
+}
+
+function renderCalBody(body, dayOffset) {
+  const all = [..._debates].sort((a, b) => (b.pool || 0) - (a.pool || 0));
+  if (!all.length) {
+    body.innerHTML = `<div class="cal-empty-state">
+      <div class="cal-empty-icon">📅</div>
+      <div class="cal-empty-text">Aucune prédiction disponible</div>
+    </div>`;
+    return;
+  }
+  const groups = {};
+  all.slice(0, 6 + dayOffset).forEach(d => {
+    const cat = d.category || 'general';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(d);
+  });
+  body.innerHTML = Object.entries(groups).map(([cat, debates]) => `
+    <div>
+      <div class="cal-competition-header">
+        <span class="cal-competition-label">${CAT_EMOJI[cat] || '🎯'} ${CAT_LABEL[cat] || cat}</span>
+        <span class="cal-competition-line"></span>
+      </div>
+      ${debates.slice(0, 3).map(d => buildCalCard(d, dayOffset)).join('')}
+    </div>`).join('');
+}
+
+function buildCalCard(d, dayOffset) {
+  const seed  = hashStr(d.id + dayOffset);
+  const hour  = 9 + (seed % 13);
+  const mins  = ['00','15','30','45'][seed % 4];
+  const total = (d.yesVotes || 0) + (d.noVotes || 0) || 100;
+  const yPct  = Math.round((d.yesVotes || 55) / total * 100);
+  const nPct  = 100 - yPct;
+  const yOdd  = (1 + (nPct / 100) * 2.2).toFixed(2);
+  const nOdd  = (1 + (yPct / 100) * 2.2).toFixed(2);
+  const emoji = CAT_EMOJI[d.category] || '🎯';
+  const yLbl  = (d.yesLabel || 'OUI').substring(0, 16);
+  const nLbl  = (d.noLabel  || 'NON').substring(0, 16);
+  const pool  = fmtPool(d.pool);
+  const live  = dayOffset === 0 ? `<span class="cal-match-live">● Live</span>` : '';
+  return `<div class="cal-match-card" onclick="openDebate('${escHtml(d.id)}')">
+    <div class="cal-match-top">
+      <span class="cal-match-time-badge">${hour}:${mins}</span>
+      ${live}
+      <span class="cal-match-pool">${pool}</span>
+    </div>
+    <div class="cal-teams">
+      <div class="cal-team">
+        <div class="cal-team-emoji">${emoji}</div>
+        <div class="cal-team-name">${escHtml(yLbl)}</div>
+      </div>
+      <div class="cal-divider">
+        <span class="cal-vs-text">VS</span>
+        <span class="cal-vs-pct">${yPct}/${nPct}</span>
+      </div>
+      <div class="cal-team">
+        <div class="cal-team-emoji">🎲</div>
+        <div class="cal-team-name">${escHtml(nLbl)}</div>
+      </div>
+    </div>
+    <div class="cal-odds-row">
+      <div class="cal-odd-btn">
+        <span class="cal-odd-lbl">OUI</span>
+        <span class="cal-odd-val">×${yOdd}</span>
+      </div>
+      <div class="cal-odd-btn">
+        <span class="cal-odd-lbl">NON</span>
+        <span class="cal-odd-val">×${nOdd}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ─── INIT ─── */
+loadDebates();
+</script>
+
+</body>
+</html>
+
+function buildCard(debate) {
+  const grad = (debate.gradColors && debate.gradColors.length >= 2)
+    ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
+    : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
+  const label = debate.yesLabel
+    ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>` : '';
+  return `
+    <div class="highlight-card" data-debate-id="${escHtml(debate.id)}"
+         onclick="openDebate('${escHtml(debate.id)}')">
+      <div class="highlight-image" style="background-image:${grad};background-size:cover;background-position:center">
+        <div class="highlight-badge">
+          <div class="badge-icon"></div>
+          ${fmtViewers(debate.viewers)}
+        </div>
+        <div class="highlight-overlay"></div>
+        <div class="highlight-text">${escHtml(debate.title)}${label}</div>
+      </div>
+    </div>`;
+}
+
+function renderAllGrid() {
+  const allGrid = document.getElementById('allGrid');
+  if (!allGrid || !_allExpanded) return;
   const rest = [..._debates]
     .sort((a, b) => (b.pool || 0) - (a.pool || 0))
     .slice(2);
@@ -1301,6 +1221,127 @@ if (seeAllNewsBtn) {
   if (paid === 'ok')     showToast('ok', 'Paiement reçu', 'Tes points arrivent…');
   if (paid === 'cancel') showToast('warn', 'Paiement annulé', 'Aucun point crédité');
 })();
+
+/* ══════════════════════════════════════════════════
+   CALENDRIER
+══════════════════════════════════════════════════ */
+const CAL_DAYS  = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const CAT_EMOJI = { sports:'⚽', crypto:'₿', politics:'🏛', geopolitics:'🌍', economy:'📈', technology:'💻', general:'🎯', society:'👥' };
+const CAT_LABEL = { sports:'Sports', crypto:'Crypto', politics:'Politique', geopolitics:'Géopolitique', economy:'Économie', technology:'Tech', general:'Général', society:'Société' };
+
+/* Hash déterministe d'une string → entier */
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function initCalendar() {
+  const strip = document.getElementById('calDateStrip');
+  const body  = document.getElementById('calBody');
+  if (!strip || !body) return;
+
+  const today = new Date();
+  let selDay  = 0;
+
+  strip.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const d   = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dot = i < 4 ? '' : ' empty';
+    const el  = document.createElement('div');
+    el.className = 'cal-day' + (i === 0 ? ' active' : '');
+    el.innerHTML = `
+      <span class="cal-day-name">${CAL_DAYS[d.getDay()]}</span>
+      <span class="cal-day-num">${d.getDate()}</span>
+      <span class="cal-day-dot${dot}"></span>`;
+    el.addEventListener('click', () => {
+      strip.querySelectorAll('.cal-day').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      selDay = i;
+      renderCalBody(body, i);
+    });
+    strip.appendChild(el);
+  }
+  renderCalBody(body, 0);
+}
+
+function renderCalBody(body, dayOffset) {
+  const all = [..._debates].sort((a, b) => (b.pool || 0) - (a.pool || 0));
+
+  if (!all.length) {
+    body.innerHTML = `<div class="cal-empty-state">
+      <div class="cal-empty-icon">📅</div>
+      <div class="cal-empty-text">Aucune prédiction disponible</div>
+    </div>`;
+    return;
+  }
+
+  /* Groupe par catégorie */
+  const groups = {};
+  all.slice(0, 6 + dayOffset).forEach(d => {
+    const cat = d.category || 'general';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(d);
+  });
+
+  body.innerHTML = Object.entries(groups).map(([cat, debates]) => `
+    <div>
+      <div class="cal-competition-header">
+        <span class="cal-competition-label">${CAT_EMOJI[cat] || '🎯'} ${CAT_LABEL[cat] || cat}</span>
+        <span class="cal-competition-line"></span>
+      </div>
+      ${debates.slice(0, 3).map(d => buildCalCard(d, dayOffset)).join('')}
+    </div>`).join('');
+}
+
+function buildCalCard(d, dayOffset) {
+  const seed  = hashStr(d.id + dayOffset);
+  const hour  = 9 + (seed % 13);
+  const mins  = ['00','15','30','45'][seed % 4];
+  const total = (d.yesVotes || 0) + (d.noVotes || 0) || 100;
+  const yPct  = Math.round((d.yesVotes || 55) / total * 100);
+  const nPct  = 100 - yPct;
+  const yOdd  = (1 + (nPct / 100) * 2.2).toFixed(2);
+  const nOdd  = (1 + (yPct / 100) * 2.2).toFixed(2);
+  const emoji = CAT_EMOJI[d.category] || '🎯';
+  const yLbl  = (d.yesLabel || 'OUI').substring(0, 16);
+  const nLbl  = (d.noLabel  || 'NON').substring(0, 16);
+  const pool  = fmtPool(d.pool);
+  const live  = dayOffset === 0 ? `<span class="cal-match-live">● Live</span>` : '';
+
+  return `<div class="cal-match-card" onclick="openDebate('${escHtml(d.id)}')">
+    <div class="cal-match-top">
+      <span class="cal-match-time-badge">${hour}:${mins}</span>
+      ${live}
+      <span class="cal-match-pool">${pool}</span>
+    </div>
+    <div class="cal-teams">
+      <div class="cal-team">
+        <div class="cal-team-emoji">${emoji}</div>
+        <div class="cal-team-name">${escHtml(yLbl)}</div>
+      </div>
+      <div class="cal-divider">
+        <span class="cal-vs-text">VS</span>
+        <span class="cal-vs-pct">${yPct}/${nPct}</span>
+      </div>
+      <div class="cal-team">
+        <div class="cal-team-emoji">🎲</div>
+        <div class="cal-team-name">${escHtml(nLbl)}</div>
+      </div>
+    </div>
+    <div class="cal-odds-row">
+      <div class="cal-odd-btn">
+        <span class="cal-odd-lbl">OUI</span>
+        <span class="cal-odd-val">×${yOdd}</span>
+      </div>
+      <div class="cal-odd-btn">
+        <span class="cal-odd-lbl">NON</span>
+        <span class="cal-odd-val">×${nOdd}</span>
+      </div>
+    </div>
+  </div>`;
+}
 
 /* ─── INIT ─── */
 loadDebates();
