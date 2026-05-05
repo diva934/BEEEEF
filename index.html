@@ -796,6 +796,8 @@ document.querySelectorAll('.nav-item').forEach((item, index) => {
     item.classList.add('active');
     if (index === 0) {
       showSection('home-section');
+    } else if (index === 1) {
+      window.location.href = 'calendar.html';
     } else if (index === 4) {
       showSection('profile-section');
       updateProfileUI();
