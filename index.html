@@ -62,13 +62,13 @@ body{
 }
 
 .logo-beef{
-  display:flex;align-items:center;justify-content:center;width:112px;height:46px;
+  display:flex;align-items:center;justify-content:center;width:160px;height:52px;
   background:transparent;border:none;box-shadow:none;
-  cursor:pointer;transition:transform 0.2s;
+  cursor:pointer;transition:transform 0.2s;flex-shrink:0;
 }
 .logo-beef:hover{transform:translateY(-2px);}
 .logo-beef img{
-  width:100%;height:100%;display:block;object-fit:contain;
+  width:160px;height:auto;display:block;object-fit:contain;
 }
 
 .header-right{
@@ -272,7 +272,7 @@ body{
 
     <div class="highlights-grid" id="topGrid">
       <div class="highlight-card">
-        <div class="highlight-image" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)">
+        <div class="highlight-image" style="background-image:linear-gradient(135deg,#667eea 0%,#764ba2 100%);background-size:cover;background-position:center">
           <div class="highlight-badge">
             <div class="badge-icon"></div>
             24k vues
@@ -285,7 +285,7 @@ body{
       </div>
 
       <div class="highlight-card">
-        <div class="highlight-image" style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%)">
+        <div class="highlight-image" style="background-image:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);background-size:cover;background-position:center">
           <div class="highlight-badge">
             <div class="badge-icon"></div>
             10k vues
@@ -577,17 +577,20 @@ async function getDebateImage(debateId) {
   return null;
 }
 
+function setImgBg(imgEl, value) {
+  imgEl.style.backgroundImage    = value;
+  imgEl.style.backgroundSize     = 'cover';
+  imgEl.style.backgroundPosition = 'center';
+  // supprime le shorthand "background" qui écrase backgroundImage
+  imgEl.style.background         = '';
+}
+
 function applyCardVisuals(card, debate, grad) {
   const imgEl   = card.querySelector('.highlight-image');
   const badgeEl = card.querySelector('.highlight-badge');
   const textEl  = card.querySelector('.highlight-text');
 
-  // Dégradé de couleur immédiatement (fond de secours)
-  if (imgEl) {
-    imgEl.style.background        = grad;
-    imgEl.style.backgroundSize    = 'cover';
-    imgEl.style.backgroundPosition = 'center';
-  }
+  if (imgEl) setImgBg(imgEl, grad);
   if (badgeEl) badgeEl.innerHTML = `<div class="badge-icon"></div>${fmtViewers(debate.viewers)}`;
   if (textEl)  textEl.innerHTML  = escHtml(debate.title)
     + (debate.yesLabel
@@ -596,12 +599,10 @@ function applyCardVisuals(card, debate, grad) {
 
   card.onclick = () => openDebate(debate.id);
 
-  // Image contextuelle en arrière-plan (async, remplace le dégradé quand prête)
+  // Image contextuelle — remplace le dégradé dès qu'elle est prête
   getDebateImage(debate.id).then(url => {
     if (!url || !imgEl) return;
-    imgEl.style.backgroundImage    = `url("${url}")`;
-    imgEl.style.backgroundSize     = 'cover';
-    imgEl.style.backgroundPosition = 'center';
+    setImgBg(imgEl, `url("${url}")`);
   });
 }
 
@@ -812,7 +813,7 @@ function buildCard(debate) {
   return `
     <div class="highlight-card" data-debate-id="${escHtml(debate.id)}"
          onclick="openDebate('${escHtml(debate.id)}')">
-      <div class="highlight-image" style="background:${grad};background-size:cover;background-position:center">
+      <div class="highlight-image" style="background-image:${grad};background-size:cover;background-position:center">
         <div class="highlight-badge">
           <div class="badge-icon"></div>
           ${fmtViewers(debate.viewers)}
