@@ -368,6 +368,316 @@ body{
 
   </div> <!-- end home-section -->
 
+  <!-- CALENDAR / NEWS SECTION -->
+  <div class="nav-section" id="calendar-section" style="padding-top: 80px; padding-bottom: 120px;">
+    <style>
+      .news-page-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 22px;
+        padding: 0 16px;
+      }
+
+      .news-page-topbar button {
+        border: none;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 12px;
+        border-radius: 16px;
+        cursor: pointer;
+        color: var(--txt);
+        font-size: 1rem;
+        box-shadow: 0 10px 20px rgba(17, 31, 79, 0.06);
+      }
+
+      .news-page-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-align: center;
+        flex: 1;
+      }
+
+      .news-page-pillbar {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 0 16px 8px;
+        margin-bottom: 24px;
+        scrollbar-width: none;
+      }
+
+      .news-page-pillbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .news-page-pill {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 999px;
+        background: var(--bg2);
+        border: 1px solid var(--line);
+        color: var(--txt3);
+        font-size: 0.95rem;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .news-page-pill.active {
+        background: var(--blue-light);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(30, 72, 216, 0.18);
+      }
+
+      .news-page-pill-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #e5e8fb;
+        display: grid;
+        place-items: center;
+        font-size: 0.85rem;
+        color: var(--blue-light);
+      }
+
+      .news-page-pill.active .news-page-pill-icon {
+        background: rgba(255, 255, 255, 0.3);
+        color: #fff;
+      }
+
+      .news-page-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        gap: 16px;
+        padding: 0 16px;
+      }
+
+      .news-page-section-header h2 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .news-page-section-header a {
+        color: var(--blue-light);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      .news-page-card {
+        background: var(--surface);
+        border-radius: 30px;
+        overflow: hidden;
+        box-shadow: 0 20px 45px rgba(17, 31, 79, 0.12);
+        border: 1px solid var(--line);
+        margin: 0 16px 18px;
+      }
+
+      .news-page-hero-card {
+        position: relative;
+        min-height: 240px;
+        display: grid;
+        align-items: end;
+        color: #fff;
+        background: linear-gradient(180deg, rgba(4, 28, 89, 0.16) 0%, rgba(3, 19, 50, 0.92) 100%),
+          url('https://images.unsplash.com/photo-1517927033932-b4d5c8e1e6e0?auto=format&fit=crop&w=900&q=80') center/cover no-repeat;
+      }
+
+      .news-page-hero-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
+      }
+
+      .news-page-hero-content {
+        position: relative;
+        padding: 18px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .news-page-hero-content .label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        width: fit-content;
+        font-size: 0.85rem;
+        color: #fff;
+      }
+
+      .news-page-hero-title-large {
+        margin: 0;
+        font-size: 1.15rem;
+        line-height: 1.35;
+        font-weight: 700;
+      }
+
+      .news-page-hero-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .news-page-hero-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .news-page-hero-meta .badge {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+      }
+
+      .news-page-article-row {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding: 0 16px 10px;
+        margin-bottom: 14px;
+      }
+
+      .news-page-article-row::-webkit-scrollbar {
+        display: none;
+      }
+
+      .news-page-small-card {
+        flex: 0 0 240px;
+        background: var(--surface);
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        overflow: hidden;
+        box-shadow: 0 18px 35px rgba(17, 31, 79, 0.08);
+        cursor: pointer;
+      }
+
+      .news-page-small-card img {
+        width: 100%;
+        display: block;
+        height: 150px;
+        object-fit: cover;
+      }
+
+      .news-page-small-card-body {
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .news-page-small-card-body h3 {
+        margin: 0;
+        font-size: 0.96rem;
+        line-height: 1.35;
+      }
+
+      .news-page-small-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.82rem;
+        color: var(--txt3);
+      }
+    </style>
+
+    <header class="news-page-topbar">
+      <button aria-label="Retour">←</button>
+      <div class="news-page-title">News</div>
+      <button aria-label="Plus">•••</button>
+    </header>
+
+    <div class="news-page-pillbar">
+      <div class="news-page-pill active"><span class="news-page-pill-icon">⚽</span>Soccer</div>
+      <div class="news-page-pill"><span class="news-page-pill-icon">🏀</span>Basketball</div>
+      <div class="news-page-pill"><span class="news-page-pill-icon">🏈</span>Football</div>
+      <div class="news-page-pill"><span class="news-page-pill-icon">⚾</span>Baseball</div>
+      <div class="news-page-pill"><span class="news-page-pill-icon">🎾</span>Tennis</div>
+    </div>
+
+    <div class="news-page-section-header">
+      <h2>Trending News</h2>
+      <a href="#">See All</a>
+    </div>
+
+    <article class="news-page-card news-page-hero-card">
+      <div class="news-page-hero-content">
+        <div class="label">Soccer</div>
+        <h3 class="news-page-hero-title-large">Title Decider: Newcastle Challenges Arsenal in Pre...</h3>
+        <div class="news-page-hero-meta">
+          <span>Premier League</span>
+          <span class="badge">5h ago</span>
+        </div>
+      </div>
+      <div class="news-page-hero-meta" style="padding: 14px; gap: 12px;">
+        <span>▶ 04:00</span>
+        <span>💚</span>
+        <span>100K Views</span>
+      </div>
+    </article>
+
+    <article class="news-page-card news-page-hero-card" style="background-image: linear-gradient(180deg, rgba(4, 28, 89, 0.16) 0%, rgba(3, 19, 50, 0.92) 100%), url('https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=900&q=80');">
+      <div class="news-page-hero-content">
+        <div class="label">Soccer</div>
+        <h3 class="news-page-hero-title-large">The Reds vs Liverpool FC — Match build-up</h3>
+        <div class="news-page-hero-meta">
+          <span>Premier League</span>
+          <span class="badge">4h ago</span>
+        </div>
+      </div>
+      <div class="news-page-hero-meta" style="padding: 14px; gap: 12px;">
+        <span>▶ 04:00</span>
+        <span>💚</span>
+        <span>87K Views</span>
+      </div>
+    </article>
+
+    <div class="news-page-section-header" style="margin-top: 8px;">
+      <h2>Best Clip</h2>
+      <a href="#">See All</a>
+    </div>
+
+    <div class="news-page-article-row">
+      <div class="news-page-small-card">
+        <img src="https://images.unsplash.com/photo-1505842465776-3d4f49f9b811?auto=format&fit=crop&w=600&q=80" alt="Best clip 1">
+        <div class="news-page-small-card-body">
+          <h3>Flying finish seals the win</h3>
+          <div class="news-page-small-meta"><span>24k views</span><span>▶ 03:12</span></div>
+        </div>
+      </div>
+      <div class="news-page-small-card">
+        <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80" alt="Best clip 2">
+        <div class="news-page-small-card-body">
+          <h3>Late strike turns the game</h3>
+          <div class="news-page-small-meta"><span>24k views</span><span>▶ 02:48</span></div>
+        </div>
+      </div>
+      <div class="news-page-small-card">
+        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80" alt="Best clip 3">
+        <div class="news-page-small-card-body">
+          <h3>Top 3 plays of the week</h3>
+          <div class="news-page-small-meta"><span>24k views</span><span>▶ 04:05</span></div>
+        </div>
+      </div>
+    </div>
+  </div> <!-- end calendar-section -->
+
   <!-- PROFILE SECTION -->
   <div class="nav-section" id="profile-section">
     <div class="section">
@@ -797,7 +1107,7 @@ document.querySelectorAll('.nav-item').forEach((item, index) => {
     if (index === 0) {
       showSection('home-section');
     } else if (index === 1) {
-      window.location.href = 'calendar.html';
+      showSection('calendar-section');
     } else if (index === 4) {
       showSection('profile-section');
       updateProfileUI();
