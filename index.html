@@ -3,789 +3,995 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BEEEF — Prédictions & Débats Live</title>
+<title>BEEEF — Home Scroll</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --ink:#0C0D12;
-  --ink2:#11131C;
-  --ink3:#181A26;
-  --ink4:#1E2033;
-  --s1:rgba(255,255,255,0.025);
-  --s2:rgba(255,255,255,0.04);
-  --s3:rgba(255,255,255,0.07);
-  --s4:rgba(255,255,255,0.11);
-  --line:rgba(255,255,255,0.07);
-  --line2:rgba(255,255,255,0.12);
-  --line3:rgba(255,255,255,0.20);
-  --txt:#ffffff;
-  --txt2:rgba(255,255,255,0.55);
-  --txt3:rgba(255,255,255,0.32);
-  --fire:#ff6b35;
-  --fire2:#ff8c55;
-  --ember:#ffaa70;
-  --elec:#00d68f;
-  --blood:#ff4d4f;
-  --ice:#4d8bff;
-  --ice2:#2b6bff;
-  --purple:#bf5af2;
-  --yellow:#ffd60a;
-  --r:14px;--rs:10px;--rl:22px;--rfull:9999px;
-  --hh:56px;
-  --nav-h:66px;
-  --fn:'Poppins',system-ui,sans-serif;
-  --fn-mono:'JetBrains Mono','SF Mono',monospace;
+  --bg:#ffffff;
+  --bg2:#f8f9fa;
+  --bg3:#f0f2f5;
+  --line:#e0e2e6;
+  --line2:#d0d3da;
+  --txt:#1a1a1a;
+  --txt2:#666666;
+  --txt3:#999999;
+  --blue:#0f2d7a;
+  --blue-light:#1e48d8;
+  --blue-bg:#f0f7ff;
+  --orange:#ff6b35;
+  --fn-disp:'Poppins',system-ui,sans-serif;
+  --fn-body:'Poppins',system-ui,sans-serif;
 }
 
 html{scroll-behavior:smooth}
 body{
-  font-family:var(--fn);
-  background:var(--ink);
+  font-family:var(--fn-body);
+  background:var(--bg);
   color:var(--txt);
   min-height:100vh;
   overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
-  letter-spacing:-0.01em;
 }
 
-/* ── AMBIENT GLOWS ── */
-.glow-fire{position:fixed;top:-280px;left:-180px;width:680px;height:680px;border-radius:50%;background:radial-gradient(circle,rgba(255,74,14,0.10) 0%,transparent 65%);pointer-events:none;z-index:0;animation:drift1 22s ease-in-out infinite}
-.glow-ice{position:fixed;bottom:-180px;right:-130px;width:580px;height:580px;border-radius:50%;background:radial-gradient(circle,rgba(61,158,255,0.07) 0%,transparent 65%);pointer-events:none;z-index:0;animation:drift2 27s ease-in-out infinite}
-@keyframes drift1{0%,100%{transform:translate(0,0)}40%{transform:translate(70px,45px)}70%{transform:translate(-35px,80px)}}
-@keyframes drift2{0%,100%{transform:translate(0,0)}35%{transform:translate(-55px,35px)}75%{transform:translate(45px,-60px)}}
-
-/* ══════════════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════════════ */
-#header{
-  position:fixed;top:0;left:0;right:0;height:var(--hh);z-index:1000;
+/* ═══════════════════════════════════════════════════
+   HEADER - Fixed Top
+═══════════════════════════════════════════════════ */
+.header{
+  position:fixed;top:0;left:0;right:0;height:60px;z-index:1000;
+  background:var(--bg);
+  border-bottom:1px solid var(--line);
   display:flex;align-items:center;justify-content:space-between;
   padding:0 16px;
-  background:rgba(12,13,18,0.92);
-  backdrop-filter:blur(32px) saturate(1.8);
-  -webkit-backdrop-filter:blur(32px) saturate(1.8);
-  border-bottom:1px solid var(--line);
-}
-#header::after{
-  content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--fire) 35%,var(--ember) 50%,var(--fire) 65%,transparent);
-  opacity:0.45;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);
 }
 
-.header-left{display:flex;align-items:center;gap:12px;flex:1}
-
-.logo-wrap{
-  display:flex;align-items:center;justify-content:center;
-  width:96px;height:38px;cursor:pointer;
-  transition:transform 0.2s,filter 0.2s;
+.header-left{
+  display:flex;align-items:center;gap:16px;flex:1;
 }
-.logo-wrap:hover{transform:translateY(-1px);filter:drop-shadow(0 0 12px rgba(255,107,53,0.4))}
-.logo-wrap img{max-width:100%;height:auto;display:block;object-fit:contain}
 
-.live-dot{
-  display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;
-  font-family:var(--fn-mono);font-size:10px;font-weight:500;color:var(--blood);
-  background:rgba(255,77,79,0.08);border:1px solid rgba(255,77,79,0.18);
+.logo-header{
+  font-family:var(--fn-disp);font-size:18px;font-weight:900;
+  background:linear-gradient(135deg,var(--orange),#ff8c55);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  letter-spacing:-1px;
 }
-.live-dot::before{
-  content:'';width:5px;height:5px;border-radius:50%;background:var(--blood);flex-shrink:0;
-  animation:beat 1.2s ease-in-out infinite;
-}
-@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.65)}}
 
-.header-right{display:flex;align-items:center;gap:8px}
+.logo-beef{
+  display:flex;align-items:center;justify-content:center;width:160px;height:52px;
+  background:transparent;border:none;box-shadow:none;
+  cursor:pointer;transition:transform 0.2s;flex-shrink:0;
+}
+.logo-beef:hover{transform:translateY(-2px);}
+.logo-beef img{
+  width:160px;height:auto;display:block;object-fit:contain;
+}
+
+.header-right{
+  display:flex;align-items:center;gap:12px;flex:1;justify-content:flex-end;
+}
 
 .icon-btn{
-  width:38px;height:38px;border-radius:var(--rs);border:1px solid var(--line);
-  background:var(--s2);color:var(--txt2);cursor:pointer;
+  width:40px;height:40px;border-radius:50%;border:none;background:transparent;
+  color:var(--txt2);cursor:pointer;
   transition:all 0.2s;display:flex;align-items:center;justify-content:center;
 }
-.icon-btn:hover{color:var(--txt);background:var(--s3);border-color:var(--line2)}
-.icon-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:hover{color:var(--blue-light);background:#eef3ff}
+.icon-btn svg{width:20px;height:20px}
 
-.notif-wrap{position:relative}
-.notif-badge{
-  position:absolute;top:5px;right:5px;width:8px;height:8px;
-  background:var(--blood);border-radius:50%;border:2px solid var(--ink);
+.header-center{
+  display:none;
 }
 
-/* ══════════════════════════════════════════════════
-   MAIN
-══════════════════════════════════════════════════ */
-#main{
-  padding-top:calc(var(--hh) + 16px);
-  padding-bottom:calc(var(--nav-h) + 16px);
-  position:relative;z-index:1;
+.profile-badge{
+  display:none;
 }
 
-/* ── SECTION ── */
-.section{padding:0 16px 28px}
+.signal-bars{
+  display:none}
+.bar{
+  width:2px;background:#cccccc;border-radius:1px}
+.bar.filled{background:var(--txt)}
+.bar:nth-child(1){height:4px}
+.bar:nth-child(2){height:6px}
+.bar:nth-child(3){height:8px}
+
+.time{
+  font-family:var(--fn-disp);font-size:14px;font-weight:600;color:var(--txt);
+  min-width:45px}
+
+.battery-icon{
+  display:none;
+}
+
+/* ═══════════════════════════════════════════════════
+   MAIN CONTENT - Scrollable
+═══════════════════════════════════════════════════ */
+.main{
+  padding-top:80px;padding-bottom:120px;
+}
+
+.section{
+  padding:0 16px 24px}
 
 .section-header{
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
-}
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .section-title{
-  font-size:15px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:6px;
-}
-.section-title .ic{color:var(--fire);font-size:14px}
+  font-size:16px;font-weight:700;color:var(--txt)}
 .see-all{
-  font-size:11px;font-weight:600;color:var(--fire);cursor:pointer;
-  padding:4px 10px;border-radius:var(--rfull);
-  background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.18);
-  transition:all 0.2s;
-}
-.see-all:hover{background:rgba(255,107,53,0.16);border-color:rgba(255,107,53,0.35)}
+  font-size:12px;color:var(--blue);cursor:pointer}
 
-/* ── HIGHLIGHTS GRID ── */
-.highlights-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* ═══════════════════════════════════════════════════
+   BEST HIGHLIGHTS - Cards with Images
+═══════════════════════════════════════════════════ */
+.highlights-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
 .highlight-card{
-  position:relative;overflow:hidden;border-radius:var(--r);height:170px;
-  cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;
-  background:var(--ink3);border:1px solid var(--line);
+  position:relative;overflow:hidden;border-radius:12px;height:180px;
+  cursor:pointer;transition:transform 0.2s;background:var(--bg2)
 }
-.highlight-card:hover{transform:scale(0.98);box-shadow:0 8px 30px rgba(0,0,0,0.4)}
+.highlight-card:hover{transform:scale(0.98)}
 
 .highlight-image{
-  width:100%;height:100%;
-  position:relative;display:flex;align-items:flex-end;
-}
-.highlight-image.grad-1{background:linear-gradient(135deg,#1a1a4e 0%,#2d3a8c 50%,#1e2a6a 100%)}
-.highlight-image.grad-2{background:linear-gradient(135deg,#3d0d2c 0%,#8b1a4e 50%,#6b1a3e 100%)}
-.highlight-image.grad-3{background:linear-gradient(135deg,#0d2d1a 0%,#1a5c34 50%,#0d3d22 100%)}
-.highlight-image.grad-4{background:linear-gradient(135deg,#1a2d0d 0%,#3d5c1a 50%,#2d4a0d 100%)}
+  width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  position:relative;display:flex;align-items:flex-end;justify-content:flex-start}
 
 .highlight-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to bottom,rgba(0,0,0,0.05),rgba(0,0,0,0.72));
+  position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(0,0,0,0.7));
 }
 
 .highlight-badge{
   position:absolute;top:10px;right:10px;display:flex;align-items:center;gap:4px;
-  background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);
-  padding:3px 8px;border-radius:6px;font-size:10px;color:rgba(255,255,255,0.85);z-index:2;
-  border:1px solid rgba(255,255,255,0.1);
-}
-.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--fire);animation:beat 1.2s ease-in-out infinite}
-
-.highlight-cat{
-  position:absolute;top:10px;left:10px;
-  padding:2px 8px;border-radius:var(--rfull);font-size:9px;font-weight:700;
-  text-transform:uppercase;letter-spacing:0.05em;z-index:2;
-}
-.cat-sport{background:rgba(77,139,255,0.25);color:var(--ice);border:1px solid rgba(77,139,255,0.3)}
-.cat-politique{background:rgba(191,90,242,0.25);color:var(--purple);border:1px solid rgba(191,90,242,0.3)}
-.cat-crypto{background:rgba(255,214,10,0.2);color:var(--yellow);border:1px solid rgba(255,214,10,0.25)}
-.cat-tech{background:rgba(0,214,143,0.2);color:var(--elec);border:1px solid rgba(0,214,143,0.25)}
-.cat-geo{background:rgba(255,107,53,0.2);color:var(--fire);border:1px solid rgba(255,107,53,0.25)}
+  background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:6px;
+  font-size:11px;color:var(--txt);z-index:2}
+.badge-icon{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.3)}
 
 .highlight-text{
-  position:relative;z-index:3;padding:10px 12px;color:#fff;
-  font-size:12px;font-weight:700;line-height:1.35;
-}
-.highlight-sub{
-  font-size:10px;font-weight:500;color:rgba(255,255,255,0.6);margin-top:3px;
-}
+  position:relative;z-index:3;padding:12px;color:#fff;
+  font-size:13px;font-weight:600;line-height:1.3}
 
-/* ── FEATURED CARD (full width) ── */
-.highlight-card.featured{grid-column:1/-1;height:140px}
-.highlight-card.featured .highlight-text{font-size:14px}
-
-/* ── SUBSCRIBE CARD ── */
-.subscribe-section{padding:4px 16px 28px}
+/* ═══════════════════════════════════════════════════
+   SUBSCRIBE CARD
+═══════════════════════════════════════════════════ */
+.section.subscribe-section{padding:24px 16px}
 
 .subscribe-card{
-  background:linear-gradient(135deg,#0f1d5c 0%,#1a3099 60%,#0d2580 100%);
-  border-radius:var(--rl);padding:18px 20px;
-  display:flex;align-items:center;gap:16px;
-  position:relative;overflow:hidden;
-  border:1px solid rgba(77,139,255,0.2);
-  box-shadow:0 4px 24px rgba(30,72,216,0.2);
-  cursor:pointer;transition:all 0.2s;
-}
-.subscribe-card:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(30,72,216,0.35)}
-.subscribe-card::before{
-  content:'';position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;
-  background:radial-gradient(circle,rgba(77,139,255,0.18) 0%,transparent 70%);pointer-events:none;
-}
+  background:linear-gradient(135deg,#0f2d7a 0%,#1e48d8 100%);
+  border-radius:14px;padding:20px;display:flex;align-items:center;
+  gap:16px;position:relative;overflow:hidden}
 
-.subscribe-crown{font-size:34px;line-height:1;flex-shrink:0}
+.subscribe-crown{
+  font-size:40px}
 
 .subscribe-content{flex:1}
-.subscribe-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;letter-spacing:-0.01em}
-.subscribe-subtitle{font-size:11px;color:rgba(255,255,255,0.65)}
+.subscribe-title{
+  font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.subscribe-subtitle{
+  font-size:12px;color:rgba(255,255,255,0.8)}
 
-.subscribe-cta{
-  padding:8px 14px;border-radius:var(--rs);
-  background:linear-gradient(135deg,var(--fire),var(--fire2));
-  border:none;color:#fff;font-family:var(--fn);font-size:12px;font-weight:800;
-  cursor:pointer;white-space:nowrap;transition:all 0.2s;
-  box-shadow:0 2px 16px rgba(255,107,53,0.35);
-}
-.subscribe-cta:hover{box-shadow:0 4px 24px rgba(255,107,53,0.55);transform:scale(1.04)}
+.subscribe-arrow{
+  font-size:24px;color:#fff;cursor:pointer}
 
-/* ── FILTER TAGS ── */
+/* ═══════════════════════════════════════════════════
+   LATEST NEWS
+═══════════════════════════════════════════════════ */
 .filter-tags{
-  display:flex;gap:7px;padding:0 16px;margin-bottom:14px;
-  overflow-x:auto;scrollbar-width:none;
-}
+  display:flex;gap:8px;padding:0 16px;margin-bottom:16px;overflow-x:auto;
+  scrollbar-width:none}
 .filter-tags::-webkit-scrollbar{display:none}
 
 .tag{
-  padding:5px 12px;border-radius:var(--rfull);
-  background:var(--s2);border:1px solid var(--line);
-  font-size:11px;font-weight:600;color:var(--txt3);
-  cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0;
-}
+  padding:6px 12px;border-radius:20px;background:var(--bg3);
+  border:1px solid var(--line2);font-size:12px;color:var(--txt3);
+  cursor:pointer;white-space:nowrap;transition:all 0.2s}
 .tag.active{
-  background:rgba(255,107,53,0.12);border-color:rgba(255,107,53,0.3);
-  color:var(--fire);
-}
-.tag:hover:not(.active){color:var(--txt2);border-color:var(--line2);background:var(--s3)}
+  background:var(--blue-light);border-color:var(--blue-light);color:#fff}
 
-/* ── NEWS FEED ── */
-.news-feed{padding:0 16px}
+.news-feed{
+  padding:0 16px}
 
 .news-item{
-  display:flex;gap:12px;padding:13px 0;
-  border-bottom:1px solid var(--line);cursor:pointer;transition:opacity 0.2s;
-}
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);
+  cursor:pointer;transition:all 0.2s}
 .news-item:last-child{border-bottom:none}
-.news-item:hover{opacity:0.75}
+.news-item:hover{opacity:0.8}
 
-.news-thumb{
-  width:52px;height:52px;border-radius:var(--rs);flex-shrink:0;overflow:hidden;
-  background:var(--ink3);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
-}
-.news-thumb.t1{background:linear-gradient(135deg,#1a1a4e,#2d3a8c)}
-.news-thumb.t2{background:linear-gradient(135deg,#3d1a0d,#8b3a1a)}
-.news-thumb.t3{background:linear-gradient(135deg,#0d1a3d,#1a3a8b)}
-.news-thumb.t4{background:linear-gradient(135deg,#1a0d3d,#3a1a8b)}
-.news-thumb.t5{background:linear-gradient(135deg,#0d3d1a,#1a8b3a)}
+.news-image{
+  width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#ff6b6b,#ff8c42);
+  flex-shrink:0}
 
 .news-content{flex:1;min-width:0}
 .news-title{
-  font-size:13px;font-weight:600;color:var(--txt);margin-bottom:5px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-  line-height:1.4;
-}
+  font-size:13px;font-weight:600;color:var(--txt);margin-bottom:4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .news-meta{
-  display:flex;align-items:center;gap:6px;font-size:10px;color:var(--txt3);
-}
-.news-cat-chip{
-  padding:1px 7px;border-radius:var(--rfull);font-size:9px;font-weight:700;
-}
-.news-cat-chip.chip-sport{background:rgba(77,139,255,0.15);color:var(--ice)}
-.news-cat-chip.chip-analyse{background:rgba(191,90,242,0.15);color:var(--purple)}
-.news-cat-chip.chip-transferts{background:rgba(0,214,143,0.12);color:var(--elec)}
-.news-cat-chip.chip-comp{background:rgba(255,214,10,0.12);color:var(--yellow)}
-.news-cat-chip.chip-crypto{background:rgba(255,107,53,0.12);color:var(--fire)}
+  font-size:11px;color:var(--txt3)}
 
-/* ── LIVE BADGE ── */
-.live-tag{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:1px 7px;border-radius:var(--rfull);font-size:9px;font-weight:700;
-  background:rgba(255,77,79,0.12);color:var(--blood);
-}
-.live-tag::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--blood);animation:beat 1.2s ease-in-out infinite}
-
-/* ── STATS STRIP ── */
-.stats-strip{
-  display:flex;gap:1px;margin:0 16px 24px;border-radius:var(--r);overflow:hidden;
-  background:var(--line);border:1px solid var(--line);
-}
-.stat-cell{
-  flex:1;padding:14px 12px;text-align:center;background:var(--ink2);
-  transition:background 0.2s;
-}
-.stat-cell:hover{background:var(--ink3)}
-.stat-val{font-family:var(--fn-mono);font-size:17px;font-weight:700;color:var(--txt);letter-spacing:-0.03em}
-.stat-val.fire{color:var(--fire)}
-.stat-val.green{color:var(--elec)}
-.stat-val.ice{color:var(--ice)}
-.stat-lbl{font-size:9px;color:var(--txt3);margin-top:2px;text-transform:uppercase;letter-spacing:0.04em}
-
-/* ══════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    BOTTOM NAVIGATION
-══════════════════════════════════════════════════ */
-#bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);z-index:999;
-  background:rgba(12,13,18,0.96);
-  backdrop-filter:blur(40px) saturate(1.8);
-  -webkit-backdrop-filter:blur(40px) saturate(1.8);
-  border-top:1px solid var(--line);
-  padding:6px 0 max(6px,env(safe-area-inset-bottom));
-}
-.nav-inner{
+═══════════════════════════════════════════════════ */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;height:70px;
+  background:var(--bg);border-top:1px solid var(--line);
   display:flex;align-items:center;justify-content:space-around;
-  max-width:480px;margin:0 auto;height:100%;
-}
-.nav-btn{
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  background:none;border:none;cursor:pointer;padding:4px 14px;
-  border-radius:12px;transition:all 0.18s;position:relative;
-  flex:1;
-}
-.nav-icon{
-  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
-  color:var(--txt3);transition:color 0.18s,transform 0.18s;
-}
-.nav-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.nav-label{
-  font-size:9.5px;font-weight:600;color:var(--txt3);transition:color 0.18s;
-  font-family:var(--fn);
-}
-.nav-btn.active .nav-icon,.nav-btn:hover .nav-icon{color:var(--fire);transform:translateY(-2px)}
-.nav-btn.active .nav-label,.nav-btn:hover .nav-label{color:var(--fire)}
-.nav-btn.active::after{
-  content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
-  width:22px;height:2px;background:var(--fire);border-radius:2px 2px 0 0;
-}
-.nav-badge{
-  position:absolute;top:2px;right:10px;
-  min-width:15px;height:15px;padding:0 3px;
-  background:var(--blood);border-radius:var(--rfull);
-  font-size:8px;font-weight:700;color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  border:2px solid var(--ink);
-}
+  z-index:999}
 
-/* ══════════════════════════════════════════════════
-   PANELS (Placeholders for other tabs)
-══════════════════════════════════════════════════ */
-.tab-panel{display:none;padding:24px 16px}
-.tab-panel.active{display:block}
-.tab-placeholder{
+.nav-item{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:60vh;gap:12px;color:var(--txt3);text-align:center;
-}
-.tab-placeholder svg{width:40px;height:40px;opacity:0.3}
-.tab-placeholder p{font-size:14px;font-weight:500}
+  flex:1;height:100%;gap:6px;cursor:pointer;color:var(--txt3);
+  transition:all 0.2s;font-size:10px;position:relative}
+.nav-item.active{color:var(--blue-light)}
+.nav-item.active::before{
+  content:'';position:absolute;top:0;width:24px;height:3px;background:var(--blue-light);border-radius:0 0 2px 2px}
+.nav-icon{
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.nav-icon svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.5}
 
-/* ══════════════════════════════════════════════════
-   SEARCH OVERLAY
-══════════════════════════════════════════════════ */
-#search-overlay{
-  position:fixed;inset:0;z-index:2000;
-  background:rgba(12,13,18,0.95);backdrop-filter:blur(24px);
-  display:none;flex-direction:column;padding:var(--hh) 16px 0;
-}
-#search-overlay.open{display:flex}
-.search-input-wrap{
-  display:flex;align-items:center;gap:10px;margin-top:20px;
-  padding:10px 14px;background:var(--ink3);border:1px solid var(--line2);
-  border-radius:var(--r);
-}
-.search-input-wrap svg{width:18px;height:18px;color:var(--txt3);flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
-.search-input{
-  flex:1;background:none;border:none;outline:none;font-family:var(--fn);
-  font-size:15px;color:var(--txt);
-}
-.search-input::placeholder{color:var(--txt3)}
-.search-close{
-  padding:8px 16px;border-radius:var(--rs);background:none;border:none;
-  color:var(--txt2);font-family:var(--fn);font-size:14px;cursor:pointer;
-}
-.search-results{margin-top:16px;overflow-y:auto}
-.search-hint{padding:32px 0;text-align:center;color:var(--txt3);font-size:13px}
-
-/* ══════════════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════════════ */
-#toast{
-  position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%) translateY(20px);
-  z-index:3000;background:var(--ink3);border:1px solid var(--line2);
-  padding:10px 18px;border-radius:var(--rfull);font-size:13px;font-weight:600;
-  color:var(--txt);white-space:nowrap;pointer-events:none;
-  opacity:0;transition:opacity 0.25s,transform 0.25s;
-  box-shadow:0 8px 32px rgba(0,0,0,0.4);
-}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ══════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    RESPONSIVE
-══════════════════════════════════════════════════ */
-@media(max-width:360px){
+═══════════════════════════════════════════════════ */
+@media(max-width:600px){
   .highlights-grid{grid-template-columns:1fr}
-  .highlight-card.featured{grid-column:auto}
+  .header-center{display:none}
 }
+
 </style>
 </head>
 <body>
 
-<div class="glow-fire"></div>
-<div class="glow-ice"></div>
-
-<!-- ══════════════ HEADER ══════════════ -->
-<header id="header">
+<!-- HEADER -->
+<div class="header">
   <div class="header-left">
-    <div class="logo-wrap" onclick="switchTab(0)">
-      <img src="assets/beeef-logo.png" alt="BEEEF">
-    </div>
-    <span class="live-dot">LIVE</span>
+    <div class="logo-beef"><img src="assets/beeef-logo.png" alt="BEEEF logo"></div>
   </div>
 
   <div class="header-right">
-    <button class="icon-btn" id="searchBtn" title="Rechercher"
-      onclick="document.getElementById('search-overlay').classList.add('open');document.getElementById('searchInput').focus()">
-      <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5l5 5"/></svg>
+    <button class="icon-btn" title="Rechercher">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5l5 5"/></svg>
     </button>
-    <div class="notif-wrap">
-      <button class="icon-btn" id="notifBtn" title="Notifications" onclick="showToast('Aucune nouvelle notification')">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 19h4"/></svg>
-      </button>
-      <div class="notif-badge"></div>
-    </div>
-  </div>
-</header>
-
-<!-- ══════════════ MAIN ══════════════ -->
-<div id="main">
-
-  <!-- ── TAB: ACCUEIL ── -->
-  <div id="tab-home" class="tab-panel active" style="display:block;padding:0">
-
-    <!-- STATS STRIP -->
-    <div class="stats-strip">
-      <div class="stat-cell">
-        <div class="stat-val fire">2.1M</div>
-        <div class="stat-lbl">Points en jeu</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-val green">1 240</div>
-        <div class="stat-lbl">Participants</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-val ice">98.4%</div>
-        <div class="stat-lbl">Précision IA</div>
-      </div>
-    </div>
-
-    <!-- MEILLEURES PRÉDICTIONS -->
-    <div class="section">
-      <div class="section-header">
-        <div class="section-title">
-          <span class="ic">🔥</span>
-          Meilleures Prédictions
-        </div>
-        <div class="see-all" onclick="switchTab(2)">Voir Tout</div>
-      </div>
-
-      <div class="highlights-grid">
-        <div class="highlight-card" onclick="openDebate('psg-city')">
-          <div class="highlight-image grad-1">
-            <span class="highlight-cat cat-sport">Sport</span>
-            <div class="highlight-badge">
-              <div class="badge-dot"></div>
-              24k vues
-            </div>
-            <div class="highlight-overlay"></div>
-            <div class="highlight-text">
-              PSG va dominer 🔥
-              <div class="highlight-sub">Très confiant · 89% agree</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="highlight-card" onclick="openDebate('btc-crash')">
-          <div class="highlight-image grad-4">
-            <span class="highlight-cat cat-crypto">Crypto</span>
-            <div class="highlight-badge">
-              <div class="badge-dot"></div>
-              18k vues
-            </div>
-            <div class="highlight-overlay"></div>
-            <div class="highlight-text">
-              BTC à 120k en 2025
-              <div class="highlight-sub">Analyse technique · Débat chaud</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="highlight-card featured" onclick="openDebate('ia-emploi')">
-          <div class="highlight-image grad-2">
-            <span class="highlight-cat cat-tech">Tech</span>
-            <div class="highlight-badge">
-              <span class="live-tag">Live</span>
-              42k vues
-            </div>
-            <div class="highlight-overlay"></div>
-            <div class="highlight-text">
-              L'IA va détruire 40% des emplois d'ici 2030 🤖
-              <div class="highlight-sub">Débat live · Verdict IA en cours</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUBSCRIBE CARD -->
-    <div class="subscribe-section">
-      <div class="subscribe-card" id="subscribeCard">
-        <div class="subscribe-crown">👑</div>
-        <div class="subscribe-content">
-          <div class="subscribe-title">BEEEF Premium</div>
-          <div class="subscribe-subtitle">Analyses exclusives · Points bonus · Arènes VIP</div>
-        </div>
-        <button class="subscribe-cta" onclick="openPremium(event)">S'abonner</button>
-      </div>
-    </div>
-
-    <!-- ACTUALITÉS -->
-    <div class="section" style="padding-bottom:0">
-      <div class="section-header">
-        <div class="section-title">
-          <span class="ic">📰</span>
-          Actualités
-        </div>
-        <div class="see-all" onclick="showToast('Section Actualités bientôt disponible')">Voir Tout</div>
-      </div>
-    </div>
-
-    <div class="filter-tags">
-      <div class="tag active" data-filter="all">Tous</div>
-      <div class="tag" data-filter="football">Football</div>
-      <div class="tag" data-filter="basketball">Basketball</div>
-      <div class="tag" data-filter="crypto">Crypto</div>
-      <div class="tag" data-filter="bourse">Bourse</div>
-      <div class="tag" data-filter="tech">Tech</div>
-      <div class="tag" data-filter="geo">Géopolitique</div>
-    </div>
-
-    <div class="news-feed" id="newsFeed">
-      <div class="news-item" data-cat="football">
-        <div class="news-thumb t1"></div>
-        <div class="news-content">
-          <div class="news-title">Liverpool : Slot veut remporter la Premier League avant la fin de saison</div>
-          <div class="news-meta">
-            <span class="live-tag">Live</span>
-            <span class="news-cat-chip chip-sport">Football</span>
-            À l'instant
-          </div>
-        </div>
-      </div>
-
-      <div class="news-item" data-cat="football">
-        <div class="news-thumb t2"></div>
-        <div class="news-content">
-          <div class="news-title">Ligue 1 : Les favoris du titre selon nos experts cette semaine</div>
-          <div class="news-meta">
-            <span class="news-cat-chip chip-analyse">Analyse</span>
-            Il y a 2h
-          </div>
-        </div>
-      </div>
-
-      <div class="news-item" data-cat="football">
-        <div class="news-thumb t3"></div>
-        <div class="news-content">
-          <div class="news-title">Mercato d'été : Les 10 transferts les plus attendus cet été</div>
-          <div class="news-meta">
-            <span class="news-cat-chip chip-transferts">Transferts</span>
-            Il y a 4h
-          </div>
-        </div>
-      </div>
-
-      <div class="news-item" data-cat="football">
-        <div class="news-thumb t4"></div>
-        <div class="news-content">
-          <div class="news-title">Champions League : Analyse complète des quarts de finale 2025</div>
-          <div class="news-meta">
-            <span class="news-cat-chip chip-comp">Compétitions</span>
-            Hier
-          </div>
-        </div>
-      </div>
-
-      <div class="news-item" data-cat="crypto">
-        <div class="news-thumb t5"></div>
-        <div class="news-content">
-          <div class="news-title">Bitcoin franchit les 100 000$ : bull run durable ou trap ?</div>
-          <div class="news-meta">
-            <span class="news-cat-chip chip-crypto">Crypto</span>
-            Il y a 1h
-          </div>
-        </div>
-      </div>
-
-      <div class="news-item" data-cat="tech">
-        <div class="news-thumb t1"></div>
-        <div class="news-content">
-          <div class="news-title">GPT-5 vs Claude 4 : quel modèle domine vraiment le benchmark ?</div>
-          <div class="news-meta">
-            <span class="news-cat-chip chip-analyse">Tech</span>
-            Il y a 3h
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /tab-home -->
-
-  <!-- ── TAB: LIVE ── -->
-  <div id="tab-live" class="tab-panel">
-    <div class="tab-placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49M7.76 7.76a6 6 0 000 8.49M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-      <p>Aucun débat en direct pour l'instant</p>
-    </div>
-  </div>
-
-  <!-- ── TAB: PRÉDICTIONS ── -->
-  <div id="tab-predictions" class="tab-panel">
-    <div class="tab-placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      <p>Vos prédictions apparaîtront ici</p>
-    </div>
-  </div>
-
-  <!-- ── TAB: CLASSEMENT ── -->
-  <div id="tab-ranking" class="tab-panel">
-    <div class="tab-placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2h8M9 2v7a3 3 0 006 0V2M5 3H3a2 2 0 000 4h2M19 3h2a2 2 0 010 4h-2M12 12v4M8 20h8M10 16h4"/></svg>
-      <p>Classement des prédicteurs</p>
-    </div>
-  </div>
-
-  <!-- ── TAB: PROFIL ── -->
-  <div id="tab-profile" class="tab-panel">
-    <div class="tab-placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <p>Connectez-vous pour accéder à votre profil</p>
-    </div>
-  </div>
-
-</div><!-- /main -->
-
-<!-- ══════════════ BOTTOM NAV ══════════════ -->
-<nav id="bottom-nav" aria-label="Navigation principale">
-  <div class="nav-inner">
-
-    <button class="nav-btn active" id="nav-home" onclick="switchTab(0)" type="button" aria-label="Accueil">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" stroke-width="1.8"/></svg>
-      </div>
-      <span class="nav-label">Arènes</span>
+    <button class="icon-btn" title="Notifications">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M18 8c0-3.31-2.69-6-6-6s-6 2.69-6 6v5h12V8z"/></svg>
     </button>
-
-    <button class="nav-btn" id="nav-live" onclick="switchTab(1)" type="button" aria-label="Live">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49M7.76 7.76a6 6 0 000 8.49"/></svg>
-      </div>
-      <span class="nav-label">Live</span>
-      <span class="nav-badge" id="liveBadge" style="display:none">0</span>
-    </button>
-
-    <button class="nav-btn" id="nav-predictions" onclick="switchTab(2)" type="button" aria-label="Prédictions">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <span class="nav-label">Prédictions</span>
-    </button>
-
-    <button class="nav-btn" id="nav-ranking" onclick="switchTab(3)" type="button" aria-label="Classement">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24"><path d="M8 2h8M9 2v7a3 3 0 006 0V2M5 3H3a2 2 0 000 4h2M19 3h2a2 2 0 010 4h-2M12 12v4M8 20h8M10 16h4"/></svg>
-      </div>
-      <span class="nav-label">Classement</span>
-    </button>
-
-    <button class="nav-btn" id="nav-profile" onclick="switchTab(4)" type="button" aria-label="Profil">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </div>
-      <span class="nav-label">Profil</span>
-    </button>
-
-  </div>
-</nav>
-
-<!-- ══════════════ SEARCH OVERLAY ══════════════ -->
-<div id="search-overlay">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 0 0">
-    <span style="font-size:14px;font-weight:700;color:var(--txt)">Recherche</span>
-    <button class="search-close"
-      onclick="document.getElementById('search-overlay').classList.remove('open')">Annuler</button>
-  </div>
-  <div class="search-input-wrap">
-    <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5l5 5"/></svg>
-    <input id="searchInput" class="search-input" type="search" placeholder="Débats, prédictions, actus…"
-      autocomplete="off" autocorrect="off" spellcheck="false">
-  </div>
-  <div class="search-results">
-    <div class="search-hint">Tapez pour chercher parmi les débats et actualités</div>
   </div>
 </div>
 
-<!-- ══════════════ TOAST ══════════════ -->
+<!-- MAIN CONTENT -->
+<div class="main">
+  <div class="nav-section active" id="home-section">
+
+  <!-- BEST HIGHLIGHTS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Meilleures Prédictions</div>
+      <div class="see-all">Voir Tout</div>
+    </div>
+
+    <div class="highlights-grid" id="topGrid">
+      <div class="highlight-card">
+        <div class="highlight-image" style="background-image:linear-gradient(135deg,#667eea 0%,#764ba2 100%);background-size:cover;background-position:center">
+          <div class="highlight-badge">
+            <div class="badge-icon"></div>
+            24k vues
+          </div>
+          <div class="highlight-overlay"></div>
+          <div class="highlight-text">
+            Le PSG va dominer 🔥<br>Très confiant
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-card">
+        <div class="highlight-image" style="background-image:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);background-size:cover;background-position:center">
+          <div class="highlight-badge">
+            <div class="badge-icon"></div>
+            10k vues
+          </div>
+          <div class="highlight-overlay"></div>
+          <div class="highlight-text">
+            Retournement dramatique 🎬<br>À ne pas manquer
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- grille étendue — masquée par défaut, remplie par JS au clic "Voir Tout" -->
+    <div class="highlights-grid" id="allGrid" style="display:none;margin-top:12px"></div>
+  </div>
+
+  <!-- SUBSCRIBE CARD -->
+  <div class="section subscribe-section">
+    <div class="subscribe-card">
+      <div class="subscribe-crown">👑</div>
+      <div class="subscribe-content">
+        <div class="subscribe-title">S'abonner maintenant</div>
+        <div class="subscribe-subtitle">Débloquez les analyses premium</div>
+      </div>
+      <div class="subscribe-arrow">→</div>
+    </div>
+  </div>
+
+  <!-- LATEST NEWS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Actualités</div>
+      <div class="see-all">Voir Tout</div>
+    </div>
+
+    <div class="filter-tags">
+      <div class="tag active">Tous</div>
+      <div class="tag">Football</div>
+      <div class="tag">Basketball</div>
+      <div class="tag">Crypto</div>
+      <div class="tag">Bourse</div>
+      <div class="tag">Esports</div>
+    </div>
+
+    <div class="news-feed">
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Liverpool: Slot veut remporter la Premier League</div>
+          <div class="news-meta">À l'instant • Football</div>
+        </div>
+      </div>
+
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Ligue 1: Les favoris du titre selon nos experts</div>
+          <div class="news-meta">Il y a 2h • Analyse</div>
+        </div>
+      </div>
+
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Mercato d'été: Les mouvements à suivre</div>
+          <div class="news-meta">Il y a 4h • Transferts</div>
+        </div>
+      </div>
+
+      <div class="news-item">
+        <div class="news-image"></div>
+        <div class="news-content">
+          <div class="news-title">Champions League: Analyse des quarts de finale</div>
+          <div class="news-meta">Hier • Compétitions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div> <!-- end home-section -->
+
+  <!-- PROFILE SECTION -->
+  <div class="nav-section" id="profile-section">
+    <div class="section">
+      <div class="profile-header">
+        <div class="profile-avatar">👤</div>
+        <div class="profile-info">
+          <div class="profile-name">Utilisateur BEEEF</div>
+          <div class="profile-balance">Solde: <span id="profile-balance">0</span> pts</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="setting-item">
+        <label>Région</label>
+        <select id="profile-region">
+          <option value="fr">France</option>
+          <option value="us">États-Unis</option>
+          <option value="uk">Royaume-Uni</option>
+          <option value="de">Allemagne</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label>Langues</label>
+        <div id="profile-langs">Français</div>
+      </div>
+      <div class="setting-item">
+        <button class="setting-btn" onclick="showToast('Paramètres — bientôt')">Paramètres</button>
+      </div>
+      <div class="setting-item">
+        <button class="setting-btn" onclick="showToast('Déconnexion — bientôt')">Déconnexion</button>
+      </div>
+    </div>
+  </div> <!-- end profile-section -->
+
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </div>
+    <div>Accueil</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    </div>
+    <div>Calendrier</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
+    </div>
+    <div>Vidéos</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h4.96l-4.01-5.05-1.54 2.04-2.63-3.39h3.97L10.5 9.6l1.46-1.31z"/></svg>
+    </div>
+    <div>Galerie</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </div>
+    <div>Profil</div>
+  </div>
+</div>
+
+<style>
+/* ── SEARCH OVERLAY ── */
+#search-overlay{
+  position:fixed;inset:0;z-index:2000;background:rgba(255,255,255,0.97);
+  backdrop-filter:blur(12px);display:none;flex-direction:column;padding:0 16px;
+}
+#search-overlay.open{display:flex}
+.search-top{
+  display:flex;align-items:center;gap:10px;height:60px;border-bottom:1px solid var(--line);
+}
+.search-field{
+  flex:1;display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border-radius:10px;padding:8px 12px;
+}
+.search-field svg{width:16px;height:16px;flex-shrink:0;color:var(--txt3);stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.search-input{
+  flex:1;border:none;background:none;outline:none;font-family:var(--fn-body);
+  font-size:14px;color:var(--txt);
+}
+.search-input::placeholder{color:var(--txt3)}
+.search-cancel{
+  background:none;border:none;font-family:var(--fn-body);font-size:14px;
+  color:var(--blue-light);cursor:pointer;padding:4px;white-space:nowrap;
+}
+.search-results{flex:1;overflow-y:auto;padding-top:12px}
+.search-hint{padding:40px 0;text-align:center;color:var(--txt3);font-size:13px}
+.search-result-item{
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;
+}
+.search-result-item:hover{opacity:0.75}
+.search-result-thumb{
+  width:44px;height:44px;border-radius:8px;flex-shrink:0;
+}
+.search-result-title{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:3px;line-height:1.3}
+.search-result-meta{font-size:11px;color:var(--txt3)}
+.search-result-pool{font-size:11px;color:var(--blue-light);font-weight:600}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);
+  z-index:3000;background:#1a1a1a;color:#fff;
+  padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;
+  white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s,transform 0.2s;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── NAV SECTIONS ── */
+.nav-section{display:none}
+.nav-section.active{display:block}
+
+/* ── PROFILE STYLES ── */
+.profile-header{
+  display:flex;gap:16px;align-items:center;padding:20px 0;
+}
+.profile-avatar{
+  width:60px;height:60px;border-radius:50%;background:var(--blue-bg);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+}
+.profile-info{flex:1}
+.profile-name{
+  font-size:18px;font-weight:700;color:var(--txt);margin-bottom:4px;
+}
+.profile-balance{
+  font-size:14px;color:var(--txt2);
+}
+.setting-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 0;border-bottom:1px solid var(--line);
+}
+.setting-item:last-child{border-bottom:none}
+.setting-item label{
+  font-size:14px;font-weight:600;color:var(--txt);
+}
+.setting-item select{
+  border:1px solid var(--line);border-radius:6px;padding:6px 10px;
+  font-family:var(--fn-body);font-size:14px;color:var(--txt);background:var(--bg);
+}
+.setting-item #profile-langs{
+  font-size:14px;color:var(--txt2);
+}
+.setting-btn{
+  background:var(--blue-light);color:#fff;border:none;border-radius:8px;
+  padding:10px 16px;font-family:var(--fn-body);font-size:14px;font-weight:600;
+  cursor:pointer;transition:background 0.2s;
+}
+.setting-btn:hover{background:#0f2d7a}
+</style>
+
+<!-- SEARCH OVERLAY -->
+<div id="search-overlay">
+  <div class="search-top">
+    <div class="search-field">
+      <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5l5 5"/></svg>
+      <input id="searchInput" class="search-input" type="search" placeholder="Chercher une prédiction…" autocomplete="off">
+    </div>
+    <button class="search-cancel" onclick="closeSearch()">Annuler</button>
+  </div>
+  <div class="search-results" id="searchResults">
+    <div class="search-hint">Tapez pour chercher parmi les prédictions</div>
+  </div>
+</div>
+
+<!-- TOAST -->
 <div id="toast"></div>
 
-<script>
-/* ── NAVIGATION ── */
-const TABS = ['tab-home','tab-live','tab-predictions','tab-ranking','tab-profile'];
-const NAV_BTNS = ['nav-home','nav-live','nav-predictions','nav-ranking','nav-profile'];
+<!-- BACKEND TECH -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/sync.js"></script>
 
-function switchTab(index) {
-  TABS.forEach((id, i) => {
-    const panel = document.getElementById(id);
-    const btn   = document.getElementById(NAV_BTNS[i]);
-    if (panel) panel.style.display = i === index ? 'block' : 'none';
-    if (btn)   btn.classList.toggle('active', i === index);
-  });
-  window.scrollTo({top: 0, behavior: 'smooth'});
+<script>
+/* ══════════════════════════════════════════════════
+   GLOBALS ATTENDUS PAR sync.js
+══════════════════════════════════════════════════ */
+let balance    = 0;
+let userRegion = localStorage.getItem('beeef_region') || 'fr';
+let userLangs  = JSON.parse(localStorage.getItem('beeef_langs') || '["fr"]');
+window.currentUser = null;
+
+function updateBalanceUI() { /* balance non affiché sur la home — sync.js met à jour balance */ }
+function closeModal() {}
+function applyUserPrefs() {}
+
+/* ─── showToast : compatible sync.js (icon,text,sub) ET usage interne (msg) ─── */
+let _toastT;
+function showToast(iconOrMsg, text, sub) {
+  const el = document.getElementById('toast');
+  const msg = text ? (text + (sub ? ' — ' + sub : '')) : iconOrMsg;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-/* ── FILTER TAGS ── */
+/* ══════════════════════════════════════════════════
+   BACKEND URL (même logique que l'app complète)
+══════════════════════════════════════════════════ */
+const BACKEND_URL = (function() {
+  const override =
+    String(window.BEEEF_BACKEND_URL || '').replace(/\/+$/, '') ||
+    new URLSearchParams(window.location.search).get('backend') || '';
+  if (override) return override;
+  const h = String(window.location.hostname || '').toLowerCase();
+  if (h === 'localhost' || h === '127.0.0.1' || h === '::1') return 'http://localhost:3001';
+  return 'https://beeeef-production.up.railway.app';
+})();
+
+/* ─── DATA ─── */
+let _debates = [];
+let _topIds  = ['', ''];
+const POLL_INTERVAL = 30_000;
+
+const CAT_GRADIENTS = {
+  sports:     'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+  economy:    'linear-gradient(135deg,#11998e 0%,#38ef7d 100%)',
+  politics:   'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)',
+  technology: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
+  crypto:     'linear-gradient(135deg,#f7971e 0%,#ffd200 100%)',
+  society:    'linear-gradient(135deg,#fd746c 0%,#ff9068 100%)',
+  geopolitics:'linear-gradient(135deg,#3a1c71 0%,#d76d77 100%)',
+  general:    'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+};
+
+function fmtViewers(n) {
+  if (!n) return '—';
+  if (n >= 1000) return (Math.round(n / 100) / 10) + 'k vues';
+  return n + ' vues';
+}
+function fmtPool(n) {
+  if (!n) return '0 pts';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M pts';
+  if (n >= 1_000)     return Math.round(n / 1_000) + 'k pts';
+  return n + ' pts';
+}
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function openDebate(id) {
+  window.location.href = '/?debate=' + encodeURIComponent(id);
+}
+
+/* ─── FETCH + DIFF ─── */
+async function loadDebates() {
+  try {
+    const region = (userRegion && userRegion !== 'unknown') ? userRegion : 'fr';
+    const res  = await fetch(BACKEND_URL + '/debates?region=' + encodeURIComponent(region), {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
+    const data = await res.json();
+    _debates = (data.debates || []).filter(d => !d.closed && d.listed !== false);
+    updateTopPredictions();
+  } catch(_) { /* serveur indisponible — on garde le contenu existant */ }
+}
+
+function getTop2() {
+  return [..._debates]
+    .sort((a, b) => (b.pool || 0) - (a.pool || 0))
+    .slice(0, 2);
+}
+
+/* ── Image generation via /api/image-gen (proxy → Zenith) ── */
+const _imgCache = {};  // debateId → url (session)
+
+async function getDebateImage(debateId) {
+  if (_imgCache[debateId]) return _imgCache[debateId];
+  try {
+    const res  = await fetch(BACKEND_URL + '/api/image-gen?id=' + encodeURIComponent(debateId));
+    const data = await res.json();
+    if (data.url) { _imgCache[debateId] = data.url; return data.url; }
+  } catch(_) {}
+  return null;
+}
+
+function setImgBg(imgEl, value) {
+  imgEl.style.backgroundImage    = value;
+  imgEl.style.backgroundSize     = 'cover';
+  imgEl.style.backgroundPosition = 'center';
+  // supprime le shorthand "background" qui écrase backgroundImage
+  imgEl.style.background         = '';
+}
+
+function applyCardVisuals(card, debate, grad) {
+  const imgEl   = card.querySelector('.highlight-image');
+  const badgeEl = card.querySelector('.highlight-badge');
+  const textEl  = card.querySelector('.highlight-text');
+
+  if (imgEl) setImgBg(imgEl, grad);
+  if (badgeEl) badgeEl.innerHTML = `<div class="badge-icon"></div>${fmtViewers(debate.viewers)}`;
+  if (textEl)  textEl.innerHTML  = escHtml(debate.title)
+    + (debate.yesLabel
+        ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>`
+        : '');
+
+  card.onclick = () => openDebate(debate.id);
+
+  // Image contextuelle — remplace le dégradé dès qu'elle est prête
+  getDebateImage(debate.id).then(url => {
+    if (!url || !imgEl) return;
+    setImgBg(imgEl, `url("${url}")`);
+  });
+}
+
+function updateTopPredictions() {
+  const top    = getTop2();
+  const newIds = top.map(d => d.id);
+
+  if (newIds[0] === _topIds[0] && newIds[1] === _topIds[1]) return;
+
+  _topIds = newIds;
+  const cards = document.querySelectorAll('#topGrid .highlight-card');
+
+  top.forEach((debate, i) => {
+    const card = cards[i];
+    if (!card) return;
+
+    const grad = (debate.gradColors && debate.gradColors.length >= 2)
+      ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
+      : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
+
+    card.style.transition = 'opacity 0.35s';
+    card.style.opacity    = '0';
+    setTimeout(() => {
+      applyCardVisuals(card, debate, grad);
+      card.style.opacity = '1';
+    }, 350);
+  });
+
+  syncSocketSubscriptions(newIds.filter(Boolean));
+  if (_allExpanded) renderAllGrid();
+}
+
+/* ══════════════════════════════════════════════════
+   SOCKET.IO — mise à jour temps réel des cards
+══════════════════════════════════════════════════ */
+let _homeSocket     = null;
+let _subscribedIds  = new Set();
+
+function getHomeSocket() {
+  if (_homeSocket) return _homeSocket;
+  if (typeof io !== 'function') return null;
+
+  _homeSocket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+
+  _homeSocket.on('prediction:settled', payload => {
+    const id = String(payload?.debateId || payload?.predictionId || '');
+    if (_subscribedIds.has(id)) {
+      // Une des 2 top prédictions vient de se clore → refresh immédiat
+      loadDebates();
+    }
+  });
+
+  _homeSocket.on('debate_state', payload => {
+    const id = String(payload?.id || '');
+    if (!_subscribedIds.has(id)) return;
+    // Mise à jour locale
+    const idx = _debates.findIndex(d => String(d.id) === id);
+    if (idx >= 0) _debates[idx] = { ..._debates[idx], ...payload };
+
+    if (payload.viewers == null) return;
+    const viewers = fmtViewers(payload.viewers);
+
+    // Mise à jour badge dans le top 2
+    const cardIdx = _topIds.indexOf(id);
+    if (cardIdx >= 0) {
+      const badge = document.querySelectorAll('#topGrid .highlight-badge')[cardIdx];
+      if (badge) badge.innerHTML = `<div class="badge-icon"></div>${viewers}`;
+    }
+
+    // Mise à jour badge dans la grille étendue si ouverte
+    if (_allExpanded) {
+      const extCard = document.querySelector(`#allGrid [data-debate-id="${id}"]`);
+      const badge   = extCard?.querySelector('.highlight-badge');
+      if (badge) badge.innerHTML = `<div class="badge-icon"></div>${viewers}`;
+    }
+  });
+
+  _homeSocket.on('connect_error', () => {});
+  return _homeSocket;
+}
+
+function syncSocketSubscriptions(ids) {
+  const socket = getHomeSocket();
+  if (!socket) return;
+
+  // Désabonnement des anciens
+  _subscribedIds.forEach(id => {
+    if (!ids.includes(id)) socket.emit('unsubscribe_debate', { debateId: id });
+  });
+  _subscribedIds = new Set(ids);
+
+  // Abonnement aux nouveaux
+  ids.forEach(id => socket.emit('subscribe_debate', { debateId: id }));
+}
+
+/* ─── POLLING AUTOMATIQUE ─── */
+setInterval(loadDebates, POLL_INTERVAL);
+
+/* ─── NAVIGATION ─── */
+const NAV_LABELS = ['Accueil','Calendrier','Vidéos','Galerie','Profil'];
+
+function showSection(sectionId) {
+  document.querySelectorAll('.nav-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(sectionId).classList.add('active');
+}
+
+function updateProfileUI() {
+  document.getElementById('profile-balance').textContent = balance;
+  document.getElementById('profile-region').value = userRegion;
+  document.getElementById('profile-langs').textContent = userLangs.join(', ');
+}
+
+document.querySelectorAll('.nav-item').forEach((item, index) => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    if (index === 0) {
+      showSection('home-section');
+    } else if (index === 4) {
+      showSection('profile-section');
+      updateProfileUI();
+    } else {
+      showToast(NAV_LABELS[index] + ' — bientôt disponible');
+    }
+  });
+});
+
+document.getElementById('profile-region').addEventListener('change', function() {
+  userRegion = this.value;
+  localStorage.setItem('beeef_region', userRegion);
+  showToast('Région mise à jour');
+  // Reload debates with new region
+  loadDebates();
+});
 document.querySelectorAll('.tag').forEach(tag => {
   tag.addEventListener('click', () => {
     document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
     tag.classList.add('active');
-
-    const filter = tag.dataset.filter;
-    document.querySelectorAll('#newsFeed .news-item').forEach(item => {
-      if (filter === 'all') {
-        item.style.display = 'flex';
-      } else {
-        item.style.display = item.dataset.cat === filter ? 'flex' : 'none';
-      }
-    });
+    filterNews(tag.textContent.trim());
   });
 });
 
-/* ── SUBSCRIBE / PREMIUM ── */
-function openPremium(e) {
-  if (e) e.stopPropagation();
-  showToast('BEEEF Premium — bientôt disponible 👑');
+function filterNews(cat) {
+  const MAP = {
+    'Tous': null, 'Football': 'football', 'Basketball': 'basketball',
+    'Crypto': 'crypto', 'Bourse': 'bourse', 'Esports': 'esports',
+  };
+  const key = MAP[cat] || null;
+  document.querySelectorAll('.news-item').forEach(item => {
+    item.style.display = (!key || item.dataset.cat === key) ? 'flex' : 'none';
+  });
 }
 
-/* ── DEBATE OPEN STUB ── */
-function openDebate(id) {
-  showToast('Ouverture du débat…');
+// Mark each news item with a data-cat
+(function() {
+  const cats = ['football','football','football','football'];
+  document.querySelectorAll('.news-item').forEach((el, i) => {
+    el.dataset.cat = cats[i] || 'football';
+  });
+})();
+
+/* ─── SEARCH ─── */
+document.querySelector('.icon-btn[title="Rechercher"]').addEventListener('click', openSearch);
+
+function openSearch() {
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('searchInput').focus(), 80);
+}
+function closeSearch() {
+  document.getElementById('search-overlay').classList.remove('open');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '<div class="search-hint">Tapez pour chercher parmi les prédictions</div>';
 }
 
-/* ── TOAST ── */
-let _toastTimer;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
-}
-
-/* ── SEARCH ── */
-document.getElementById('searchInput').addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.getElementById('search-overlay').classList.remove('open');
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const resultsEl = document.getElementById('searchResults');
+  if (!q) {
+    resultsEl.innerHTML = '<div class="search-hint">Tapez pour chercher parmi les prédictions</div>';
+    return;
   }
+  const matches = _debates.filter(d =>
+    (d.title || '').toLowerCase().includes(q) ||
+    (d.category || '').toLowerCase().includes(q) ||
+    (d.yesLabel || '').toLowerCase().includes(q) ||
+    (d.noLabel || '').toLowerCase().includes(q)
+  ).slice(0, 12);
+
+  if (!matches.length) {
+    resultsEl.innerHTML = '<div class="search-hint">Aucun résultat pour "' + escHtml(q) + '"</div>';
+    return;
+  }
+  resultsEl.innerHTML = matches.map(d => {
+    const grad = (d.gradColors && d.gradColors.length >= 2)
+      ? `linear-gradient(135deg,${d.gradColors[0]},${d.gradColors[1]})`
+      : (CAT_GRADIENTS[d.category] || CAT_GRADIENTS.general);
+    return `<div class="search-result-item" onclick="closeSearch();openDebate('${d.id}')">
+      <div class="search-result-thumb" style="background:${grad}"></div>
+      <div>
+        <div class="search-result-title">${escHtml(d.title)}</div>
+        <div class="search-result-meta">${escHtml(d.category || '')} · <span class="search-result-pool">${fmtPool(d.pool)}</span></div>
+      </div>
+    </div>`;
+  }).join('');
 });
 
-/* ── INIT ── */
-switchTab(0);
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSearch();
+});
+
+/* ─── NOTIFICATIONS ─── */
+document.querySelector('.icon-btn[title="Notifications"]').addEventListener('click', () => {
+  showToast('Aucune nouvelle notification');
+});
+
+/* ─── SUBSCRIBE ─── */
+document.querySelector('.subscribe-arrow').addEventListener('click', () => {
+  showToast('BEEEF Premium — bientôt disponible 👑');
+});
+
+/* ══════════════════════════════════════════════════
+   VOIR TOUT — prédictions
+══════════════════════════════════════════════════ */
+let _allExpanded = false;
+
+function buildCard(debate) {
+  const grad = (debate.gradColors && debate.gradColors.length >= 2)
+    ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
+    : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
+  const label = debate.yesLabel
+    ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>` : '';
+  return `
+    <div class="highlight-card" data-debate-id="${escHtml(debate.id)}"
+         onclick="openDebate('${escHtml(debate.id)}')">
+      <div class="highlight-image" style="background-image:${grad};background-size:cover;background-position:center">
+        <div class="highlight-badge">
+          <div class="badge-icon"></div>
+          ${fmtViewers(debate.viewers)}
+        </div>
+        <div class="highlight-overlay"></div>
+        <div class="highlight-text">${escHtml(debate.title)}${label}</div>
+      </div>
+    </div>`;
+}
+
+function renderAllGrid() {
+  const allGrid = document.getElementById('allGrid');
+  if (!allGrid || !_allExpanded) return;
+  const rest = [..._debates]
+    .sort((a, b) => (b.pool || 0) - (a.pool || 0))
+    .slice(2);
+  allGrid.innerHTML = rest.map(buildCard).join('');
+
+  // Charger les images générées pour chaque carte de la grille étendue
+  rest.forEach(debate => {
+    getDebateImage(debate.id).then(url => {
+      if (!url) return;
+      const imgEl = allGrid.querySelector(`[data-debate-id="${debate.id}"] .highlight-image`);
+      if (imgEl) {
+        imgEl.style.backgroundImage    = `url("${url}")`;
+        imgEl.style.backgroundSize     = 'cover';
+        imgEl.style.backgroundPosition = 'center';
+      }
+    });
+  });
+  // Mise à jour socket : abonner aussi les nouvelles cartes visibles
+  const allIds = _topIds.concat(rest.map(d => d.id)).filter(Boolean);
+  syncSocketSubscriptions(allIds);
+}
+
+const seeAllPredBtn = document.querySelector('.see-all');
+if (seeAllPredBtn) {
+  seeAllPredBtn.addEventListener('click', () => {
+    const allGrid = document.getElementById('allGrid');
+    if (!allGrid) return;
+    _allExpanded = !_allExpanded;
+    if (_allExpanded) {
+      renderAllGrid();
+      allGrid.style.display = 'grid';
+      seeAllPredBtn.textContent = 'Voir Moins';
+    } else {
+      allGrid.style.display = 'none';
+      allGrid.innerHTML = '';
+      seeAllPredBtn.textContent = 'Voir Tout';
+      // Réduire les abonnements socket au top 2 seulement
+      syncSocketSubscriptions(_topIds.filter(Boolean));
+    }
+  });
+}
+
+/* ─── VOIR TOUT — actualités ─── */
+const seeAllNewsBtn = document.querySelectorAll('.see-all')[1];
+if (seeAllNewsBtn) {
+  seeAllNewsBtn.addEventListener('click', () => {
+    showToast('Toutes les actualités — bientôt');
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   RETOUR STRIPE (?paid=ok / ?paid=cancel)
+══════════════════════════════════════════════════ */
+(function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const paid   = params.get('paid');
+  if (!paid) return;
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete('paid');
+  history.replaceState({}, '', clean.toString());
+  if (paid === 'ok')     showToast('ok', 'Paiement reçu', 'Tes points arrivent…');
+  if (paid === 'cancel') showToast('warn', 'Paiement annulé', 'Aucun point crédité');
+})();
+
+/* ─── INIT ─── */
+loadDebates();
 </script>
 
 </body>
