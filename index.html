@@ -319,12 +319,12 @@ body{
   <!-- SUBSCRIBE CARD -->
   <div class="section subscribe-section">
     <div class="subscribe-card">
-      <div class="subscribe-crown">ðŸ‘‘</div>
+      <div class="subscribe-crown">&#128081;</div>
       <div class="subscribe-content">
         <div class="subscribe-title">S'abonner maintenant</div>
-        <div class="subscribe-subtitle">DÃ©bloquez les analyses premium</div>
+        <div class="subscribe-subtitle">D&eacute;bloquez les analyses premium</div>
       </div>
-      <div class="subscribe-arrow">â†’</div>
+      <div class="subscribe-arrow">&rarr;</div>
     </div>
   </div>
 
@@ -622,7 +622,7 @@ body{
     <div class="nav-icon">
       <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
     </div>
-    <div>VidÃ©os</div>
+    <div>Vid&eacute;os</div>
   </div>
   <div class="nav-item">
     <div class="nav-icon">
@@ -977,7 +977,7 @@ function syncSocketSubscriptions(ids) {
 setInterval(loadDebates, POLL_INTERVAL);
 
 /* â”€â”€â”€ NAVIGATION â”€â”€â”€ */
-const NAV_LABELS = ['Accueil','Calendrier','VidÃ©os','Galerie','Profil'];
+const NAV_LABELS = ['Accueil','Calendrier','Vid&eacute;os','Galerie','Profil'];
 
 function showSection(sectionId) {
   document.querySelectorAll('.nav-section').forEach(s => s.classList.remove('active'));
@@ -1307,219 +1307,3 @@ loadDebates();
 
 </body>
 </html>
-
-function buildCard(debate) {
-  const grad = (debate.gradColors && debate.gradColors.length >= 2)
-    ? `linear-gradient(135deg,${debate.gradColors[0]} 0%,${debate.gradColors[1]} 100%)`
-    : (CAT_GRADIENTS[debate.category] || CAT_GRADIENTS.general);
-  const label = debate.yesLabel
-    ? `<br><span style="font-size:11px;opacity:0.8">${escHtml(debate.yesLabel)}</span>` : '';
-  return `
-    <div class="highlight-card" data-debate-id="${escHtml(debate.id)}"
-         onclick="openDebate('${escHtml(debate.id)}')">
-      <div class="highlight-image" style="background-image:${grad};background-size:cover;background-position:center">
-        <div class="highlight-badge">
-          <div class="badge-icon"></div>
-          ${fmtViewers(debate.viewers)}
-        </div>
-        <div class="highlight-overlay"></div>
-        <div class="highlight-text">${escHtml(debate.title)}${label}</div>
-      </div>
-    </div>`;
-}
-
-function renderAllGrid() {
-  const allGrid = document.getElementById('allGrid');
-  if (!allGrid || !_allExpanded) return;
-  const rest = [..._debates]
-    .sort((a, b) => (b.pool || 0) - (a.pool || 0))
-    .slice(2);
-  allGrid.innerHTML = rest.map(buildCard).join('');
-
-  // Charger les images gÃ©nÃ©rÃ©es pour chaque carte de la grille Ã©tendue
-  rest.forEach(debate => {
-    getDebateImage(debate.id).then(url => {
-      if (!url) return;
-      const imgEl = allGrid.querySelector(`[data-debate-id="${debate.id}"] .highlight-image`);
-      if (imgEl) {
-        imgEl.style.backgroundImage    = `url("${url}")`;
-        imgEl.style.backgroundSize     = 'cover';
-        imgEl.style.backgroundPosition = 'center';
-      }
-    });
-  });
-  // Mise Ã  jour socket : abonner aussi les nouvelles cartes visibles
-  const allIds = _topIds.concat(rest.map(d => d.id)).filter(Boolean);
-  syncSocketSubscriptions(allIds);
-}
-
-const seeAllPredBtn = document.querySelector('.see-all');
-if (seeAllPredBtn) {
-  seeAllPredBtn.addEventListener('click', () => {
-    const allGrid = document.getElementById('allGrid');
-    if (!allGrid) return;
-    _allExpanded = !_allExpanded;
-    if (_allExpanded) {
-      renderAllGrid();
-      allGrid.style.display = 'grid';
-      seeAllPredBtn.textContent = 'Voir Moins';
-    } else {
-      allGrid.style.display = 'none';
-      allGrid.innerHTML = '';
-      seeAllPredBtn.textContent = 'Voir Tout';
-      // RÃ©duire les abonnements socket au top 2 seulement
-      syncSocketSubscriptions(_topIds.filter(Boolean));
-    }
-  });
-}
-
-/* â”€â”€â”€ VOIR TOUT â€” actualitÃ©s â”€â”€â”€ */
-const seeAllNewsBtn = document.querySelectorAll('.see-all')[1];
-if (seeAllNewsBtn) {
-  seeAllNewsBtn.addEventListener('click', () => {
-    showToast('Toutes les actualitÃ©s â€” bientÃ´t');
-  });
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   RETOUR STRIPE (?paid=ok / ?paid=cancel)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-(function handleStripeReturn() {
-  const params = new URLSearchParams(window.location.search);
-  const paid   = params.get('paid');
-  if (!paid) return;
-  const clean = new URL(window.location.href);
-  clean.searchParams.delete('paid');
-  history.replaceState({}, '', clean.toString());
-  if (paid === 'ok')     showToast('ok', 'Paiement reÃ§u', 'Tes points arriventâ€¦');
-  if (paid === 'cancel') showToast('warn', 'Paiement annulÃ©', 'Aucun point crÃ©ditÃ©');
-})();
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   CALENDRIER
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-const CAL_DAYS  = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-const CAT_EMOJI = { sports:'âš½', crypto:'â‚¿', politics:'ðŸ›', geopolitics:'ðŸŒ', economy:'ðŸ“ˆ', technology:'ðŸ’»', general:'ðŸŽ¯', society:'ðŸ‘¥' };
-const CAT_LABEL = { sports:'Sports', crypto:'Crypto', politics:'Politique', geopolitics:'GÃ©opolitique', economy:'Ã‰conomie', technology:'Tech', general:'GÃ©nÃ©ral', society:'SociÃ©tÃ©' };
-
-/* Hash dÃ©terministe d'une string â†’ entier */
-function hashStr(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-function initCalendar() {
-  const strip = document.getElementById('calDateStrip');
-  const body  = document.getElementById('calBody');
-  if (!strip || !body) return;
-
-  const today = new Date();
-  let selDay  = 0;
-
-  strip.innerHTML = '';
-  for (let i = 0; i < 7; i++) {
-    const d   = new Date(today);
-    d.setDate(today.getDate() + i);
-    const dot = i < 4 ? '' : ' empty';
-    const el  = document.createElement('div');
-    el.className = 'cal-day' + (i === 0 ? ' active' : '');
-    el.innerHTML = `
-      <span class="cal-day-name">${CAL_DAYS[d.getDay()]}</span>
-      <span class="cal-day-num">${d.getDate()}</span>
-      <span class="cal-day-dot${dot}"></span>`;
-    el.addEventListener('click', () => {
-      strip.querySelectorAll('.cal-day').forEach(x => x.classList.remove('active'));
-      el.classList.add('active');
-      selDay = i;
-      renderCalBody(body, i);
-    });
-    strip.appendChild(el);
-  }
-  renderCalBody(body, 0);
-}
-
-function renderCalBody(body, dayOffset) {
-  const all = [..._debates].sort((a, b) => (b.pool || 0) - (a.pool || 0));
-
-  if (!all.length) {
-    body.innerHTML = `<div class="cal-empty-state">
-      <div class="cal-empty-icon">ðŸ“…</div>
-      <div class="cal-empty-text">Aucune prÃ©diction disponible</div>
-    </div>`;
-    return;
-  }
-
-  /* Groupe par catÃ©gorie */
-  const groups = {};
-  all.slice(0, 6 + dayOffset).forEach(d => {
-    const cat = d.category || 'general';
-    if (!groups[cat]) groups[cat] = [];
-    groups[cat].push(d);
-  });
-
-  body.innerHTML = Object.entries(groups).map(([cat, debates]) => `
-    <div>
-      <div class="cal-competition-header">
-        <span class="cal-competition-label">${CAT_EMOJI[cat] || 'ðŸŽ¯'} ${CAT_LABEL[cat] || cat}</span>
-        <span class="cal-competition-line"></span>
-      </div>
-      ${debates.slice(0, 3).map(d => buildCalCard(d, dayOffset)).join('')}
-    </div>`).join('');
-}
-
-function buildCalCard(d, dayOffset) {
-  const seed  = hashStr(d.id + dayOffset);
-  const hour  = 9 + (seed % 13);
-  const mins  = ['00','15','30','45'][seed % 4];
-  const total = (d.yesVotes || 0) + (d.noVotes || 0) || 100;
-  const yPct  = Math.round((d.yesVotes || 55) / total * 100);
-  const nPct  = 100 - yPct;
-  const yOdd  = (1 + (nPct / 100) * 2.2).toFixed(2);
-  const nOdd  = (1 + (yPct / 100) * 2.2).toFixed(2);
-  const emoji = CAT_EMOJI[d.category] || 'ðŸŽ¯';
-  const yLbl  = (d.yesLabel || 'OUI').substring(0, 16);
-  const nLbl  = (d.noLabel  || 'NON').substring(0, 16);
-  const pool  = fmtPool(d.pool);
-  const live  = dayOffset === 0 ? `<span class="cal-match-live">â— Live</span>` : '';
-
-  return `<div class="cal-match-card" onclick="openDebate('${escHtml(d.id)}')">
-    <div class="cal-match-top">
-      <span class="cal-match-time-badge">${hour}:${mins}</span>
-      ${live}
-      <span class="cal-match-pool">${pool}</span>
-    </div>
-    <div class="cal-teams">
-      <div class="cal-team">
-        <div class="cal-team-emoji">${emoji}</div>
-        <div class="cal-team-name">${escHtml(yLbl)}</div>
-      </div>
-      <div class="cal-divider">
-        <span class="cal-vs-text">VS</span>
-        <span class="cal-vs-pct">${yPct}/${nPct}</span>
-      </div>
-      <div class="cal-team">
-        <div class="cal-team-emoji">ðŸŽ²</div>
-        <div class="cal-team-name">${escHtml(nLbl)}</div>
-      </div>
-    </div>
-    <div class="cal-odds-row">
-      <div class="cal-odd-btn">
-        <span class="cal-odd-lbl">OUI</span>
-        <span class="cal-odd-val">Ã—${yOdd}</span>
-      </div>
-      <div class="cal-odd-btn">
-        <span class="cal-odd-lbl">NON</span>
-        <span class="cal-odd-val">Ã—${nOdd}</span>
-      </div>
-    </div>
-  </div>`;
-}
-
-/* â”€â”€â”€ INIT â”€â”€â”€ */
-loadDebates();
-</script>
-
-</body>
-</html>
-
